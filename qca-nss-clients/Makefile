@@ -261,6 +261,28 @@ define KernelPackage/qca-nss-drv-lag-mgr/Description
 Kernel modules for NSS LAG manager
 endef
 
+define KernelPackage/qca-nss-drv-netlink
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  DEPENDS:=@TARGET_ipq_ipq806x||TARGET_ipq806x||TARGET_ipq807x||TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64 +kmod-qca-nss-drv +kmod-qca-nss-drv-ipsecmgr @!LINUX_3_18
+  TITLE:=NSS NETLINK Manager for QCA NSS driver
+  FILES:=$(PKG_BUILD_DIR)/netlink/qca-nss-netlink.ko
+endef
+
+define KernelPackage/qca-nss-drv-netlink/Description
+Kernel module for NSS netlink manager
+endef
+
+define Build/InstallDev/qca-nss-clients
+	$(INSTALL_DIR) $(1)/usr/include/qca-nss-clients
+	$(CP) $(PKG_BUILD_DIR)/netlink/include/* $(1)/usr/include/qca-nss-clients/
+endef
+
+define Build/InstallDev
+	$(call Build/InstallDev/qca-nss-clients,$(1))
+endef
+
 EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/qca-nss-drv \
 	-I$(STAGING_DIR)/usr/include/qca-nss-crypto \
@@ -331,6 +353,10 @@ ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-pppoe),y)
 MAKE_OPTS+=pppoe=y
 endif
 
+ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-netlink),y)
+MAKE_OPTS+=netlink=y
+endif
+
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" $(strip $(MAKE_OPTS)) \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
@@ -353,6 +379,7 @@ $(eval $(call KernelPackage,qca-nss-drv-pppoe))
 $(eval $(call KernelPackage,qca-nss-drv-map-t))
 $(eval $(call KernelPackage,qca-nss-drv-tunipip6))
 $(eval $(call KernelPackage,qca-nss-drv-qdisc))
+$(eval $(call KernelPackage,qca-nss-drv-netlink))
 $(eval $(call KernelPackage,qca-nss-drv-ipsecmgr))
 $(eval $(call KernelPackage,qca-nss-drv-bridge-mgr))
 $(eval $(call KernelPackage,qca-nss-drv-vlan-mgr))
