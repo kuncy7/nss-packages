@@ -93,6 +93,20 @@ define KernelPackage/qca-nss-drv-pptp/Description
 Kernel modules for NSS connection manager - Support for PPTP tunnel
 endef
 
+define KernelPackage/qca-nss-drv-pppoe
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  TITLE:=Kernel driver for NSS (connection manager) - PPPoE
+  DEPENDS:=+kmod-qca-nss-drv +kmod-pppoe +kmod-bonding @!LINUX_3_18
+  FILES:=$(PKG_BUILD_DIR)/pppoe/qca-nss-pppoe.ko
+  AUTOLOAD:=$(call AutoLoad,51,qca-nss-pppoe)
+endef
+
+define KernelPackage/qca-nss-drv-pppoe/Description
+Kernel modules for NSS connection manager - Support for PPPoE
+endef
+
 define KernelPackage/qca-nss-drv-map-t
   SECTION:=kernel
   CATEGORY:=Kernel modules
@@ -307,6 +321,10 @@ ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-gre),y)
 MAKE_OPTS+=gre=y
 endif
 
+ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-pppoe),y)
+MAKE_OPTS+=pppoe=y
+endif
+
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" $(strip $(MAKE_OPTS)) \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
@@ -325,6 +343,7 @@ $(eval $(call KernelPackage,qca-nss-drv-tun6rd))
 $(eval $(call KernelPackage,qca-nss-drv-dtlsmgr))
 $(eval $(call KernelPackage,qca-nss-drv-l2tpv2))
 $(eval $(call KernelPackage,qca-nss-drv-pptp))
+$(eval $(call KernelPackage,qca-nss-drv-pppoe))
 $(eval $(call KernelPackage,qca-nss-drv-map-t))
 $(eval $(call KernelPackage,qca-nss-drv-tunipip6))
 $(eval $(call KernelPackage,qca-nss-drv-qdisc))
