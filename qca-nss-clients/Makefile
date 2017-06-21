@@ -278,13 +278,47 @@ define KernelPackage/qca-nss-drv-netlink/Description
 Kernel module for NSS netlink manager
 endef
 
+define KernelPackage/qca-nss-drv-ovpn-mgr
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  TITLE:=Kernel driver for NSS OpenVPN manager
+  DEPENDS:=+kmod-qca-nss-drv +kmod-qca-nss-cfi +kmod-tun +kmod-ipt-conntrack @!LINUX_3_18 \
+	  @TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64
+  FILES:=$(PKG_BUILD_DIR)/openvpn/src/qca-nss-ovpn-mgr.ko
+endef
+
+define KernelPackage/qca-nss-drv-ovpn-mgr/Description
+Kernel module for NSS OpenVPN manager
+endef
+
+define KernelPackage/qca-nss-drv-ovpn-link
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  TITLE:=Kernel driver for interfacing NSS OpenVPN manager with ECM
+  DEPENDS:=+kmod-qca-nss-drv-ovpn-mgr +kmod-qca-nss-ecm-premium @!LINUX_3_18 \
+	  @TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64
+  FILES:=$(PKG_BUILD_DIR)/openvpn/plugins/qca-nss-ovpn-link.ko
+endef
+
+define KernelPackage/qca-nss-drv-ovpn-link/Description
+This module registers with ECM and communicates with NSS OpenVPN manager for supporting OpenVPN offload.
+endef
+
 define Build/InstallDev/qca-nss-clients
 	$(INSTALL_DIR) $(1)/usr/include/qca-nss-clients
 	$(CP) $(PKG_BUILD_DIR)/netlink/include/* $(1)/usr/include/qca-nss-clients/
+	$(CP) $(PKG_BUILD_DIR)/exports/* $(1)/usr/include/qca-nss-clients/
 endef
 
 define Build/InstallDev
 	$(call Build/InstallDev/qca-nss-clients,$(1))
+endef
+
+define KernelPackage/qca-nss-drv-ovpn-mgr/install
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/qca-nss-ovpn.init $(1)/etc/init.d/qca-nss-ovpn
 endef
 
 define KernelPackage/qca-nss-drv-ipsecmgr/install
@@ -297,6 +331,7 @@ EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/qca-nss-crypto \
 	-I$(STAGING_DIR)/usr/include/qca-nss-cfi \
 	-I$(STAGING_DIR)/usr/include/qca-nss-gmac \
+	-I$(STAGING_DIR)/usr/include/qca-nss-ecm \
 	-I$(STAGING_DIR)/usr/include/qca-ssdk \
 	-I$(STAGING_DIR)/usr/include/qca-ssdk/fal \
 	-I$(STAGING_DIR)/usr/include/nat46
@@ -368,6 +403,14 @@ ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-netlink),y)
 MAKE_OPTS+=netlink=y
 endif
 
+ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ovpn-mgr),y)
+MAKE_OPTS+=ovpn-mgr=y
+endif
+
+ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ovpn-link),y)
+MAKE_OPTS+=ovpn-link=y
+endif
+
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" $(strip $(MAKE_OPTS)) \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
@@ -396,3 +439,5 @@ $(eval $(call KernelPackage,qca-nss-drv-bridge-mgr))
 $(eval $(call KernelPackage,qca-nss-drv-vlan-mgr))
 $(eval $(call KernelPackage,qca-nss-drv-lag-mgr))
 $(eval $(call KernelPackage,qca-nss-drv-gre))
+$(eval $(call KernelPackage,qca-nss-drv-ovpn-mgr))
+$(eval $(call KernelPackage,qca-nss-drv-ovpn-link))
