@@ -53,6 +53,15 @@ define KernelPackage/qca-nss-cfi
   AUTOLOAD:=$(call AutoLoad,59,qca-nss-cfi-ocf qca-nss-cfi-cryptoapi qca-nss-ipsec)
 endef
 
+define Build/InstallDev/qca-nss-cfi
+	$(INSTALL_DIR) $(1)/usr/include/qca-nss-cfi
+	$(CP) $(PKG_BUILD_DIR)/$(CFI_CRYPTOAPI_DIR)/../exports/* $(1)/usr/include/qca-nss-cfi
+endef
+
+define Build/InstallDev
+	$(call Build/InstallDev/qca-nss-cfi,$(1))
+endef
+
 define KernelPackage/qca-nss-cfi/Description
 This package contains a NSS cfi driver for QCA chipset
 endef
