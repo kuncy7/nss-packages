@@ -38,7 +38,7 @@ define KernelPackage/qca-nss-drv-dtlsmgr
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS (connection manager) - dtlsmgr
-  DEPENDS:=@PACKAGE_kmod-qca-nss-crypto +kmod-qca-nss-drv @!LINUX_3_18
+  DEPENDS:=@PACKAGE_kmod-qca-nss-crypto +kmod-qca-nss-drv +kmod-qca-nss-cfi @!LINUX_3_18
   FILES:=$(PKG_BUILD_DIR)/dtls/qca-nss-dtlsmgr.ko
   AUTOLOAD:=$(call AutoLoad,60,qca-nss-dtlsmgr)
 endef
@@ -136,7 +136,7 @@ define KernelPackage/qca-nss-drv-ipsecmgr
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS (ipsec manager) - ipsecmgr
-  DEPENDS:=@TARGET_ipq806x||TARGET_ipq807x||TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64 +kmod-qca-nss-drv @!LINUX_3_18
+  DEPENDS:=@TARGET_ipq806x||TARGET_ipq807x||TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64 +kmod-qca-nss-drv +kmod-qca-nss-cfi @!LINUX_3_18
   FILES:=$(PKG_BUILD_DIR)/ipsecmgr/qca-nss-ipsecmgr.ko
   AUTOLOAD:=$(call AutoLoad,58,qca-nss-ipsecmgr)
 endef
@@ -219,6 +219,7 @@ endef
 EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/qca-nss-drv \
 	-I$(STAGING_DIR)/usr/include/qca-nss-crypto \
+	-I$(STAGING_DIR)/usr/include/qca-nss-cfi \
 	-I$(STAGING_DIR)/usr/include/qca-nss-gmac \
 	-I$(STAGING_DIR)/usr/include/qca-ssdk \
 	-I$(STAGING_DIR)/usr/include/qca-ssdk/fal \
