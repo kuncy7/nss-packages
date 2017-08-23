@@ -61,6 +61,10 @@ else
 subtarget:=ipq806x
 endif
 
+define Build/Configure
+	ln -rs $(PKG_BUILD_DIR)/exports/arch/nss_$(subtarget).h $(PKG_BUILD_DIR)/exports/nss_arch.h
+endef
+
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
