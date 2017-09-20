@@ -62,7 +62,7 @@ subtarget:=ipq806x
 endif
 
 define Build/Configure
-	ln -rs $(PKG_BUILD_DIR)/exports/arch/nss_$(subtarget).h $(PKG_BUILD_DIR)/exports/nss_arch.h
+	$(LN) arch/nss_$(subtarget).h $(PKG_BUILD_DIR)/exports/nss_arch.h
 endef
 
 define Build/Compile
