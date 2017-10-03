@@ -79,7 +79,7 @@ unload_ecm() {
 		# Defunct the connections
 		#
 	        echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all
-		sleep 1;
+		sleep 5;
 
 		rmmod ecm
 		sleep 1
