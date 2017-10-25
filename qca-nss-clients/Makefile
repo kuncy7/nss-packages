@@ -33,14 +33,21 @@ define KernelPackage/qca-nss-drv-tun6rd/Description
 Kernel modules for NSS connection manager - Support for 6rd tunnel
 endef
 
+ifneq (, $(findstring ipq807x, $(subtarget)))
+# DTLS Manager v1.0 for Akronite.
+  DTLSMGR_DIR:=v1.0
+else
+# DTLS Manager v2.0 for Hawkeye
+  DTLSMGR_DIR:=v2.0
+endif
+
 define KernelPackage/qca-nss-drv-dtlsmgr
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS (connection manager) - dtlsmgr
   DEPENDS:=+kmod-qca-nss-drv +kmod-qca-nss-cfi @!LINUX_3_18
-  FILES:=$(PKG_BUILD_DIR)/dtls/qca-nss-dtlsmgr.ko
-  AUTOLOAD:=$(call AutoLoad,60,qca-nss-dtlsmgr)
+  FILES:=$(PKG_BUILD_DIR)/dtls/$(DTLSMGR_DIR)/qca-nss-dtlsmgr.ko
 endef
 
 define KernelPackage/qca-nss-drv-dtls/Description
@@ -296,6 +303,7 @@ define Build/Compile
 		SUBDIRS="$(PKG_BUILD_DIR)" \
 		EXTRA_CFLAGS="$(EXTRA_CFLAGS)" \
 		SoC="$(subtarget)" \
+		DTLSMGR_DIR="$(DTLSMGR_DIR)" \
 		modules
 endef
 
