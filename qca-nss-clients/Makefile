@@ -187,6 +187,9 @@ define KernelPackage/qca-nss-drv-vlan-mgr
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS vlan manager
   DEPENDS:=@TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64 +kmod-qca-nss-drv @!LINUX_3_18
+ifeq ($(CONFIG_PACKAGE_kmod-bonding),y)
+  DEPENDS:=+kmod-bonding
+endif
   FILES:=$(PKG_BUILD_DIR)/vlan/qca-nss-vlan.ko
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-vlan)
 endef
@@ -214,7 +217,10 @@ define KernelPackage/qca-nss-drv-lag-mgr
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS LAG manager
-  DEPENDS:=+kmod-qca-nss-drv @!LINUX_3_18 +kmod-bonding
+  DEPENDS:=+kmod-qca-nss-drv  @!LINUX_3_18 \
+	   +TARGET_ipq_ipq807x:kmod-qca-nss-drv-vlan-mgr \
+	   +TARGET_ipq_ipq807x_64:kmod-qca-nss-drv-vlan-mgr @!LINUX_3_18 \
+	   +kmod-bonding
   FILES:=$(PKG_BUILD_DIR)/lag/qca-nss-lag-mgr.ko
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-lag-mgr)
 endef
