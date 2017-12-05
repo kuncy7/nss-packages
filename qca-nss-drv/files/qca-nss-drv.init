@@ -37,7 +37,7 @@ enable_rps() {
 	done
 
 	# Enable NSS RPS
-	sysctl -w dev.nss.n2hcfg.rps=1 >/dev/null 2>/dev/null
+	sysctl -w dev.nss.rps.enable=1 >/dev/null 2>/dev/null
 
 }
 
