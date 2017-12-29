@@ -14,6 +14,8 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_VERSION:=$(PKG_VERSION)
 
+NSS_CLIENTS_DIR:=$(TOPDIR)/qca/src/qca-nss-clients
+
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/qca-nss-drv
@@ -50,6 +52,11 @@ endef
 define Build/InstallDev
 	mkdir -p $(1)/usr/include/qca-nss-drv
 	$(CP) $(PKG_BUILD_DIR)/exports/* $(1)/usr/include/qca-nss-drv/
+ifneq (, $(findstring ipq807x, $(subtarget)))
+	$(RM) $(1)/usr/include/qca-nss-drv/nss_ipsecmgr.h
+	$(INSTALL_DIR) $(1)/usr/include/qca-nss-clients
+	$(CP) $(NSS_CLIENTS_DIR)/exports/nss_ipsecmgr.h $(1)/usr/include/qca-nss-clients/.
+endif
 endef
 
 EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-gmac -I$(STAGING_DIR)/usr/include/qca-nss-dp
