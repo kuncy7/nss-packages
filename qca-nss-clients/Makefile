@@ -154,7 +154,8 @@ define KernelPackage/qca-nss-drv-ipsecmgr
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS (ipsec manager) - ipsecmgr
-  DEPENDS:=@TARGET_ipq806x||TARGET_ipq807x||TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64 +kmod-qca-nss-drv +kmod-qca-nss-cfi-cryptoapi @!LINUX_3_18
+  DEPENDS:=@TARGET_ipq806x||TARGET_ipq_ipq806x||TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64 \
+		+kmod-qca-nss-drv +kmod-qca-nss-cfi-cryptoapi @!LINUX_3_18
   FILES:=$(PKG_BUILD_DIR)/ipsecmgr/$(IPSECMGR_DIR)/qca-nss-ipsecmgr.ko
   AUTOLOAD:=$(call AutoLoad,60,qca-nss-ipsecmgr)
 endef
