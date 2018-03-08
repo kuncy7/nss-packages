@@ -93,6 +93,10 @@ start() {
 
 	ethtool -K eth0 gro off
 	ethtool -K eth1 gro off
+
+#	The following command should be uncommented to Disable RSS and Enable ACL
+#	echo 2 > /proc/sys/net/edma/edma_disable_rss
+#	echo 0x64206420 > /proc/sys/net/edma/rss_acl_queue_map
 }
 
 
