@@ -48,11 +48,18 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/libfal.so $(1)/usr/lib
 endef
 
+ifeq ($(CONFIG_TARGET_ipq),y)
+subtarget:=$(SUBTARGET)
+else
+subtarget:=ipq806x
+endif
+
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
 		SUBDIRS="$(PKG_BUILD_DIR)" \
+		SoC="$(subtarget)" \
 		modules
 	$(MAKE) -C $(PKG_BUILD_DIR) $(strip $(QCA_NSS_MACSEC_CONFIG_OPTS)) -f Makefile.shell
 endef
