@@ -44,6 +44,7 @@ define KernelPackage/qca-nss-ecm/Default
   FILES:=$(PKG_BUILD_DIR)/*.ko $(FILES_EXAMPLES)
   KCONFIG:=CONFIG_BRIDGE_NETFILTER=y
   MENU:=1
+  PROVIDES:=kmod-qca-nss-ecm
 endef
 
 define KernelPackage/qca-nss-ecm/Description/Default
@@ -115,7 +116,6 @@ define KernelPackage/qca-nss-ecm-noload
 	   +kmod-bonding
 endef
 
-
 define KernelPackage/qca-nss-ecm-noload/Description
   $(call KernelPackage/qca-nss-ecm/Description/Default)
   When selected, this package installs the driver but does not load it at init.
@@ -179,6 +179,11 @@ subtarget:=$(SUBTARGET)
 else
 subtarget:=$(CONFIG_TARGET_BOARD)
 endif
+
+define Build/InstallDev
+	$(INSTALL_DIR) $(1)/usr/include/qca-nss-ecm
+	$(CP) $(PKG_BUILD_DIR)/exports/* $(1)/usr/include/qca-nss-ecm
+endef
 
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" $(strip $(ECM_MAKE_OPTS)) \

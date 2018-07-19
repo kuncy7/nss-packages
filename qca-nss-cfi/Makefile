@@ -35,7 +35,6 @@ ifneq (, $(findstring $(subtarget), ipq807x ipq807x_64 ipq60xx ipq60xx_64))
 #4.4 Kernel + ipq807x/ipq60xx
   CFI_OCF_DIR:=ocf/v2.0
   CFI_CRYPTOAPI_DIR:=cryptoapi/v2.0
-  CFI_IPSEC_DIR:=ipsec/v2.0
 else
 #4.4 Kernel + ipq806x
   CFI_CRYPTOAPI_DIR:=cryptoapi/v1.1
@@ -62,14 +61,20 @@ define KernelPackage/qca-nss-cfi-ocf
   DEPENDS:=@TARGET_ipq806x||TARGET_ipq_ipq806x||TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_32||TARGET_ipq_ipq60xx||TARGET_ipq_ipq60xx_64 \
 		+kmod-qca-nss-crypto +kmod-crypto-ocf @!LINUX_3_18
   TITLE:=Kernel driver for NSS cfi
-  FILES:=$(PKG_BUILD_DIR)/$(CFI_OCF_DIR)/qca-nss-cfi-ocf.ko \
-	 $(PKG_BUILD_DIR)/$(CFI_IPSEC_DIR)/qca-nss-ipsec.ko
+  FILES:=$(PKG_BUILD_DIR)/$(CFI_OCF_DIR)/qca-nss-cfi-ocf.ko
+
+ifdef CFI_IPSEC_DIR
+  FILES+=$(PKG_BUILD_DIR)/$(CFI_IPSEC_DIR)/qca-nss-ipsec.ko
   AUTOLOAD:=$(call AutoLoad,61,qca-nss-cfi-ocf qca-nss-ipsec)
+else
+  AUTOLOAD:=$(call AutoLoad,61,qca-nss-cfi-ocf)
+endif
 endef
 
 define Build/InstallDev/qca-nss-cfi
 	$(INSTALL_DIR) $(1)/usr/include/qca-nss-cfi
 	$(CP) $(PKG_BUILD_DIR)/$(CFI_CRYPTOAPI_DIR)/../exports/* $(1)/usr/include/qca-nss-cfi
+	$(CP) $(PKG_BUILD_DIR)/include/* $(1)/usr/include/qca-nss-cfi
 endef
 
 define Build/InstallDev

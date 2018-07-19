@@ -31,11 +31,15 @@ ifneq (, $(findstring $(subtarget), ipq807x ipq807x_64 ipq60xx ipq60xx_64))
   DTLSMGR_DIR:=v2.0
 # IPsec Manager v2.0 for Hawkeye/Cypress
   IPSECMGR_DIR:=v2.0
+# KLIPS plugin
+  IPSECMGR_KLIPS:= $(PKG_BUILD_DIR)/ipsecmgr/$(IPSECMGR_DIR)/plugins/klips/qca-nss-ipsec-klips.ko
 else
 # DTLS Manager v1.0 for Akronite.
   DTLSMGR_DIR:=v1.0
 # IPsec Manager v1.0 for Akronite.
   IPSECMGR_DIR:=v1.0
+# KLIPS plugin not needed
+  IPSECMGR_KLIPS:=
 endif
 
 define KernelPackage/qca-nss-drv-tun6rd
@@ -170,8 +174,8 @@ define KernelPackage/qca-nss-drv-ipsecmgr
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS (ipsec manager) - ipsecmgr
   DEPENDS:=@TARGET_ipq806x||TARGET_ipq_ipq806x||TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_32||TARGET_ipq_ipq60xx||TARGET_ipq_ipq60xx_64 \
-		+kmod-qca-nss-drv +kmod-qca-nss-cfi-cryptoapi @!LINUX_3_18
-  FILES:=$(PKG_BUILD_DIR)/ipsecmgr/$(IPSECMGR_DIR)/qca-nss-ipsecmgr.ko
+		+kmod-qca-nss-drv +kmod-qca-nss-ecm +kmod-qca-nss-cfi-cryptoapi @!LINUX_3_18
+  FILES:=$(PKG_BUILD_DIR)/ipsecmgr/$(IPSECMGR_DIR)/qca-nss-ipsecmgr.ko	$(IPSECMGR_KLIPS)
   AUTOLOAD:=$(call AutoLoad,60,qca-nss-ipsecmgr)
 endef
 
@@ -283,6 +287,11 @@ define Build/InstallDev
 	$(call Build/InstallDev/qca-nss-clients,$(1))
 endef
 
+define KernelPackage/qca-nss-drv-ipsecmgr/install
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/qca-nss-ipsec $(1)/etc/init.d/qca-nss-ipsec
+endef
+
 EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/qca-nss-drv \
 	-I$(STAGING_DIR)/usr/include/qca-nss-crypto \
@@ -330,6 +339,8 @@ MAKE_OPTS+=qdisc=y
 endif
 
 ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ipsecmgr),y)
+EXTRA_CFLAGS+= -I$(PKG_BUILD_DIR)/exports \
+		-I$(STAGING_DIR)/usr/include/qca-nss-ecm
 MAKE_OPTS+=ipsecmgr=y
 endif
 
