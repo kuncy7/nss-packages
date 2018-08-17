@@ -31,8 +31,8 @@ ifeq ($(findstring 4.4, $(LINUX_VERSION)),)
   CFI_IPSEC_DIR:=ipsec/v1.0
 else
 #4.4 Kernel
-ifneq (, $(findstring ipq807x, $(subtarget)))
-#4.4 Kernel + ipq807x
+ifneq (, $(findstring $(subtarget), ipq807x ipq807x_64 ipq60xx ipq60xx_64))
+#4.4 Kernel + ipq807x/ipq60xx
   CFI_OCF_DIR:=ocf/v2.0
   CFI_CRYPTOAPI_DIR:=cryptoapi/v2.0
   CFI_IPSEC_DIR:=ipsec/v2.0
@@ -48,7 +48,7 @@ define KernelPackage/qca-nss-cfi-cryptoapi
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  DEPENDS:=@TARGET_ipq806x||TARGET_ipq_ipq806x||TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_32 \
+  DEPENDS:=@TARGET_ipq806x||TARGET_ipq_ipq806x||TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_32||Target_ipq_ipq60xx||Target_ipq_ipq60xx_64 \
 		+kmod-qca-nss-crypto +kmod-crypto-authenc @!LINUX_3_18
   TITLE:=Kernel driver for NSS cfi
   FILES:=$(PKG_BUILD_DIR)/$(CFI_CRYPTOAPI_DIR)/qca-nss-cfi-cryptoapi.ko
@@ -59,7 +59,7 @@ define KernelPackage/qca-nss-cfi-ocf
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  DEPENDS:=@TARGET_ipq806x||TARGET_ipq_ipq806x||TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_32 \
+  DEPENDS:=@TARGET_ipq806x||TARGET_ipq_ipq806x||TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_32||TARGET_ipq_ipq60xx||Target_ipq_ipq60xx_64 \
 		+kmod-qca-nss-crypto +kmod-crypto-ocf @!LINUX_3_18
   TITLE:=Kernel driver for NSS cfi
   FILES:=$(PKG_BUILD_DIR)/$(CFI_OCF_DIR)/qca-nss-cfi-ocf.ko \
@@ -86,7 +86,7 @@ EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/crypto \
 	-I$(STAGING_DIR)/usr/include/qca-nss-drv
 
-ifneq (, $(findstring ipq807x, $(subtarget)))
+ifneq (, $(findstring $(subtarget), ipq807x ipq807x_64 ipq60xx ipq60xx_64))
 EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-clients
 endif
 

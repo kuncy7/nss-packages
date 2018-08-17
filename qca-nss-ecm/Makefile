@@ -31,6 +31,8 @@ define KernelPackage/qca-nss-ecm/Default
 	+TARGET_ipq_ipq807x_64:kmod-qca-nss-drv \
 	+TARGET_ipq807x_32:kmod-qca-nss-drv \
 	+TARGET_ipq807x:kmod-qca-nss-drv \
+	+TARGET_ipq_ipq60xx:kmod-qca-nss-drv \
+	+TARGET_ipq_ipq60xx_64:kmod-qca-nss-drv \
 	+kmod-shortcut-fe-drv +iptables-mod-extra +kmod-ipt-conntrack \
 	+kmod-ipv6 +kmod-l2tp +kmod-pppol2tp +kmod-bonding +kmod-pptp \
 	+kmod-pppoe @!LINUX_3_18

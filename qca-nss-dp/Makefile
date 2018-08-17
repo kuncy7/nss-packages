@@ -20,7 +20,7 @@ define KernelPackage/qca-nss-dp
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  DEPENDS:=@TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_32 +kmod-qca-ssdk-nohnat
+  DEPENDS:=@TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_32||TARGET_ipq_ipq60xx||Target_ipq_ipq60xx_64 +kmod-qca-ssdk-nohnat
   TITLE:=Kernel driver for NSS data plane
   FILES:=$(PKG_BUILD_DIR)/qca-nss-dp.ko
   AUTOLOAD:=$(call AutoLoad,31,qca-nss-dp)

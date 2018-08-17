@@ -26,10 +26,10 @@ else
 subtarget:=$(CONFIG_TARGET_BOARD)
 endif
 
-ifneq (, $(findstring ipq807x, $(subtarget)))
-# DTLS Manager v2.0 for Hawkeye
+ifneq (, $(findstring $(subtarget), ipq807x ipq807x_64 ipq60xx ipq60xx_64))
+# DTLS Manager v2.0 for Hawkeye/Cypress
   DTLSMGR_DIR:=v2.0
-# IPsec Manager v2.0 for Hawkeye
+# IPsec Manager v2.0 for Hawkeye/Cypress
   IPSECMGR_DIR:=v2.0
 else
 # DTLS Manager v1.0 for Akronite.
@@ -126,7 +126,7 @@ define KernelPackage/qca-nss-drv-gre
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS (connection manager) - GRE
-  DEPENDS:=@TARGET_ipq_ipq806x||TARGET_ipq806x||TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_32 +kmod-qca-nss-drv @!LINUX_3_18 +kmod-gre6
+  DEPENDS:=@TARGET_ipq_ipq806x||TARGET_ipq806x||TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_32||TARGET_ipq_ipq60xx||Target_ipq_ipq60xx_64 +kmod-qca-nss-drv @!LINUX_3_18 +kmod-gre6
   FILES:=$(PKG_BUILD_DIR)/gre/qca-nss-gre.ko $(PKG_BUILD_DIR)/gre/test/qca-nss-gre-test.ko
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-gre)
 endef
@@ -168,7 +168,7 @@ define KernelPackage/qca-nss-drv-ipsecmgr
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS (ipsec manager) - ipsecmgr
-  DEPENDS:=@TARGET_ipq806x||TARGET_ipq_ipq806x||TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_32 \
+  DEPENDS:=@TARGET_ipq806x||TARGET_ipq_ipq806x||TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_32||TARGET_ipq_ipq60xx||Target_ipq_ipq60xx_64 \
 		+kmod-qca-nss-drv +kmod-qca-nss-cfi-cryptoapi @!LINUX_3_18
   FILES:=$(PKG_BUILD_DIR)/ipsecmgr/$(IPSECMGR_DIR)/qca-nss-ipsecmgr.ko
   AUTOLOAD:=$(call AutoLoad,60,qca-nss-ipsecmgr)
@@ -196,9 +196,11 @@ define KernelPackage/qca-nss-drv-bridge-mgr
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS bridge manager
-  DEPENDS:=@TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_32 +kmod-bonding \
+  DEPENDS:=@TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_32||TARGET_ipq_ipq60xx||Target_ipq_ipq60xx_64 +kmod-bonding \
 		+TARGET_ipq_ipq807x:kmod-qca-nss-drv-vlan-mgr \
-		+TARGET_ipq_ipq807x_64:kmod-qca-nss-drv-vlan-mgr @!LINUX_3_18
+		+TARGET_ipq_ipq807x_64:kmod-qca-nss-drv-vlan-mgr \
+		+TARGET_ipq_ipq60xx:kmod-qca-nss-drv-vlan-mgr \
+		+TARGET_ipq_ipq60xx_64:kmod-qca-nss-drv-vlan-mgr @!LINUX_3_18
   FILES:=$(PKG_BUILD_DIR)/bridge/qca-nss-bridge-mgr.ko
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-bridge-mgr)
 endef
@@ -212,7 +214,7 @@ define KernelPackage/qca-nss-drv-vlan-mgr
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS vlan manager
-  DEPENDS:=@TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_32 +kmod-qca-nss-drv @!LINUX_3_18
+  DEPENDS:=@TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_32||TARGET_ipq_ipq60xx||Target_ipq_ipq60xx_64 +kmod-qca-nss-drv @!LINUX_3_18
 ifeq ($(CONFIG_PACKAGE_kmod-bonding),y)
   DEPENDS:=+kmod-bonding
 endif
@@ -248,6 +250,8 @@ define KernelPackage/qca-nss-drv-lag-mgr
 	   +TARGET_ipq_ipq807x_64:kmod-qca-nss-drv-vlan-mgr @!LINUX_3_18 \
 	   +TARGET_ipq807x_32:kmod-qca-nss-drv-vlan-mgr \
 	   +TARGET_ipq807x:kmod-qca-nss-drv-vlan-mgr @!LINUX_3_18 \
+	   +TARGET_ipq_ipq60xx:kmod-qca-nss-drv-vlan-mgr @!LINUX_3_18 \
+	   +TARGET_ipq_ipq60xx_64:kmod-qca-nss-drv-vlan-mgr @!LINUX_3_18 \
 	   +kmod-bonding
   FILES:=$(PKG_BUILD_DIR)/lag/qca-nss-lag-mgr.ko
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-lag-mgr)
