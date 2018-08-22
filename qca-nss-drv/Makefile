@@ -65,7 +65,7 @@ EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-gmac -I$(STAGING_DIR)/usr/in
 ifeq ($(CONFIG_TARGET_ipq),y)
 subtarget:=$(SUBTARGET)
 else
-subtarget:=ipq806x
+subtarget:=$(CONFIG_TARGET_BOARD)
 endif
 
 define Build/Configure

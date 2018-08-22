@@ -25,7 +25,12 @@ define KernelPackage/qca-nss-ecm/Default
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Support
-  DEPENDS:=+!TARGET_ipq_ipq40xx:kmod-qca-nss-drv \
+  DEPENDS:=+TARGET_ipq806x:kmod-qca-nss-drv \
+	+TARGET_ipq_ipq806x:kmod-qca-nss-drv \
+	+TARGET_ipq_ipq807x:kmod-qca-nss-drv \
+	+TARGET_ipq_ipq807x_64:kmod-qca-nss-drv \
+	+TARGET_ipq807x_32:kmod-qca-nss-drv \
+	+TARGET_ipq807x:kmod-qca-nss-drv \
 	+kmod-shortcut-fe-drv +iptables-mod-extra +kmod-ipt-conntrack \
 	+kmod-ipv6 +kmod-l2tp +kmod-pppol2tp +kmod-bonding +kmod-pptp \
 	+kmod-pppoe @!LINUX_3_18
@@ -145,7 +150,7 @@ endif
 ifeq ($(CONFIG_TARGET_ipq),y)
 subtarget:=$(SUBTARGET)
 else
-subtarget:=ipq806x
+subtarget:=$(CONFIG_TARGET_BOARD)
 endif
 
 define Build/Compile

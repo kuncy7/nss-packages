@@ -19,12 +19,12 @@ include $(INCLUDE_DIR)/package.mk
 ifeq ($(CONFIG_TARGET_ipq),y)
 subtarget:=$(SUBTARGET)
 else
-subtarget:=ipq806x
+subtarget:=$(CONFIG_TARGET_BOARD)
 endif
 
 # v1.0 is for Akronite
 # v2.0 is for Hawkeye
-ifneq (, $(findstring ipq807x, $(SUBTARGET)))
+ifneq (, $(findstring ipq807x, $(subtarget)))
 NSS_CRYPTO_DIR:=v2.0
 else
 NSS_CRYPTO_DIR:=v1.0
@@ -34,7 +34,7 @@ define KernelPackage/qca-nss-crypto/Default
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  DEPENDS:=@TARGET_ipq806x||TARGET_ipq_ipq806x||TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64 \
+  DEPENDS:=@TARGET_ipq806x||TARGET_ipq_ipq806x||TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_32 \
 		+kmod-qca-nss-drv @!LINUX_3_18
 endef
 
