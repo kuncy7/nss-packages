@@ -18,7 +18,11 @@ LOCAL_VARIANT=$(patsubst qca-nss-ecm-%,%,$(patsubst qca-nss-ecm-%,%,$(BUILD_VARI
 include $(INCLUDE_DIR)/package.mk
 
 ifeq ($(CONFIG_QCA_NSS_ECM_EXAMPLES_PCC),y)
-	FILES_EXAMPLES:=$(PKG_BUILD_DIR)/examples/ecm_pcc_test.ko
+	FILES_EXAMPLES=$(PKG_BUILD_DIR)/examples/ecm_pcc_test.ko
+endif
+
+ifeq ($(CONFIG_QCA_NSS_ECM_EXAMPLES_MARK),y)
+	FILES_EXAMPLES+=$(PKG_BUILD_DIR)/examples/ecm_mark_test.ko
 endif
 
 define KernelPackage/qca-nss-ecm/Default
@@ -162,6 +166,7 @@ define Build/Compile
 		SUBDIRS="$(PKG_BUILD_DIR)" \
 		EXTRA_CFLAGS="$(EXTRA_CFLAGS)" SoC="$(subtarget)" \
 		EXAMPLES_BUILD_PCC="$(CONFIG_QCA_NSS_ECM_EXAMPLES_PCC)" \
+		EXAMPLES_BUILD_MARK="$(CONFIG_QCA_NSS_ECM_EXAMPLES_MARK)" \
 		modules
 endef
 
@@ -173,6 +178,12 @@ menu "ECM Configuration"
 		bool "Build PCC usage example"
 		help
 			Selecting this will build the PCC classifier usage example module.
+		default n
+
+	config QCA_NSS_ECM_EXAMPLES_MARK
+		bool "Build Mark classifier usage example"
+		help
+			Selecting this will build the Mark classifier usage example module.
 		default n
 endmenu
 endef
