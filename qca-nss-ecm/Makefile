@@ -37,8 +37,8 @@ define KernelPackage/qca-nss-ecm/Default
 	+TARGET_ipq807x:kmod-qca-nss-drv \
 	+TARGET_ipq_ipq60xx:kmod-qca-nss-drv \
 	+TARGET_ipq_ipq60xx_64:kmod-qca-nss-drv \
-	+kmod-shortcut-fe-drv +iptables-mod-extra +kmod-ipt-conntrack \
-	+kmod-ipv6 +kmod-l2tp +kmod-pppol2tp +kmod-bonding +kmod-pptp \
+	+iptables-mod-extra +kmod-ipt-conntrack \
+	+kmod-ipv6 \
 	+kmod-pppoe @!LINUX_3_18
   TITLE:=QCA NSS Enhanced Connection Manager (ECM)
   FILES:=$(PKG_BUILD_DIR)/*.ko $(FILES_EXAMPLES)
@@ -61,15 +61,16 @@ define KernelPackage/qca-nss-ecm/Default/install
 	$(INSTALL_BIN) ./files/qca-nss-ecm.sysctl $(1)/etc/sysctl.d/qca-nss-ecm.conf
 endef
 
-define KernelPackage/qca-nss-ecm
+define KernelPackage/qca-nss-ecm-standard
   $(call KernelPackage/qca-nss-ecm/Default)
+  VARIANT:=standard
 endef
 
-define KernelPackage/qca-nss-ecm/Description
+define KernelPackage/qca-nss-ecm-standard/Description
   $(call KernelPackage/qca-nss-ecm/Description/Default)
 endef
 
-define KernelPackage/qca-nss-ecm/install
+define KernelPackage/qca-nss-ecm-standard/install
 $(call KernelPackage/qca-nss-ecm/Default/install, $(1))
 endef
 
@@ -78,7 +79,9 @@ define KernelPackage/qca-nss-ecm-premium/Default
 $(call KernelPackage/qca-nss-ecm/Default)
   TITLE+= (with premium features)
   VARIANT:=premium
-  DEPENDS+=+kmod-qca-hyfi-bridge +kmod-qca-mcs +kmod-nat46
+  DEPENDS+=+kmod-qca-hyfi-bridge +kmod-qca-mcs +kmod-nat46 \
+	+kmod-l2tp +kmod-pppol2tp +kmod-pptp +kmod-shortcut-fe-drv \
+	+kmod-bonding
 endef
 
 define KernelPackage/qca-nss-ecm-premium/Description/Default
@@ -99,13 +102,19 @@ $(call KernelPackage/qca-nss-ecm-premium/Description/Default)
 endef
 
 define KernelPackage/qca-nss-ecm-premium/install
-$(call KernelPackage/qca-nss-ecm/install, $(1))
+$(call KernelPackage/qca-nss-ecm-standard/install, $(1))
 endef
 
+# Variant with additional features enabled for noload profile
 define KernelPackage/qca-nss-ecm-noload
   $(call KernelPackage/qca-nss-ecm/Default)
+  TITLE+= (with noload features)
   PROVIDES:=kmod-qca-nss-ecm
+  VARIANT:=noload
+  DEPENDS+=+kmod-l2tp +kmod-pppol2tp +kmod-pptp +kmod-shortcut-fe-drv \
+	   +kmod-bonding
 endef
+
 
 define KernelPackage/qca-nss-ecm-noload/Description
   $(call KernelPackage/qca-nss-ecm/Description/Default)
@@ -143,9 +152,21 @@ EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/nat46
 
 ECM_MAKE_OPTS:=
-ifeq ($(LOCAL_VARIANT),premium)
+ifneq ($(LOCAL_VARIANT),standard)
 ECM_MAKE_OPTS+=ECM_CLASSIFIER_HYFI_ENABLE=y \
-		ECM_MULTICAST_ENABLE=y
+		ECM_MULTICAST_ENABLE=y \
+		ECM_INTERFACE_IPSEC_ENABLE=y \
+		ECM_INTERFACE_PPTP_ENABLE=y \
+		ECM_INTERFACE_L2TPV2_ENABLE=y \
+		ECM_INTERFACE_GRE_TAP_ENABLE=y \
+		ECM_INTERFACE_GRE_TUN_ENABLE=y \
+		ECM_INTERFACE_SIT_ENABLE=y \
+		ECM_INTERFACE_TUNIPIP6_ENABLE=y
+
+ifeq ($(CONFIG_TARGET_ipq_ipq40xx),)
+ECM_MAKE_OPTS+=ECM_INTERFACE_BOND_ENABLE=y
+endif
+
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-nat46),)
@@ -189,6 +210,6 @@ endmenu
 endef
 
 $(eval $(call KernelPackage,qca-nss-ecm-noload))
-$(eval $(call KernelPackage,qca-nss-ecm))
+$(eval $(call KernelPackage,qca-nss-ecm-standard))
 $(eval $(call KernelPackage,qca-nss-ecm-premium-noload))
 $(eval $(call KernelPackage,qca-nss-ecm-premium))
