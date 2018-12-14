@@ -38,7 +38,6 @@ define KernelPackage/qca-nss-ecm/Default
 	+TARGET_ipq_ipq60xx:kmod-qca-nss-drv \
 	+TARGET_ipq_ipq60xx_64:kmod-qca-nss-drv \
 	+iptables-mod-extra +kmod-ipt-conntrack \
-	+kmod-ipv6 \
 	+kmod-pppoe @!LINUX_3_18
   TITLE:=QCA NSS Enhanced Connection Manager (ECM)
   FILES:=$(PKG_BUILD_DIR)/*.ko $(FILES_EXAMPLES)
