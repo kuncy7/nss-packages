@@ -67,6 +67,14 @@ else
 subtarget:=$(CONFIG_TARGET_BOARD)
 endif
 
+ifeq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),256)
+EXTRA_CFLAGS+= -DNSS_MEM_PROFILE_LOW
+endif
+
+ifeq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),512)
+EXTRA_CFLAGS+= -DNSS_MEM_PROFILE_MEDIUM
+endif
+
 define Build/Configure
 	$(LN) arch/nss_$(subtarget).h $(PKG_BUILD_DIR)/exports/nss_arch.h
 endef
