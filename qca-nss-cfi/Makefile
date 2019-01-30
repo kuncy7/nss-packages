@@ -16,8 +16,6 @@ PKG_SOURCE_VERSION:=$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
-PKG_BUILD_DEPENDS:=ocf-crypto-headers
-
 ifeq ($(CONFIG_TARGET_ipq),y)
 subtarget:=$(SUBTARGET)
 else
@@ -87,6 +85,7 @@ endef
 
 EXTRA_CFLAGS+= \
 	-DCONFIG_NSS_DEBUG_LEVEL=4 \
+	-I$(LINUX_DIR)/crypto/ocf \
 	-I$(STAGING_DIR)/usr/include/qca-nss-crypto \
 	-I$(STAGING_DIR)/usr/include/crypto \
 	-I$(STAGING_DIR)/usr/include/qca-nss-drv
