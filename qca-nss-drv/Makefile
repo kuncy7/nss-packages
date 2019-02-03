@@ -22,9 +22,8 @@ define KernelPackage/qca-nss-drv
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  DEPENDS:=@(PACKAGE_kmod-qca-nss-gmac||PACKAGE_kmod-qca-nss-dp) @!LINUX_3_18
-  PKG_BUILD_DEPENDS:=PACKAGE_kmod-qca-nss-gmac:kmod-qca-nss-gmac \
-	PACKAGE_kmod-qca-nss-dp:kmod-qca-nss-dp
+  DEPENDS:=@TARGET_ipq806x||TARGET_ipq_ipq806x||TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_64||TARGET_ipq_ipq60xx||TARGET_ipq_ipq60xx_64 \
+		+PACKAGE_kmod-qca-nss-gmac:kmod-qca-nss-gmac +PACKAGE_kmod-qca-nss-dp:kmod-qca-nss-dp @!LINUX_3_18
   TITLE:=Kernel driver for NSS (core driver)
   FILES:=$(PKG_BUILD_DIR)/qca-nss-drv.ko
   AUTOLOAD:=$(call AutoLoad,32,qca-nss-drv)
@@ -52,7 +51,7 @@ endef
 define Build/InstallDev
 	mkdir -p $(1)/usr/include/qca-nss-drv
 	$(CP) $(PKG_BUILD_DIR)/exports/* $(1)/usr/include/qca-nss-drv/
-ifneq (, $(findstring $(subtarget), ipq807x ipq807x_64 ipq60xx ipq60xx_64))
+ifneq (, $(findstring $(subtarget), "ipq807x" "ipq807x_64" "ipq60xx" "ipq60xx_64"))
 	$(RM) $(1)/usr/include/qca-nss-drv/nss_ipsecmgr.h
 	$(INSTALL_DIR) $(1)/usr/include/qca-nss-clients
 	$(CP) $(NSS_CLIENTS_DIR)/exports/nss_ipsecmgr.h $(1)/usr/include/qca-nss-clients/.

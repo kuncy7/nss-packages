@@ -33,8 +33,8 @@ define KernelPackage/qca-nss-ecm/Default
 	+TARGET_ipq_ipq806x:kmod-qca-nss-drv \
 	+TARGET_ipq_ipq807x:kmod-qca-nss-drv \
 	+TARGET_ipq_ipq807x_64:kmod-qca-nss-drv \
-	+TARGET_ipq807x_32:kmod-qca-nss-drv \
 	+TARGET_ipq807x:kmod-qca-nss-drv \
+	+TARGET_ipq807x_64:kmod-qca-nss-drv \
 	+TARGET_ipq_ipq60xx:kmod-qca-nss-drv \
 	+TARGET_ipq_ipq60xx_64:kmod-qca-nss-drv \
 	+iptables-mod-extra +kmod-ipt-conntrack \
@@ -163,7 +163,7 @@ ECM_MAKE_OPTS+=ECM_CLASSIFIER_HYFI_ENABLE=y \
 		ECM_INTERFACE_TUNIPIP6_ENABLE=y \
 		ECM_INTERFACE_RAWIP_ENABLE=y
 
-ifeq ($(CONFIG_TARGET_ipq_ipq40xx),)
+ifeq ($(CONFIG_TARGET_ipq_ipq40xx)$(CONFIG_TARGET_ipq40xx),)
 ECM_MAKE_OPTS+=ECM_INTERFACE_BOND_ENABLE=y
 endif
 
