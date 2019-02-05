@@ -149,6 +149,15 @@ define KernelPackage/qca-nss-ecm-premium-noload/install
 $(call KernelPackage/qca-nss-ecm-premium/Default/install, $(1))
 endef
 
+define Build/InstallDev/qca-nss-ecm
+	$(INSTALL_DIR) $(1)/usr/include/qca-nss-ecm
+	$(CP) $(PKG_BUILD_DIR)/exports/* $(1)/usr/include/qca-nss-ecm/
+endef
+
+define Build/InstallDev
+	$(call Build/InstallDev/qca-nss-ecm,$(1))
+endef
+
 EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/hyfibr \
 	-I$(STAGING_DIR)/usr/include/qca-mcs \
@@ -177,6 +186,10 @@ endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-nat46),)
 ECM_MAKE_OPTS+=ECM_INTERFACE_MAP_T_ENABLE=y
+endif
+
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ovpn-link),)
+ECM_MAKE_OPTS+=ECM_INTERFACE_OVPN_ENABLE=y
 endif
 
 # Keeping default as ipq806x for branches that does not have subtarget framework
