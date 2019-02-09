@@ -63,7 +63,7 @@ ifeq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),256)
 	echo 'net.netfilter.nf_conntrack_max=2048' >> $(1)/etc/sysctl.d/qca-nss-ecm.conf
 endif
 ifeq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),512)
-        echo 'net.netfilter.nf_conntrack_max=8192' >> $(1)/etc/sysctl.d/qca-nss-ecm.conf
+	echo 'net.netfilter.nf_conntrack_max=8192' >> $(1)/etc/sysctl.d/qca-nss-ecm.conf
 endif
 endef
 
