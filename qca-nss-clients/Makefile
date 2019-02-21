@@ -308,6 +308,19 @@ define KernelPackage/qca-nss-drv-ovpn-link/Description
 This module registers with ECM and communicates with NSS OpenVPN manager for supporting OpenVPN offload.
 endef
 
+define KernelPackage/qca-nss-drv-pvxlanmgr
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  DEPENDS:=+kmod-qca-nss-drv @!LINUX_3_18
+  TITLE:=NSS PVXLAN Manager for QCA NSS driver
+  FILES:=$(PKG_BUILD_DIR)/pvxlanmgr/qca-nss-pvxlanmgr.ko
+endef
+
+define KernelPackage/qca-nss-drv-pvxlanmgr/Description
+Kernel module for managing NSS PVxLAN
+endef
+
 define Build/InstallDev/qca-nss-clients
 	$(INSTALL_DIR) $(1)/usr/include/qca-nss-clients
 	$(CP) $(PKG_BUILD_DIR)/netlink/include/* $(1)/usr/include/qca-nss-clients/
@@ -413,6 +426,10 @@ ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ovpn-link),y)
 MAKE_OPTS+=ovpn-link=y
 endif
 
+ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-pvxlanmgr),y)
+MAKE_OPTS+=pvxlanmgr=y
+endif
+
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" $(strip $(MAKE_OPTS)) \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
@@ -443,3 +460,4 @@ $(eval $(call KernelPackage,qca-nss-drv-lag-mgr))
 $(eval $(call KernelPackage,qca-nss-drv-gre))
 $(eval $(call KernelPackage,qca-nss-drv-ovpn-mgr))
 $(eval $(call KernelPackage,qca-nss-drv-ovpn-link))
+$(eval $(call KernelPackage,qca-nss-drv-pvxlanmgr))
