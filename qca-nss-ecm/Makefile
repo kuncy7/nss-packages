@@ -216,8 +216,6 @@ define Build/Compile
 endef
 
 define KernelPackage/qca-nss-ecm/config
-$(call Package/$(PKG_NAME)/override_source_path,kmod-$(PKG_NAME))
-$(call Package/$(PKG_NAME)/override_version,kmod-$(PKG_NAME),$(PKG_SUPPORTED_VERSION))
 menu "ECM Configuration"
 	config QCA_NSS_ECM_EXAMPLES_PCC
 		bool "Build PCC usage example"
