@@ -175,6 +175,10 @@ define KernelPackage/qca-nss-drv-ipsecmgr
   TITLE:=Kernel driver for NSS (ipsec manager) - ipsecmgr
   DEPENDS:=@TARGET_ipq806x||TARGET_ipq_ipq806x||TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_64||TARGET_ipq_ipq60xx||TARGET_ipq_ipq60xx_64 \
 		+kmod-qca-nss-drv +kmod-qca-nss-ecm +kmod-qca-nss-cfi-cryptoapi kmod-qca-nss-cfi-ocf @!LINUX_3_18
+ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-l2tpv2),y)
+  DEPENDS:=+kmod-qca-nss-drv-l2tpv2
+endif
+
   FILES:=$(PKG_BUILD_DIR)/ipsecmgr/$(IPSECMGR_DIR)/qca-nss-ipsecmgr.ko	$(IPSECMGR_KLIPS)
   AUTOLOAD:=$(call AutoLoad,60,qca-nss-ipsecmgr)
 endef
@@ -370,6 +374,7 @@ endif
 
 ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-l2tpv2),y)
 MAKE_OPTS+=l2tpv2=y
+EXTRA_CFLAGS += -DNSS_L2TPV2_ENABLED
 endif
 
 ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-pptp),y)
