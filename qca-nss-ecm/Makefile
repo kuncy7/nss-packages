@@ -41,7 +41,9 @@ define KernelPackage/qca-nss-ecm/Default
 	+kmod-pppoe @!LINUX_3_18
   TITLE:=QCA NSS Enhanced Connection Manager (ECM)
   FILES:=$(PKG_BUILD_DIR)/*.ko $(FILES_EXAMPLES)
-  KCONFIG:=CONFIG_BRIDGE_NETFILTER=y
+  KCONFIG:=CONFIG_BRIDGE_NETFILTER=y \
+	CONFIG_NF_CONNTRACK_EVENTS=y \
+	CONFIG_NF_CONNTRACK_CHAIN_EVENTS=y
   MENU:=1
   PROVIDES:=kmod-qca-nss-ecm
 endef
