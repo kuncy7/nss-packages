@@ -271,7 +271,7 @@ define KernelPackage/qca-nss-drv-netlink
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  DEPENDS:=@TARGET_ipq_ipq806x||TARGET_ipq806x||TARGET_ipq807x||TARGET_ipq_ipq807x||TARGET_ipq807x_64||TARGET_ipq_ipq807x_64 +kmod-qca-nss-drv +kmod-qca-nss-drv-ipsecmgr @!LINUX_3_18
+  DEPENDS:=@TARGET_ipq_ipq806x||TARGET_ipq806x||TARGET_ipq807x||TARGET_ipq_ipq807x||TARGET_ipq807x_64||TARGET_ipq_ipq807x_64||TARGET_ipq_ipq60xx||TARGET_ipq_ipq60xx_64 +kmod-qca-nss-drv +kmod-qca-nss-drv-ipsecmgr @!LINUX_3_18
   TITLE:=NSS NETLINK Manager for QCA NSS driver
   FILES:=$(PKG_BUILD_DIR)/netlink/qca-nss-netlink.ko
 endef
