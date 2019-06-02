@@ -250,6 +250,19 @@ define KernelPackage/qca-nss-drv-qdisc/Description
 Linux qdisc that aids in configuring shapers in the NSS
 endef
 
+define KernelPackage/qca-nss-drv-igs
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Support
+  TITLE:=Action for offloading traffic to an IFB interface to perform ingress shaping.
+  DEPENDS:=@TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq_ipq60xx||TARGET_ipq_ipq60xx_64 +kmod-qca-nss-drv +kmod-sched-core +kmod-ifb +kmod-qca-nss-drv-qdisc @!LINUX_3_18
+  FILES:=$(PKG_BUILD_DIR)/nss_qdisc/igs/act_nssmirred.ko
+endef
+
+define KernelPackage/qca-nss-drv-igs/Description
+Linux action that helps in offloading traffic to an IFB interface to perform ingress shaping.
+endef
+
 define KernelPackage/qca-nss-drv-lag-mgr
   SECTION:=kernel
   CATEGORY:=Kernel modules
@@ -393,6 +406,10 @@ ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-qdisc),y)
 MAKE_OPTS+=qdisc=y
 endif
 
+ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-igs),y)
+MAKE_OPTS+=igs=y
+endif
+
 ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ipsecmgr),y)
 EXTRA_CFLAGS+= -I$(PKG_BUILD_DIR)/exports \
 		-I$(STAGING_DIR)/usr/include/qca-nss-ecm
@@ -457,6 +474,7 @@ $(eval $(call KernelPackage,qca-nss-drv-pppoe))
 $(eval $(call KernelPackage,qca-nss-drv-map-t))
 $(eval $(call KernelPackage,qca-nss-drv-tunipip6))
 $(eval $(call KernelPackage,qca-nss-drv-qdisc))
+$(eval $(call KernelPackage,qca-nss-drv-igs))
 $(eval $(call KernelPackage,qca-nss-drv-netlink))
 $(eval $(call KernelPackage,qca-nss-drv-ipsecmgr))
 $(eval $(call KernelPackage,qca-nss-drv-bridge-mgr))
