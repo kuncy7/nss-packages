@@ -1,6 +1,6 @@
 #!/bin/sh  /etc/rc.common
 #
-# Copyright (c) 2014 The Linux Foundation. All rights reserved.
+# Copyright (c) 2014, 2019 The Linux Foundation. All rights reserved.
 #
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -54,7 +54,7 @@ load_sfe() {
 
 load_ecm() {
 	[ -d /sys/module/ecm ] || {
-		load_sfe
+		[ ! -e /proc/device-tree/MP_256 ] && load_sfe
 		insmod ecm front_end_selection=$(get_front_end_mode)
 	}
 
