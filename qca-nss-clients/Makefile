@@ -131,7 +131,7 @@ define KernelPackage/qca-nss-drv-gre
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS (connection manager) - GRE
-  DEPENDS:=@TARGET_ipq_ipq806x||TARGET_ipq806x||TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_64||TARGET_ipq_ipq60xx||Target_ipq_ipq60xx_64 +kmod-qca-nss-drv @!LINUX_3_18 +kmod-gre6
+  DEPENDS:=@TARGET_ipq_ipq806x||TARGET_ipq806x||TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_64||TARGET_ipq_ipq60xx||TARGET_ipq_ipq60xx_64 +kmod-qca-nss-drv @!LINUX_3_18 +kmod-gre6
   FILES:=$(PKG_BUILD_DIR)/gre/qca-nss-gre.ko $(PKG_BUILD_DIR)/gre/test/qca-nss-gre-test.ko
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-gre)
 endef
