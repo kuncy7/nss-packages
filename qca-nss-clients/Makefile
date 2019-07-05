@@ -364,6 +364,20 @@ define KernelPackage/qca-nss-drv-clmapmgr/Description
 Kernel module for managing NSS clmap
 endef
 
+define KernelPackage/qca-nss-drv-vxlanmgr
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  DEPENDS:=+kmod-qca-nss-drv +kmod-vxlan @!LINUX_3_18
+  TITLE:=NSS VxLAN Manager for QCA NSS driver
+  FILES:=$(PKG_BUILD_DIR)/vxlanmgr/qca-nss-vxlanmgr.ko
+  AUTOLOAD:=$(call AutoLoad,51,qca-nss-vxlanmgr)
+endef
+
+define KernelPackage/qca-nss-drv-vxlanmgr/Description
+Kernel module for managing NSS VxLAN
+endef
+
 define Build/InstallDev/qca-nss-clients
 	$(INSTALL_DIR) $(1)/usr/include/qca-nss-clients
 	$(CP) $(PKG_BUILD_DIR)/netlink/include/* $(1)/usr/include/qca-nss-clients/
@@ -491,6 +505,10 @@ ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-clmapmgr),y)
 MAKE_OPTS+=clmapmgr=y
 endif
 
+ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-vxlanmgr),y)
+MAKE_OPTS+=vxlanmgr=y
+endif
+
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" $(strip $(MAKE_OPTS)) \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
@@ -525,3 +543,4 @@ $(eval $(call KernelPackage,qca-nss-drv-ovpn-link))
 $(eval $(call KernelPackage,qca-nss-drv-pvxlanmgr))
 $(eval $(call KernelPackage,qca-nss-drv-eogremgr))
 $(eval $(call KernelPackage,qca-nss-drv-clmapmgr))
+$(eval $(call KernelPackage,qca-nss-drv-vxlanmgr))
