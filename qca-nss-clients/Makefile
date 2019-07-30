@@ -358,6 +358,11 @@ define KernelPackage/qca-nss-drv-ipsecmgr/install
 	$(INSTALL_BIN) ./files/qca-nss-ipsec $(1)/etc/init.d/qca-nss-ipsec
 endef
 
+define KernelPackage/qca-nss-drv-igs/install
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/qca-nss-mirred.init $(1)/etc/init.d/qca-nss-mirred
+endef
+
 EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/qca-nss-drv \
 	-I$(STAGING_DIR)/usr/include/qca-nss-crypto \
