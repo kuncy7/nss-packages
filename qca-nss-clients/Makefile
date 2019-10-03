@@ -69,6 +69,19 @@ define KernelPackage/qca-nss-drv-dtls/Description
 Kernel modules for NSS connection manager - Support for DTLS sessions
 endef
 
+define KernelPackage/qca-nss-drv-tlsmgr
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  TITLE:=Kernel driver for NSS (connection manager) - tlsmgr
+  DEPENDS:=+kmod-qca-nss-drv +kmod-qca-nss-cfi @!LINUX_3_18
+  FILES:=$(PKG_BUILD_DIR)/tls/qca-nss-tlsmgr.ko
+endef
+
+define KernelPackage/qca-nss-drv-tls/Description
+Kernel modules for NSS connection manager - Support for TLS sessions
+endef
+
 define KernelPackage/qca-nss-drv-l2tpv2
   SECTION:=kernel
   CATEGORY:=Kernel modules
@@ -448,7 +461,11 @@ ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-dtlsmgr),)
 MAKE_OPTS+=dtlsmgr=y
 endif
 
-ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-l2tpv2),)
+ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-tlsmgr),y)
+MAKE_OPTS+=tlsmgr=y
+endif
+
+ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-l2tpv2),y)
 MAKE_OPTS+=l2tpv2=y
 EXTRA_CFLAGS += -DNSS_L2TPV2_ENABLED
 endif
@@ -568,3 +585,4 @@ $(eval $(call KernelPackage,qca-nss-drv-eogremgr))
 $(eval $(call KernelPackage,qca-nss-drv-clmapmgr))
 $(eval $(call KernelPackage,qca-nss-drv-vxlanmgr))
 $(eval $(call KernelPackage,qca-nss-drv-match))
+$(eval $(call KernelPackage,qca-nss-drv-tlsmgr))
