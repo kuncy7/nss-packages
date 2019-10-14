@@ -175,10 +175,9 @@ define KernelPackage/qca-nss-drv-ipsecmgr
   TITLE:=Kernel driver for NSS (ipsec manager) - ipsecmgr
   DEPENDS:=@TARGET_ipq806x||TARGET_ipq_ipq806x||TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_64||TARGET_ipq_ipq60xx||TARGET_ipq_ipq60xx_64 \
 		+kmod-qca-nss-drv +kmod-qca-nss-ecm +kmod-qca-nss-cfi-cryptoapi kmod-qca-nss-cfi-ocf @!LINUX_3_18
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-l2tpv2),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-l2tpv2),)
   DEPENDS:=+kmod-qca-nss-drv-l2tpv2
 endif
-
   FILES:=$(PKG_BUILD_DIR)/ipsecmgr/$(IPSECMGR_DIR)/qca-nss-ipsecmgr.ko	$(IPSECMGR_KLIPS)
   AUTOLOAD:=$(call AutoLoad,60,qca-nss-ipsecmgr)
 endef
@@ -414,98 +413,98 @@ EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/nat46
 
 # Build individual packages if selected
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-profile),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-profile),)
 MAKE_OPTS+=profile=y
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-capwapmgr),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-capwapmgr),)
 MAKE_OPTS+=capwapmgr=y
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-tun6rd),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-tun6rd),)
 MAKE_OPTS+=tun6rd=m
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-dtlsmgr),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-dtlsmgr),)
 MAKE_OPTS+=dtlsmgr=y
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-l2tpv2),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-l2tpv2),)
 MAKE_OPTS+=l2tpv2=y
 EXTRA_CFLAGS += -DNSS_L2TPV2_ENABLED
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-pptp),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-pptp),)
 MAKE_OPTS+=pptp=y
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-map-t),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-map-t),)
 MAKE_OPTS+=map-t=y
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-tunipip6),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-tunipip6),)
 MAKE_OPTS+=tunipip6=m
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-qdisc),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-qdisc),)
 MAKE_OPTS+=qdisc=y
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-igs),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-igs),)
 MAKE_OPTS+=igs=y
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ipsecmgr),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ipsecmgr),)
 EXTRA_CFLAGS+= -I$(PKG_BUILD_DIR)/exports \
 		-I$(STAGING_DIR)/usr/include/qca-nss-ecm
 MAKE_OPTS+=ipsecmgr=y
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-bridge-mgr),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-bridge-mgr),)
 MAKE_OPTS+=bridge-mgr=y
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-vlan-mgr),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-vlan-mgr),)
 MAKE_OPTS+=vlan-mgr=y
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-lag-mgr),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-lag-mgr),)
 MAKE_OPTS+=lag-mgr=y
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-gre),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-gre),)
 MAKE_OPTS+=gre=y
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-pppoe),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-pppoe),)
 MAKE_OPTS+=pppoe=y
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-netlink),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-netlink),)
 MAKE_OPTS+=netlink=y
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ovpn-mgr),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ovpn-mgr),)
 MAKE_OPTS+=ovpn-mgr=y
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ovpn-link),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ovpn-link),)
 MAKE_OPTS+=ovpn-link=y
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-pvxlanmgr),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-pvxlanmgr),)
 MAKE_OPTS+=pvxlanmgr=y
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-eogremgr),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-eogremgr),)
 MAKE_OPTS+=eogremgr=y
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-clmapmgr),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-clmapmgr),)
 MAKE_OPTS+=clmapmgr=y
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-vxlanmgr),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-vxlanmgr),)
 MAKE_OPTS+=vxlanmgr=y
 endif
 
