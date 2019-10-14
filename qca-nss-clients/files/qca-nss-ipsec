@@ -14,10 +14,32 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+NSS_IPSEC_LOG_FILE=/tmp/.nss_ipsec_log
+NSS_IPSEC_LOG_STR_ECM="ECM_Loaded"
+
+ecm_load () {
+	if [ ! -d /sys/module/ecm ]; then
+		/etc/init.d/qca-nss-ecm start
+		if [ -d /sys/module/ecm ]; then
+			echo ${NSS_IPSEC_LOG_STR_ECM} >> ${NSS_IPSEC_LOG_FILE}
+		fi
+	fi
+}
+
+ecm_unload () {
+	if [ -f /tmp/.nss_ipsec_log ]; then
+		str=`grep ${NSS_IPSEC_LOG_STR_ECM} ${NSS_IPSEC_LOG_FILE}`
+		if [[ $str == ${NSS_IPSEC_LOG_STR_ECM} ]]; then
+			/etc/init.d/qca-nss-ecm stop
+			`sed 's/${NSS_IPSEC_LOG_STR_ECM}/ /g' $NSS_IPSEC_LOG_FILE >  $NSS_IPSEC_LOG_FILE`
+		fi
+	fi
+}
+
 ecm_disable() {
 
 	if [ ! -d /sys/module/ecm ]; then
-	   return
+		return;
 	fi
 
 	echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop
@@ -28,7 +50,7 @@ ecm_disable() {
 
 ecm_enable() {
 	if [ ! -d /sys/module/ecm ]; then
-	   return
+		return;
 	fi
 
 	echo 0 > /sys/kernel/debug/ecm/ecm_db/defunct_all
@@ -36,16 +58,12 @@ ecm_enable() {
 	echo 0 > /sys/kernel/debug/ecm/front_end_ipv6_stop
 }
 
-restart() {
-
-	ecm_disable
+start() {
+	ecm_load
 
 	local kernel_version=$(uname -r)
-	/etc/init.d/ipsec stop
 
-	rmmod qca-nss-ipsec-klips
-
-	insmod /lib/modules/$kernel_version/qca-nss-ipsec-klips.ko
+	insmod /lib/modules/${kernel_version}/qca-nss-ipsec-klips.ko
 	if [ "$?" -gt 0 ]; then
 		echo "Failed to load plugin. Please start ecm if not done already"
 		ecm_enable
@@ -59,15 +77,16 @@ restart() {
 	ecm_enable
 }
 
-start() {
-	restart
-}
-
 stop() {
 	ecm_disable
 
 	/etc/init.d/ipsec stop
 	rmmod qca-nss-ipsec-klips
 
-	ecm_enable
+	ecm_unload
+}
+
+restart() {
+	stop
+	start
 }
