@@ -40,7 +40,8 @@ define KernelPackage/qca-nss-ecm/Default
 	+TARGET_ipq_ipq50xx:kmod-qca-nss-drv \
 	+TARGET_ipq_ipq50xx_64:kmod-qca-nss-drv \
 	+iptables-mod-extra +kmod-ipt-conntrack \
-	+kmod-pppoe @!LINUX_3_18
+	+kmod-pppoe @!LINUX_3_18 \
+	+PACKAGE_kmod-qca-ovsmgr:kmod-qca-ovsmgr
   TITLE:=QCA NSS Enhanced Connection Manager (ECM)
   FILES:=$(PKG_BUILD_DIR)/*.ko $(FILES_EXAMPLES)
   KCONFIG:=CONFIG_BRIDGE_NETFILTER=y \
@@ -198,6 +199,12 @@ endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-vxlanmgr),)
 ECM_MAKE_OPTS+=ECM_INTERFACE_VXLAN_ENABLE=y
+endif
+
+ifneq ($(CONFIG_PACKAGE_kmod-qca-ovsmgr),)
+ECM_MAKE_OPTS+=ECM_INTERFACE_OVS_BRIDGE_ENABLE=y \
+		ECM_CLASSIFIER_OVS_ENABLE=y
+EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-ovsmgr
 endif
 
 # Keeping default as ipq806x for branches that does not have subtarget framework
