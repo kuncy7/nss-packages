@@ -194,6 +194,10 @@ ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ovpn-link),)
 ECM_MAKE_OPTS+=ECM_INTERFACE_OVPN_ENABLE=y
 endif
 
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-vxlanmgr),)
+ECM_MAKE_OPTS+=ECM_INTERFACE_VXLAN_ENABLE=y
+endif
+
 # Keeping default as ipq806x for branches that does not have subtarget framework
 ifeq ($(CONFIG_TARGET_ipq),y)
 subtarget:=$(SUBTARGET)
