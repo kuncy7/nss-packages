@@ -42,6 +42,18 @@ else
 subtarget:=$(CONFIG_TARGET_BOARD)
 endif
 
+NSS_DP_HAL_DIR:=$(PKG_BUILD_DIR)/hal
+ifneq (, $(findstring _64, $(subtarget)))
+hal_arch:=$(subst _64,,$(subtarget))
+else
+hal_arch:=$(subtarget)
+endif
+
+define Build/Configure
+	$(LN) $(NSS_DP_HAL_DIR)/arch/$(hal_arch)/nss_$(hal_arch).h \
+		$(PKG_BUILD_DIR)/exports/nss_dp_arch.h
+endef
+
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
