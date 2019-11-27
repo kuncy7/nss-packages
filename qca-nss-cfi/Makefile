@@ -75,9 +75,12 @@ define Build/InstallDev/qca-nss-cfi
 	$(CP) $(PKG_BUILD_DIR)/include/* $(1)/usr/include/qca-nss-cfi
 endef
 
+##TODO: Delete the below check once crypto is enabled
+ifeq (, $(findstring $(subtarget), "ipq50xx" "ipq50xx_64"))
 define Build/InstallDev
 	$(call Build/InstallDev/qca-nss-cfi,$(1))
 endef
+endif
 
 define KernelPackage/qca-nss-cfi/Description
 This package contains a NSS cfi driver for QCA chipset

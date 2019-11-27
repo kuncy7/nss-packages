@@ -55,9 +55,12 @@ define Build/InstallDev/qca-nss-crypto
 	$(CP) $(PKG_BUILD_DIR)/$(NSS_CRYPTO_DIR)/include/* $(1)/usr/include/qca-nss-crypto
 endef
 
+##TODO: Delete the below check once crypto is enabled
+ifeq (, $(findstring $(subtarget), "ipq50xx" "ipq50xx_64"))
 define Build/InstallDev
 	$(call Build/InstallDev/qca-nss-crypto,$(1))
 endef
+endif
 
 EXTRA_CFLAGS+= \
 	-DCONFIG_NSS_DEBUG_LEVEL=4 \
