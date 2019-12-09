@@ -409,6 +409,19 @@ define KernelPackage/qca-nss-drv-match/Description
 Kernel module for managing NSS Match
 endef
 
+define KernelPackage/qca-nss-drv-mirror
+ SECTION:=kernel
+ CATEGORY:=Kernel modules
+ SUBMENU:=Network Support
+ TITLE:=Module for mirroring packets from NSS to host.
+ DEPENDS:=+kmod-qca-nss-drv @!LINUX_3_18
+ FILES:=$(PKG_BUILD_DIR)/mirror/qca-nss-mirror.ko
+endef
+
+define KernelPackage/qca-nss-drv-mirror/Description
+Kernel module for managing NSS Mirror
+endef
+
 define Build/InstallDev/qca-nss-clients
 	$(INSTALL_DIR) $(1)/usr/include/qca-nss-clients
 	$(CP) $(PKG_BUILD_DIR)/netlink/include/* $(1)/usr/include/qca-nss-clients/
@@ -555,6 +568,10 @@ ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-match),)
 MAKE_OPTS+=match=y
 endif
 
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-mirror),)
+MAKE_OPTS+=mirror=y
+endif
+
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" $(strip $(MAKE_OPTS)) \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
@@ -592,3 +609,4 @@ $(eval $(call KernelPackage,qca-nss-drv-clmapmgr))
 $(eval $(call KernelPackage,qca-nss-drv-vxlanmgr))
 $(eval $(call KernelPackage,qca-nss-drv-match))
 $(eval $(call KernelPackage,qca-nss-drv-tlsmgr))
+$(eval $(call KernelPackage,qca-nss-drv-mirror))
