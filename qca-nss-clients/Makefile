@@ -498,6 +498,11 @@ endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-bridge-mgr),)
 MAKE_OPTS+=bridge-mgr=y
+#enable OVS bridge if ovsmgr is enabled
+ifneq ($(CONFIG_PACKAGE_kmod-qca-ovsmgr),)
+MAKE_OPTS+= NSS_BRIDGE_MGR_OVS_ENABLE=y
+EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-ovsmgr
+endif
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-vlan-mgr),)
