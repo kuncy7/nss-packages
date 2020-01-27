@@ -550,7 +550,7 @@ ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-vxlanmgr),)
 MAKE_OPTS+=vxlanmgr=y
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-match),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-match),)
 MAKE_OPTS+=match=y
 endif
 
