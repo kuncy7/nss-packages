@@ -461,11 +461,11 @@ ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-dtlsmgr),)
 MAKE_OPTS+=dtlsmgr=y
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-tlsmgr),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-tlsmgr),)
 MAKE_OPTS+=tlsmgr=y
 endif
 
-ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-l2tpv2),y)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-l2tpv2),)
 MAKE_OPTS+=l2tpv2=y
 EXTRA_CFLAGS += -DNSS_L2TPV2_ENABLED
 endif
