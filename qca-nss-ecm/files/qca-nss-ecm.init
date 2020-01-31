@@ -96,6 +96,11 @@ start() {
 		echo 'net.bridge.bridge-nf-call-ip6tables=1' >> /etc/sysctl.d/qca-nss-ecm.conf
 		echo 'net.bridge.bridge-nf-call-iptables=1' >> /etc/sysctl.d/qca-nss-ecm.conf
 	}
+
+	if [ -d /sys/module/qca_ovsmgr ]; then
+		insmod ecm_ovs
+	fi
+
 }
 
 stop() {
@@ -104,6 +109,10 @@ stop() {
 
 	sed '/net.bridge.bridge-nf-call-ip6tables=1/d' -i /etc/sysctl.d/qca-nss-ecm.conf
 	sed '/net.bridge.bridge-nf-call-iptables=1/d' -i /etc/sysctl.d/qca-nss-ecm.conf
+
+	if [ -d /sys/module/ecm_ovs ]; then
+		rmmod ecm_ovs
+	fi
 
 	unload_ecm
 }

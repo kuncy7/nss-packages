@@ -18,11 +18,20 @@ LOCAL_VARIANT=$(patsubst qca-nss-ecm-%,%,$(patsubst qca-nss-ecm-%,%,$(BUILD_VARI
 include $(INCLUDE_DIR)/package.mk
 
 ifeq ($(CONFIG_QCA_NSS_ECM_EXAMPLES_PCC),y)
-	FILES_EXAMPLES=$(PKG_BUILD_DIR)/examples/ecm_pcc_test.ko
+       FILES_EXAMPLES=$(PKG_BUILD_DIR)/examples/ecm_pcc_test.ko
 endif
 
 ifeq ($(CONFIG_QCA_NSS_ECM_EXAMPLES_MARK),y)
-	FILES_EXAMPLES+=$(PKG_BUILD_DIR)/examples/ecm_mark_test.ko
+       FILES_EXAMPLES+=$(PKG_BUILD_DIR)/examples/ecm_mark_test.ko
+endif
+
+#Explicitly enable OVS external module, if ovsmgr is enabled.
+ifneq ($(CONFIG_PACKAGE_kmod-qca-ovsmgr),)
+CONFIG_QCA_NSS_ECM_OVS=y
+endif
+
+ifeq ($(CONFIG_QCA_NSS_ECM_OVS),y)
+       FILES_EXAMPLES+=$(PKG_BUILD_DIR)/examples/ecm_ovs.ko
 endif
 
 define KernelPackage/qca-nss-ecm/Default
@@ -227,10 +236,11 @@ define Build/Compile
 		EXTRA_CFLAGS="$(EXTRA_CFLAGS)" SoC="$(subtarget)" \
 		EXAMPLES_BUILD_PCC="$(CONFIG_QCA_NSS_ECM_EXAMPLES_PCC)" \
 		EXAMPLES_BUILD_MARK="$(CONFIG_QCA_NSS_ECM_EXAMPLES_MARK)" \
+		EXAMPLES_BUILD_OVS="$(CONFIG_QCA_NSS_ECM_OVS)" \
 		modules
 endef
 
-define KernelPackage/qca-nss-ecm/config
+define KernelPackage/qca-nss-ecm-premium/config
 menu "ECM Configuration"
 	config QCA_NSS_ECM_EXAMPLES_PCC
 		bool "Build PCC usage example"
@@ -242,6 +252,12 @@ menu "ECM Configuration"
 		bool "Build Mark classifier usage example"
 		help
 			Selecting this will build the Mark classifier usage example module.
+		default n
+
+	config QCA_NSS_ECM_OVS
+		bool "Build OVS classifier external module"
+		help
+			Selecting this will build the OVS classifier external module.
 		default n
 endmenu
 endef
