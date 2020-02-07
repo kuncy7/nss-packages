@@ -30,7 +30,7 @@ define KernelPackage/qca-ovsmgr
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS OpenVSwitch manager
   DEPENDS:=+kmod-openvswitch @!LINUX_3_18 \
-	  @TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_64||TARGET_ipq_ipq60xx||TARGET_ipq_ipq60xx_64
+	  @TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_64||TARGET_ipq_ipq60xx||TARGET_ipq_ipq60xx_64||TARGET_ipq_ipq806x
   FILES:=$(PKG_BUILD_DIR)/qca-ovsmgr.ko
   AUTOLOAD:=$(call AutoLoad,50,qca-ovsmgr)
 endef
