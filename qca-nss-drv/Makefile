@@ -105,7 +105,9 @@ DRV_MAKE_OPTS+=NSS_DRV_C2C_ENABLE=n \
         NSS_DRV_TSTAMP_ENABLE=n \
         NSS_DRV_TUN6RD_ENABLE=n \
         NSS_DRV_TUNIPIP6_ENABLE=n \
-        NSS_DRV_VXLAN_ENABLE=n
+        NSS_DRV_VXLAN_ENABLE=n \
+        NSS_DRV_MATCH_ENABLE=n \
+        NSS_DRV_MIRROR_ENABLE=n
 endif
 
 define Build/Configure
