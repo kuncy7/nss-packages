@@ -559,7 +559,7 @@ define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" $(strip $(MAKE_OPTS)) \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
-		SUBDIRS="$(PKG_BUILD_DIR)" \
+		M="$(PKG_BUILD_DIR)" \
 		EXTRA_CFLAGS="$(EXTRA_CFLAGS)" \
 		SoC="$(subtarget)" \
 		DTLSMGR_DIR="$(DTLSMGR_DIR)" \
