@@ -79,12 +79,44 @@ ifeq ($(CONFIG_KERNEL_SKB_FIXED_SIZE_2K),y)
 EXTRA_CFLAGS+= -DNSS_SKB_FIXED_SIZE_2K
 endif
 
+DRV_MAKE_OPTS:=
+ifeq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),256)
+DRV_MAKE_OPTS+=NSS_DRV_C2C_ENABLE=n \
+        NSS_DRV_CAPWAP_ENABLE=n \
+        NSS_DRV_CLMAP_ENABLE=n \
+        NSS_DRV_CRYPTO_ENABLE=n \
+        NSS_DRV_DTLS_ENABLE=n \
+        NSS_DRV_GRE_ENABLE=n \
+        NSS_DRV_GRE_REDIR_ENABLE=n \
+        NSS_DRV_GRE_TUNNEL_ENABLE=n \
+        NSS_DRV_IGS_ENABLE=n \
+        NSS_DRV_IPSEC_ENABLE=n \
+        NSS_DRV_LAG_ENABLE=n \
+        NSS_DRV_L2TP_ENABLE=n \
+        NSS_DRV_MAPT_ENABLE=n \
+        NSS_DRV_OAM_ENABLE=n \
+        NSS_DRV_PPTP_ENABLE=n \
+        NSS_DRV_PORTID_ENABLE=n \
+        NSS_DRV_PVXLAN_ENABLE=n \
+        NSS_DRV_QRFS_ENABLE=n \
+        NSS_DRV_QVPN_ENABLE=n \
+        NSS_DRV_RMNET_ENABLE=n \
+        NSS_DRV_SHAPER_ENABLE=n \
+        NSS_DRV_SJACK_ENABLE=n \
+        NSS_DRV_TLS_ENABLE=n \
+        NSS_DRV_TRUSTSEC_ENABLE=n \
+        NSS_DRV_TSTAMP_ENABLE=n \
+        NSS_DRV_TUN6RD_ENABLE=n \
+        NSS_DRV_TUNIPIP6_ENABLE=n \
+        NSS_DRV_VXLAN_ENABLE=n
+endif
+
 define Build/Configure
 	$(LN) arch/nss_$(subtarget).h $(PKG_BUILD_DIR)/exports/nss_arch.h
 endef
 
 define Build/Compile
-	$(MAKE) -C "$(LINUX_DIR)" \
+	$(MAKE) -C "$(LINUX_DIR)" $(strip $(DRV_MAKE_OPTS)) \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
 		M="$(PKG_BUILD_DIR)" \
