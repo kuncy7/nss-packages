@@ -28,15 +28,11 @@ ifneq (, $(findstring $(subtarget), "ipq807x" "ipq807x_64" "ipq60xx" "ipq60xx_64
   DTLSMGR_DIR:=v2.0
 # IPsec Manager v2.0 for Hawkeye/Cypress
   IPSECMGR_DIR:=v2.0
-# KLIPS plugin
-  IPSECMGR_KLIPS:= $(PKG_BUILD_DIR)/ipsecmgr/$(IPSECMGR_DIR)/plugins/klips/qca-nss-ipsec-klips.ko
 else
 # DTLS Manager v1.0 for Akronite.
   DTLSMGR_DIR:=v1.0
 # IPsec Manager v1.0 for Akronite.
   IPSECMGR_DIR:=v1.0
-# KLIPS plugin not needed
-  IPSECMGR_KLIPS:=
 endif
 
 define KernelPackage/qca-nss-drv-tun6rd
@@ -185,17 +181,32 @@ define KernelPackage/qca-nss-drv-ipsecmgr
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS (ipsec manager) - ipsecmgr
   DEPENDS:=@TARGET_ipq806x||TARGET_ipq_ipq806x||TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq807x_64||TARGET_ipq_ipq60xx||TARGET_ipq_ipq60xx_64 \
-		+kmod-qca-nss-drv +kmod-qca-nss-ecm +kmod-qca-nss-cfi-cryptoapi kmod-qca-nss-cfi-ocf @!LINUX_3_18
+		+kmod-qca-nss-drv +kmod-qca-nss-cfi-cryptoapi +kmod-qca-nss-cfi-ocf @!LINUX_3_18
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-l2tpv2),)
   DEPENDS:=+kmod-qca-nss-drv-l2tpv2
 endif
-  FILES:=$(PKG_BUILD_DIR)/ipsecmgr/$(IPSECMGR_DIR)/qca-nss-ipsecmgr.ko	$(IPSECMGR_KLIPS)
+  FILES:=$(PKG_BUILD_DIR)/ipsecmgr/$(IPSECMGR_DIR)/qca-nss-ipsecmgr.ko
   AUTOLOAD:=$(call AutoLoad,60,qca-nss-ipsecmgr)
 endef
 
 define KernelPackage/qca-nss-drv-ipsecmgr/Description
 Kernel module for NSS IPsec offload manager
 endef
+
+define KernelPackage/qca-nss-drv-ipsecmgr-klips
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  TITLE:=Kernel driver for NSS (ipsec klips)
+  DEPENDS:=@TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq_ipq60xx||TARGET_ipq_ipq60xx_64 \
+		+kmod-qca-nss-drv-ipsecmgr kmod-qca-nss-ecm
+  FILES:=$(PKG_BUILD_DIR)/ipsecmgr/$(IPSECMGR_DIR)/plugins/klips/qca-nss-ipsec-klips.ko
+endef
+
+define KernelPackage/qca-nss-drv-ipsecmgr-klips/Description
+NSS Kernel module for IPsec klips offload
+endef
+
 
 define KernelPackage/qca-nss-drv-capwapmgr
   SECTION:=kernel
@@ -434,7 +445,7 @@ define KernelPackage/qca-nss-drv-ovpn-mgr/install
 	$(INSTALL_BIN) ./files/qca-nss-ovpn.init $(1)/etc/init.d/qca-nss-ovpn
 endef
 
-define KernelPackage/qca-nss-drv-ipsecmgr/install
+define KernelPackage/qca-nss-drv-ipsecmgr-klips/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/qca-nss-ipsec $(1)/etc/init.d/qca-nss-ipsec
 endef
@@ -449,7 +460,6 @@ EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/qca-nss-crypto \
 	-I$(STAGING_DIR)/usr/include/qca-nss-cfi \
 	-I$(STAGING_DIR)/usr/include/qca-nss-gmac \
-	-I$(STAGING_DIR)/usr/include/qca-nss-ecm \
 	-I$(STAGING_DIR)/usr/include/qca-ssdk \
 	-I$(STAGING_DIR)/usr/include/qca-ssdk/fal \
 	-I$(STAGING_DIR)/usr/include/nat46
@@ -502,10 +512,15 @@ MAKE_OPTS+=igs=y
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ipsecmgr),)
-EXTRA_CFLAGS+= -I$(PKG_BUILD_DIR)/exports \
-		-I$(STAGING_DIR)/usr/include/qca-nss-ecm
+EXTRA_CFLAGS+= -I$(PKG_BUILD_DIR)/exports
 MAKE_OPTS+=ipsecmgr=y
 endif
+
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ipsecmgr-klips),)
+EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-ecm
+MAKE_OPTS+=ipsecmgr-klips=m
+endif
+
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-bridge-mgr),)
 MAKE_OPTS+=bridge-mgr=y
@@ -594,6 +609,7 @@ $(eval $(call KernelPackage,qca-nss-drv-qdisc))
 $(eval $(call KernelPackage,qca-nss-drv-igs))
 $(eval $(call KernelPackage,qca-nss-drv-netlink))
 $(eval $(call KernelPackage,qca-nss-drv-ipsecmgr))
+$(eval $(call KernelPackage,qca-nss-drv-ipsecmgr-klips))
 $(eval $(call KernelPackage,qca-nss-drv-bridge-mgr))
 $(eval $(call KernelPackage,qca-nss-drv-vlan-mgr))
 $(eval $(call KernelPackage,qca-nss-drv-lag-mgr))
