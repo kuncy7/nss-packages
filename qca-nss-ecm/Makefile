@@ -98,7 +98,7 @@ $(call KernelPackage/qca-nss-ecm/Default)
   TITLE+= (with premium features)
   VARIANT:=premium
   DEPENDS+=+!LINUX_5_4:kmod-qca-hyfi-bridge +!LINUX_5_4:kmod-qca-mcs +!LINUX_5_4:kmod-nat46 \
-	+!LINUX_5_4:kmod-l2tp +!LINUX_5_4:kmod-pppol2tp +!LINUX_5_4:kmod-pptp +!LINUX_5_4:kmod-shortcut-fe-drv \
+	+!LINUX_5_4:kmod-l2tp +!LINUX_5_4:kmod-pppol2tp +kmod-pptp +!LINUX_5_4:kmod-shortcut-fe-drv \
 	+kmod-bonding
 endef
 
