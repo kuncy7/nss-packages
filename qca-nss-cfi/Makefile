@@ -19,7 +19,8 @@ else
 subtarget:=$(CONFIG_TARGET_BOARD)
 endif
 
-ifeq ($(findstring 4.4, $(LINUX_VERSION)),)
+LINUX_VER:=$(word 1, $(subst ., ,$(LINUX_VERSION))).$(word 2, $(subst ., ,$(LINUX_VERSION)))
+ifeq ($(findstring 4.4, $(LINUX_VER)),)
 #3.14 Kernel + ipq806x
   CFI_CRYPTOAPI_DIR:=cryptoapi/v1.0
   CFI_OCF_DIR:=ocf/v1.0
