@@ -73,8 +73,9 @@ define KernelPackage/qca-nss-ecm/Default/install
 	$(INSTALL_BIN) ./files/qca-nss-ecm.sysctl $(1)/etc/sysctl.d/qca-nss-ecm.conf
 ifeq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),256)
 	echo 'net.netfilter.nf_conntrack_max=2048' >> $(1)/etc/sysctl.d/qca-nss-ecm.conf
-endif
-ifeq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),512)
+else ifeq ($(CONFIG_LOWMEM_FLASH),y)
+	echo 'net.netfilter.nf_conntrack_max=2048' >> $(1)/etc/sysctl.d/qca-nss-ecm.conf
+else ifeq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),512)
 	echo 'net.netfilter.nf_conntrack_max=8192' >> $(1)/etc/sysctl.d/qca-nss-ecm.conf
 endif
 endef
@@ -194,8 +195,10 @@ ECM_MAKE_OPTS+=ECM_INTERFACE_BOND_ENABLE=y
 endif
 endif
 
-ifeq ($(filter $(CONFIG_KERNEL_IPQ_MEM_PROFILE), 256),)
+ifneq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),256)
+ifneq ($(CONFIG_LOWMEM_FLASH),y)
 ECM_MAKE_OPTS+=ECM_XFRM_ENABLE=y
+endif
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-nat46),)
