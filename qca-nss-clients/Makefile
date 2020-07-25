@@ -109,7 +109,7 @@ define KernelPackage/qca-nss-drv-pppoe
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS (connection manager) - PPPoE
   DEPENDS:=+kmod-qca-nss-drv +kmod-pppoe @!LINUX_3_18 \
-		+!(TARGET_ipq_ipq807x_QSDK_256||TARGET_ipq_ipq60xx_QSDK_256):kmod-bonding
+		+!(TARGET_ipq_ipq807x_QSDK_256||TARGET_ipq_ipq60xx_QSDK_256||TARGET_ipq_ipq50xx_QSDK_256||TARGET_ipq_ipq50xx_QSDK_16M):kmod-bonding
   FILES:=$(PKG_BUILD_DIR)/pppoe/qca-nss-pppoe.ko
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-pppoe)
 endef
