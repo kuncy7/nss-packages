@@ -223,6 +223,10 @@ ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-igs),)
 ECM_MAKE_OPTS+=ECM_CLASSIFIER_DSCP_IGS=y
 endif
 
+ifneq ($(CONFIG_PACKAGE_kmod-emesh-sp),)
+ECM_MAKE_OPTS+=ECM_CLASSIFIER_EMESH_ENABLE=y
+endif
+
 # Keeping default as ipq806x for branches that does not have subtarget framework
 ifeq ($(CONFIG_TARGET_ipq),y)
 subtarget:=$(SUBTARGET)
