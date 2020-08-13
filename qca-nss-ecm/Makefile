@@ -228,6 +228,10 @@ ECM_MAKE_OPTS+=ECM_CLASSIFIER_EMESH_ENABLE=y
 EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/emesh-sp
 endif
 
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-mscs),)
+ECM_MAKE_OPTS+=ECM_CLASSIFIER_MSCS_ENABLE=y
+endif
+
 # Keeping default as ipq806x for branches that does not have subtarget framework
 ifeq ($(CONFIG_TARGET_ipq),y)
 subtarget:=$(SUBTARGET)
