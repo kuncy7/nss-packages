@@ -430,6 +430,20 @@ define KernelPackage/qca-nss-drv-mirror/Description
 Kernel module for managing NSS Mirror
 endef
 
+define KernelPackage/qca-nss-drv-mscs
+ SECTION:=kernel
+ CATEGORY:=Kernel modules
+ SUBMENU:=Network Support
+ TITLE:=NSS Module to interface between wlan host driver and ECM MSCS classifier.
+ DEPENDS:=+kmod-qca-nss-drv kmod-qca-nss-ecm-premium kmod-qca-wifi @!LINUX_3_18
+ FILES:=$(PKG_BUILD_DIR)/mscs/qca-nss-mscs.ko
+ AUTOLOAD:=$(call AutoLoad,52,qca-nss-tun6rd)
+endef
+
+define KernelPackage/qca-nss-drv-mscs/Description
+Kernel module for Mirrored Stream Classification Signalling(MSCS) NSS client
+endef
+
 define Build/InstallDev/qca-nss-clients
 	$(INSTALL_DIR) $(1)/usr/include/qca-nss-clients
 	$(CP) $(PKG_BUILD_DIR)/netlink/include/* $(1)/usr/include/qca-nss-clients/
@@ -584,6 +598,12 @@ ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-mirror),)
 MAKE_OPTS+=mirror=y
 endif
 
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-mscs),)
+EXTRA_CFLAGS+= \
+	-I$(STAGING_DIR)/usr/include/qca-wifi
+MAKE_OPTS+=mscs=y
+endif
+
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" $(strip $(MAKE_OPTS)) \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
@@ -623,3 +643,4 @@ $(eval $(call KernelPackage,qca-nss-drv-vxlanmgr))
 $(eval $(call KernelPackage,qca-nss-drv-match))
 $(eval $(call KernelPackage,qca-nss-drv-tlsmgr))
 $(eval $(call KernelPackage,qca-nss-drv-mirror))
+$(eval $(call KernelPackage,qca-nss-drv-mscs))
