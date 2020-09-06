@@ -100,7 +100,7 @@ $(call KernelPackage/qca-nss-ecm/Default)
   VARIANT:=premium
   DEPENDS+=+!LINUX_5_4:kmod-qca-hyfi-bridge +!LINUX_5_4:kmod-qca-mcs +!LINUX_5_4:kmod-nat46 \
 	+kmod-l2tp +kmod-pppol2tp +kmod-pptp +!LINUX_5_4:kmod-shortcut-fe-drv \
-	+kmod-bonding
+	+kmod-bonding PACKAGE_kmod-emesh-sp:kmod-emesh-sp
 endef
 
 define KernelPackage/qca-nss-ecm-premium/Description/Default
@@ -225,6 +225,7 @@ endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-emesh-sp),)
 ECM_MAKE_OPTS+=ECM_CLASSIFIER_EMESH_ENABLE=y
+EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/emesh-sp
 endif
 
 # Keeping default as ipq806x for branches that does not have subtarget framework
