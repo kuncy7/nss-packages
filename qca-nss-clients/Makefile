@@ -234,6 +234,9 @@ define KernelPackage/qca-nss-drv-bridge-mgr
 		+TARGET_ipq_ipq60xx:kmod-qca-nss-drv-vlan-mgr \
 		+TARGET_ipq_ipq60xx_64:kmod-qca-nss-drv-vlan-mgr @!LINUX_3_18 \
 		+!(TARGET_ipq_ipq807x_QSDK_256||TARGET_ipq_ipq60xx_QSDK_256):kmod-bonding
+ifneq ($(CONFIG_PACKAGE_kmod-qca-ovsmgr),)
+  DEPENDS+=kmod-qca-ovsmgr
+endif
   FILES:=$(PKG_BUILD_DIR)/bridge/qca-nss-bridge-mgr.ko
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-bridge-mgr)
 endef
