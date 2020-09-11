@@ -20,15 +20,15 @@ subtarget:=$(CONFIG_TARGET_BOARD)
 endif
 
 LINUX_VER:=$(word 1, $(subst ., ,$(LINUX_VERSION))).$(word 2, $(subst ., ,$(LINUX_VERSION)))
-ifeq ($(findstring 4.4, $(LINUX_VER)),)
+ifneq ($(findstring 3.14, $(LINUX_VER)),)
 #3.14 Kernel + ipq806x
   CFI_CRYPTOAPI_DIR:=cryptoapi/v1.0
   CFI_OCF_DIR:=ocf/v1.0
   CFI_IPSEC_DIR:=ipsec/v1.0
 else
-#4.4 Kernel
+#4.4/5.4 Kernel
 ifneq (, $(findstring $(subtarget), "ipq807x" "ipq807x_64" "ipq60xx" "ipq60xx_64" "ipq50xx" "ipq50xx_64"))
-#4.4 Kernel + ipq807x/ipq60xx/ipq50xx
+#4.4/5.4 + ipq807x/ipq60xx/ipq50xx
   CFI_OCF_DIR:=ocf/v2.0
   CFI_CRYPTOAPI_DIR:=cryptoapi/v2.0
 else
@@ -92,11 +92,20 @@ ifneq (, $(findstring $(subtarget), "ipq807x" "ipq807x_64" "ipq60xx" "ipq60xx_64
 EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-clients
 endif
 
+# Build individual packages if selected
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-cfi-cryptoapi),)
+MAKE_OPTS+=cryptoapi=y
+endif
+
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-cfi-ocf),)
+MAKE_OPTS+=ocf=y
+endif
+
 define Build/Compile
-	$(MAKE) -C "$(LINUX_DIR)" \
+	$(MAKE) -C "$(LINUX_DIR)" $(strip $(MAKE_OPTS)) \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
-		SUBDIRS="$(PKG_BUILD_DIR)" \
+		M="$(PKG_BUILD_DIR)" \
 		EXTRA_CFLAGS="$(EXTRA_CFLAGS)" \
 		CC="$(TARGET_CC)" \
 		CFI_CRYPTOAPI_DIR=$(CFI_CRYPTOAPI_DIR) \
