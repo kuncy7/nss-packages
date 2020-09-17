@@ -198,6 +198,7 @@ endif
 ifneq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),256)
 ifneq ($(CONFIG_LOWMEM_FLASH),y)
 ECM_MAKE_OPTS+=ECM_XFRM_ENABLE=y
+ECM_MAKE_OPTS+=ECM_FRONT_END_SFE_ENABLE=y
 endif
 endif
 
@@ -233,6 +234,11 @@ ifeq ($(CONFIG_TARGET_ipq),y)
 subtarget:=$(SUBTARGET)
 else
 subtarget:=$(CONFIG_TARGET_BOARD)
+endif
+
+# Enable NSS frontend for all the platforms except ipq40xx
+ifeq ($(CONFIG_TARGET_ipq_ipq40xx)$(CONFIG_TARGET_ipq40xx),)
+ECM_MAKE_OPTS+=ECM_FRONT_END_NSS_ENABLE=y
 endif
 
 define Build/InstallDev
