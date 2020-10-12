@@ -436,7 +436,6 @@ define KernelPackage/qca-nss-drv-mscs
  TITLE:=NSS Module to interface between wlan host driver and ECM MSCS classifier.
  DEPENDS:=+kmod-qca-nss-drv kmod-qca-nss-ecm-premium kmod-qca-wifi @!LINUX_3_18
  FILES:=$(PKG_BUILD_DIR)/mscs/qca-nss-mscs.ko
- AUTOLOAD:=$(call AutoLoad,52,qca-nss-tun6rd)
 endef
 
 define KernelPackage/qca-nss-drv-mscs/Description
@@ -598,7 +597,8 @@ endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-mscs),)
 EXTRA_CFLAGS+= \
-	-I$(STAGING_DIR)/usr/include/qca-wifi
+	-I$(STAGING_DIR)/usr/include/qca-wifi \
+	-I$(STAGING_DIR)/usr/include/qca-nss-ecm
 MAKE_OPTS+=mscs=y
 endif
 
