@@ -204,6 +204,20 @@ define KernelPackage/qca-nss-drv-ipsecmgr-klips/Description
 NSS Kernel module for IPsec klips offload
 endef
 
+define KernelPackage/qca-nss-drv-ipsecmgr-xfrm
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  TITLE:=Kernel driver for NSS (ipsec xfrm)
+  DEPENDS:=@TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq_ipq60xx||TARGET_ipq_ipq60xx_64||TARGET_ipq_ipq50xx||TARGET_ipq_ipq50xx_64\
+		+kmod-qca-nss-drv-ipsecmgr kmod-qca-nss-ecm +kmod-ipsec @!LINUX_3_18 @!LINUX_4_4
+  FILES:=$(PKG_BUILD_DIR)/ipsecmgr/$(IPSECMGR_DIR)/plugins/xfrm/qca-nss-ipsec-xfrm.ko
+endef
+
+define KernelPackage/qca-nss-drv-ipsecmgr-xfrm/Description
+NSS Kernel module for IPsec xfrm offload
+endef
+
 define KernelPackage/qca-nss-drv-capwapmgr
   SECTION:=kernel
   CATEGORY:=Kernel modules
@@ -462,6 +476,11 @@ define KernelPackage/qca-nss-drv-ipsecmgr-klips/install
 	$(INSTALL_BIN) ./files/qca-nss-ipsec $(1)/etc/init.d/qca-nss-ipsec
 endef
 
+define KernelPackage/qca-nss-drv-ipsecmgr-xfrm/install
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/qca-nss-ipsec-xfrm $(1)/etc/init.d/qca-nss-ipsec
+endef
+
 define KernelPackage/qca-nss-drv-igs/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/qca-nss-mirred.init $(1)/etc/init.d/qca-nss-mirred
@@ -531,6 +550,11 @@ endif
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ipsecmgr-klips),)
 EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-ecm
 MAKE_OPTS+=ipsecmgr-klips=m
+endif
+
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ipsecmgr-xfrm),)
+EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-ecm
+MAKE_OPTS+=ipsecmgr-xfrm=m
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-bridge-mgr),)
@@ -628,6 +652,7 @@ $(eval $(call KernelPackage,qca-nss-drv-igs))
 $(eval $(call KernelPackage,qca-nss-drv-netlink))
 $(eval $(call KernelPackage,qca-nss-drv-ipsecmgr))
 $(eval $(call KernelPackage,qca-nss-drv-ipsecmgr-klips))
+$(eval $(call KernelPackage,qca-nss-drv-ipsecmgr-xfrm))
 $(eval $(call KernelPackage,qca-nss-drv-bridge-mgr))
 $(eval $(call KernelPackage,qca-nss-drv-vlan-mgr))
 $(eval $(call KernelPackage,qca-nss-drv-lag-mgr))
