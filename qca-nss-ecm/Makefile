@@ -45,6 +45,7 @@ define KernelPackage/qca-nss-ecm/Default
 	+TARGET_ipq_ipq60xx_64:kmod-qca-nss-drv \
 	+TARGET_ipq_ipq50xx:kmod-qca-nss-drv \
 	+TARGET_ipq_ipq50xx_64:kmod-qca-nss-drv \
+	+TARGET_ipq50xx:kmod-qca-nss-drv \
 	+iptables-mod-extra +kmod-ipt-conntrack \
 	+kmod-pppoe @!LINUX_3_18 \
 	+PACKAGE_kmod-qca-ovsmgr:kmod-qca-ovsmgr
@@ -197,7 +198,9 @@ endif
 
 ifneq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),256)
 ifneq ($(CONFIG_LOWMEM_FLASH),y)
+ifneq ($(CONFIG_XFRM),)
 ECM_MAKE_OPTS+=ECM_XFRM_ENABLE=y
+endif
 ECM_MAKE_OPTS+=ECM_FRONT_END_SFE_ENABLE=y
 endif
 endif
