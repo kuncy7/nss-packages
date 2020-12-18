@@ -112,6 +112,11 @@ DRV_MAKE_OPTS+=NSS_DRV_C2C_ENABLE=n \
         NSS_DRV_MIRROR_ENABLE=n
 endif
 
+# Disable DRV IPv6 support when global IPv6 support is disabled.
+ifneq ($(CONFIG_IPV6),y)
+DRV_MAKE_OPTS+=NSS_DRV_IPV6_ENABLE=n
+endif
+
 define Build/Configure
 	$(LN) arch/nss_$(subtarget).h $(PKG_BUILD_DIR)/exports/nss_arch.h
 endef
