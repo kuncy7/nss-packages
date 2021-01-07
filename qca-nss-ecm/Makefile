@@ -233,6 +233,10 @@ ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-mscs),)
 ECM_MAKE_OPTS+=ECM_CLASSIFIER_MSCS_ENABLE=y
 endif
 
+ifneq ($(CONFIG_PACKAGE_kmod-macvlan),)
+ECM_MAKE_OPTS+=ECM_INTERFACE_MACVLAN_ENABLE=y
+endif
+
 # Keeping default as ipq806x for branches that does not have subtarget framework
 ifeq ($(CONFIG_TARGET_ipq),y)
 subtarget:=$(SUBTARGET)
