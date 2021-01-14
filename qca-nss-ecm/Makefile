@@ -99,7 +99,7 @@ define KernelPackage/qca-nss-ecm-premium/Default
 $(call KernelPackage/qca-nss-ecm/Default)
   TITLE+= (with premium features)
   VARIANT:=premium
-  DEPENDS+=+!LINUX_5_4:kmod-qca-hyfi-bridge +kmod-qca-mcs +kmod-nat46 \
+  DEPENDS+=+kmod-qca-hyfi-bridge +kmod-qca-mcs +kmod-nat46 \
 	+kmod-l2tp +kmod-pppol2tp +kmod-pptp +kmod-shortcut-fe-drv \
 	+kmod-bonding PACKAGE_kmod-emesh-sp:kmod-emesh-sp
 endef
