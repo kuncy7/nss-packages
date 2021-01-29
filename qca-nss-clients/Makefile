@@ -456,6 +456,20 @@ define KernelPackage/qca-nss-drv-mscs/Description
 Kernel module for Mirrored Stream Classification Signalling(MSCS) NSS client
 endef
 
+define KernelPackage/qca-nss-drv-wifi-meshmgr
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  DEPENDS:=+kmod-qca-nss-drv @!LINUX_3_18
+  TITLE:=NSS WiFi-Mesh Manager for QCA NSS driver
+  FILES:=$(PKG_BUILD_DIR)/wifi_meshmgr/qca-nss-wifi-meshmgr.ko
+  AUTOLOAD:=$(call AutoLoad,51,qca-nss-wifi-meshmgr)
+endef
+
+define KernelPackage/qca-nss-drv-wifi-meshmgr/Description
+Kernel module for WiFi Mesh manager
+endef
+
 define Build/InstallDev/qca-nss-clients
 	$(INSTALL_DIR) $(1)/usr/include/qca-nss-clients
 	$(CP) $(PKG_BUILD_DIR)/netlink/include/* $(1)/usr/include/qca-nss-clients/
@@ -626,6 +640,10 @@ EXTRA_CFLAGS+= \
 MAKE_OPTS+=mscs=y
 endif
 
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-wifi-meshmgr),)
+MAKE_OPTS+=wifi-meshmgr=y
+endif
+
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" $(strip $(MAKE_OPTS)) \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
@@ -667,3 +685,4 @@ $(eval $(call KernelPackage,qca-nss-drv-match))
 $(eval $(call KernelPackage,qca-nss-drv-tlsmgr))
 $(eval $(call KernelPackage,qca-nss-drv-mirror))
 $(eval $(call KernelPackage,qca-nss-drv-mscs))
+$(eval $(call KernelPackage,qca-nss-drv-wifi-meshmgr))
