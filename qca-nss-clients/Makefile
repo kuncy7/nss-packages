@@ -210,7 +210,7 @@ define KernelPackage/qca-nss-drv-ipsecmgr-xfrm
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS (ipsec xfrm)
   DEPENDS:=@TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq_ipq60xx||TARGET_ipq_ipq60xx_64||TARGET_ipq_ipq50xx||TARGET_ipq_ipq50xx_64\
-		+kmod-qca-nss-drv-ipsecmgr kmod-qca-nss-ecm +kmod-ipsec @!LINUX_3_18 @!LINUX_4_4
+		+kmod-qca-nss-drv-ipsecmgr kmod-qca-nss-ecm +kmod-ipsec @!LINUX_3_18
   FILES:=$(PKG_BUILD_DIR)/ipsecmgr/$(IPSECMGR_DIR)/plugins/xfrm/qca-nss-ipsec-xfrm.ko
 endef
 
@@ -492,7 +492,7 @@ endef
 
 define KernelPackage/qca-nss-drv-ipsecmgr-xfrm/install
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/qca-nss-ipsec-xfrm $(1)/etc/init.d/qca-nss-ipsec
+	$(INSTALL_BIN) ./files/qca-nss-ipsec $(1)/etc/init.d/qca-nss-ipsec
 endef
 
 define KernelPackage/qca-nss-drv-igs/install
