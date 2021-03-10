@@ -564,6 +564,8 @@ endif
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ipsecmgr-klips),)
 EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-ecm
 MAKE_OPTS+=ipsecmgr-klips=m
+# Enable netdev based binding from L2TP to IPsec if KLIPS is enabled
+EXTRA_CFLAGS+= -DNSS_L2TP_IPSEC_BIND_BY_NETDEV
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ipsecmgr-xfrm),)
