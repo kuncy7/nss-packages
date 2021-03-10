@@ -16,6 +16,7 @@
 
 NSS_IPSEC_LOG_FILE=/tmp/.nss_ipsec_log
 NSS_IPSEC_LOG_STR_ECM="ECM_Loaded"
+NSS_IPSEC_OL_FILE=/tmp/qca_nss_ipsec_ol
 
 ecm_load () {
 	if [ ! -d /sys/module/ecm ]; then
@@ -75,6 +76,7 @@ start_klips() {
 		return $?
 	fi
 
+	touch $NSS_IPSEC_OL_FILE
 	ecm_load
 
 	local kernel_version=$(uname -r)
@@ -83,6 +85,7 @@ start_klips() {
 	if [ "$?" -gt 0 ]; then
 		echo "Failed to load plugin. Please start ecm if not done already"
 		ecm_enable
+		rm $NSS_IPSEC_OL_FILE
 		return
 	fi
 
@@ -104,11 +107,13 @@ stop_klips() {
 
 	/etc/init.d/ipsec stop
 	rmmod qca-nss-ipsec-klips
+	rm $NSS_IPSEC_OL_FILE
 
 	ecm_unload
 }
 
 start_xfrm() {
+	touch $NSS_IPSEC_OL_FILE
 	ecm_load
 
 	local kernel_version=$(uname -r)
@@ -126,6 +131,7 @@ start_xfrm() {
 	if [ "$?" -gt 0 ]; then
 		echo "Failed to load plugin. Please start ecm if not done already"
 		ecm_enable
+		rm $NSS_IPSEC_OL_FILE
 		return
 	fi
 
@@ -160,6 +166,7 @@ stop_xfrm() {
 	do
 		rmmod qca-nss-ipsec-xfrm
 		if [ "$?" -eq 0 ]; then
+			rm $NSS_IPSEC_OL_FILE
 			break
 		fi
 
