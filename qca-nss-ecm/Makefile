@@ -81,9 +81,12 @@ else ifeq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),512)
 endif
 endef
 
+# Variant with additional features enabled for standard profile
 define KernelPackage/qca-nss-ecm-standard
   $(call KernelPackage/qca-nss-ecm/Default)
+  TITLE+= (with standard features)
   VARIANT:=standard
+  DEPENDS+=+kmod-qca-mcs
 endef
 
 define KernelPackage/qca-nss-ecm-standard/Description
