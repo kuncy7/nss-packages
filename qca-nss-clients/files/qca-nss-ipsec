@@ -158,6 +158,8 @@ stop_xfrm() {
 		fi
 		rm -rf $plutopid
 	fi
+	ip xfrm state flush;
+	ip xfrm policy flush;
 	sleep 2
 
 	#Now we can remove the plugin
@@ -171,12 +173,13 @@ stop_xfrm() {
 		fi
 
 		if [ ${retries} -eq 0 ]; then
-			break
+			echo "Failed to unload qca-nss-ipsec-xfrm plugin!"
+			exit
 		fi
 
 		echo "XFRM plugin unload failed; retrying ${retries} times"
 		sleep 1
-		let retries = ${retries} - 1
+		retries=`expr ${retries} - 1`
 	done
 
 	/etc/init.d/ipsec stop
