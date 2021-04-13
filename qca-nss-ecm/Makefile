@@ -249,6 +249,11 @@ ifneq ($(CONFIG_PACKAGE_kmod-macvlan),)
 ECM_MAKE_OPTS+=ECM_INTERFACE_MACVLAN_ENABLE=y
 endif
 
+# Disable ECM IPv6 support when global IPv6 support is disabled.
+ifneq ($(CONFIG_IPV6),)
+ECM_MAKE_OPTS+=ECM_IPV6_ENABLE=y
+endif
+
 # Keeping default as ipq806x for branches that does not have subtarget framework
 ifeq ($(CONFIG_TARGET_ipq),y)
 subtarget:=$(SUBTARGET)
