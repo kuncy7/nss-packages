@@ -601,6 +601,12 @@ endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-netlink),)
 MAKE_OPTS+=netlink=y
+
+ifeq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),256)
+EXTRA_CFLAGS+= -DNSS_NETLINK_UDP_ST_NO_RMNET_SUPPORT
+else ifeq ($(CONFIG_LOWMEM_FLASH),y)
+EXTRA_CFLAGS+= -DNSS_NETLINK_UDP_ST_NO_RMNET_SUPPORT
+endif
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ovpn-mgr),)
