@@ -86,7 +86,7 @@ define KernelPackage/qca-nss-ecm-standard
   $(call KernelPackage/qca-nss-ecm/Default)
   TITLE+= (with standard features)
   VARIANT:=standard
-  DEPENDS+=+kmod-qca-mcs
+  DEPENDS+=+PACKAGE_kmod-qca-mcs:kmod-qca-mcs
 endef
 
 define KernelPackage/qca-nss-ecm-standard/Description
@@ -102,7 +102,7 @@ define KernelPackage/qca-nss-ecm-premium/Default
 $(call KernelPackage/qca-nss-ecm/Default)
   TITLE+= (with premium features)
   VARIANT:=premium
-  DEPENDS+=+kmod-qca-hyfi-bridge +kmod-qca-mcs +kmod-nat46 \
+  DEPENDS+=+PACKAGE_kmod-qca-hyfi-bridge:kmod-qca-hyfi-bridge +PACKAGE_kmod-qca-mcs:kmod-qca-mcs +kmod-nat46 \
 	+kmod-l2tp +kmod-pppol2tp +kmod-pptp +kmod-shortcut-fe-drv \
 	+kmod-bonding PACKAGE_kmod-emesh-sp:kmod-emesh-sp
 endef
@@ -135,7 +135,7 @@ define KernelPackage/qca-nss-ecm-noload
   PROVIDES:=kmod-qca-nss-ecm
   VARIANT:=noload
   DEPENDS+=+kmod-l2tp +kmod-pppol2tp +kmod-pptp +kmod-shortcut-fe-drv \
-	   +kmod-bonding +kmod-qca-mcs
+	   +kmod-bonding +PACKAGE_kmod-qca-mcs:kmod-qca-mcs
 endef
 
 define KernelPackage/qca-nss-ecm-noload/Description
@@ -176,16 +176,22 @@ define Build/InstallDev
 endef
 
 EXTRA_CFLAGS+= \
-	-I$(STAGING_DIR)/usr/include/hyfibr \
-	-I$(STAGING_DIR)/usr/include/qca-mcs \
 	-I$(STAGING_DIR)/usr/include/qca-nss-drv \
 	-I$(STAGING_DIR)/usr/include/shortcut-fe \
 	-I$(STAGING_DIR)/usr/include/nat46
 
+ifeq ($(CONFIG_PACKAGE_kmod-qca-hyfi-bridge), y)
 ECM_MAKE_OPTS:=ECM_CLASSIFIER_HYFI_ENABLE=y
+EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/hyfibr
+endif
+
+ifeq ($(CONFIG_PACKAGE_kmod-qca-mcs), y)
+ECM_MAKE_OPTS+=ECM_MULTICAST_ENABLE=y
+EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-mcs
+endif
+
 ifneq ($(LOCAL_VARIANT),standard)
-ECM_MAKE_OPTS+=ECM_MULTICAST_ENABLE=y \
-		ECM_INTERFACE_IPSEC_ENABLE=y \
+ECM_MAKE_OPTS+=	ECM_INTERFACE_IPSEC_ENABLE=y \
 		ECM_INTERFACE_PPTP_ENABLE=y \
 		ECM_INTERFACE_L2TPV2_ENABLE=y \
 		ECM_INTERFACE_GRE_TAP_ENABLE=y \
