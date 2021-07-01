@@ -196,7 +196,7 @@ define KernelPackage/qca-nss-drv-ipsecmgr-klips
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS (ipsec klips)
   DEPENDS:=@TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq_ipq60xx||TARGET_ipq_ipq60xx_64||TARGET_ipq_ipq50xx||TARGET_ipq_ipq50xx_64 \
-		+kmod-qca-nss-drv-ipsecmgr kmod-qca-nss-ecm +kmod-qca-nss-cfi-ocf
+		+kmod-qca-nss-drv-ipsecmgr kmod-qca-nss-ecm +kmod-qca-nss-cfi-ocf +PACKAGE_kmod-qca-nss-drv-vxlanmgr:kmod-qca-nss-drv-vxlanmgr
   FILES:=$(PKG_BUILD_DIR)/ipsecmgr/$(IPSECMGR_DIR)/plugins/klips/qca-nss-ipsec-klips.ko
 endef
 
@@ -632,6 +632,7 @@ endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-vxlanmgr),)
 MAKE_OPTS+=vxlanmgr=y
+EXTRA_CFLAGS += -DNSS_VXLAN_ENABLED
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-match),)
