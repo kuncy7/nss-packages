@@ -239,6 +239,7 @@ define KernelPackage/qca-nss-drv-bridge-mgr
 		+TARGET_ipq_ipq807x:kmod-qca-nss-drv-vlan-mgr \
 		+TARGET_ipq_ipq807x_64:kmod-qca-nss-drv-vlan-mgr \
 		+TARGET_ipq807x:kmod-qca-nss-drv-vlan-mgr \
+		+TARGET_ipq60xx:kmod-qca-nss-drv-vlan-mgr \
 		+TARGET_ipq807x_64:kmod-qca-nss-drv-vlan-mgr \
 		+TARGET_ipq_ipq60xx:kmod-qca-nss-drv-vlan-mgr \
 		+TARGET_ipq_ipq60xx_64:kmod-qca-nss-drv-vlan-mgr @!LINUX_3_18 \
