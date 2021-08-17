@@ -331,7 +331,6 @@ define KernelPackage/qca-nss-drv-netlink
 		+PACKAGE_kmod-qca-nss-drv-capwapmgr:kmod-qca-nss-drv-capwapmgr @!LINUX_3_18
   TITLE:=NSS NETLINK Manager for QCA NSS driver
   FILES:=$(PKG_BUILD_DIR)/netlink/qca-nss-netlink.ko
-  AUTOLOAD:=$(call AutoLoad,59,qca-nss-netlink)
 endef
 
 define KernelPackage/qca-nss-drv-netlink/Description
