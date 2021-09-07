@@ -1,6 +1,6 @@
 #!/bin/sh  /etc/rc.common
 #
-# Copyright (c) 2014, 2019-2020 The Linux Foundation. All rights reserved.
+# Copyright (c) 2014, 2019-2021 The Linux Foundation. All rights reserved.
 #
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -34,6 +34,9 @@ get_front_end_mode() {
 	sfe)
 		echo '2'
 		;;
+	hybrid)
+		echo '3'
+		;;
 	*)
 		echo 'uci_option_acceleration_engine is invalid'
 	esac
@@ -66,6 +69,10 @@ load_ecm() {
 	[ -d /sys/module/ecm ] || {
 		[ ! -e /proc/device-tree/MP_256 ] && load_sfe
 		insmod ecm front_end_selection=$(get_front_end_mode)
+
+		if [ $(get_front_end_mode) == 3 ]; then
+			insmod ecm_ae_select
+		fi
 	}
 
 	support_bridge && {
@@ -90,6 +97,10 @@ unload_ecm() {
 		#
 	        echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all
 		sleep 5;
+
+		if [ -d /sys/module/ecm_ae_select ]; then
+			rmmod ecm_ae_select
+		fi
 
 		rmmod ecm
 		sleep 1
