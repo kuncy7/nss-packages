@@ -200,7 +200,7 @@ ECM_MAKE_OPTS+=	ECM_INTERFACE_IPSEC_ENABLE=y \
 		ECM_INTERFACE_TUNIPIP6_ENABLE=y \
 		ECM_INTERFACE_RAWIP_ENABLE=y
 
-ifeq ($(CONFIG_TARGET_ipq_ipq40xx)$(CONFIG_TARGET_ipq40xx),)
+ifeq ($(CONFIG_TARGET_ipq_ipq40xx)$(CONFIG_TARGET_ipq40xx)$(CONFIG_TARGET_ipq95xx),)
 ECM_MAKE_OPTS+=ECM_INTERFACE_BOND_ENABLE=y
 endif
 endif
@@ -268,8 +268,8 @@ else
 subtarget:=$(CONFIG_TARGET_BOARD)
 endif
 
-# Enable NSS frontend for all the platforms except ipq40xx
-ifeq ($(CONFIG_TARGET_ipq_ipq40xx)$(CONFIG_TARGET_ipq40xx),)
+# Enable NSS frontend for all the platforms except ipq40xx and ipq95xx
+ifeq ($(CONFIG_TARGET_ipq_ipq40xx)$(CONFIG_TARGET_ipq40xx)$(CONFIG_TARGET_ipq95xx),)
 ECM_MAKE_OPTS+=ECM_FRONT_END_NSS_ENABLE=y
 endif
 
