@@ -13,76 +13,46 @@ endif
 
 include $(INCLUDE_DIR)/package.mk
 
-define KernelPackage/shortcut-fe
+define KernelPackage/qca-nss-sfe
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Support
   DEPENDS:=
-  TITLE:=Kernel driver for SFE
-  FILES:=$(PKG_BUILD_DIR)/shortcut-fe/shortcut-fe.ko $(PKG_BUILD_DIR)/shortcut-fe/shortcut-fe-ipv6.ko
+  TITLE:=Kernel data path for SFE
+  FILES:=$(PKG_BUILD_DIR)/qca-nss-sfe.ko
   KCONFIG:=CONFIG_NF_CONNTRACK_EVENTS=y
-  AUTOLOAD:=$(call AutoLoad,09,shortcut-fe shortcut-fe-ipv6)
+  AUTOLOAD:=$(call AutoLoad,09,qca-nss-sfe)
 endef
 
-define KernelPackage/shortcut-fe/Description
+define KernelPackage/qca-nss-sfe/Description
 Shortcut is an in-Linux-kernel IP packet forwarding engine.
 endef
 
-define KernelPackage/shortcut-fe/install
-	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/etc/init.d/shortcut-fe $(1)/etc/init.d
+define KernelPackage/qca-nss-sfe/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) ./files/usr/bin/sfe_dump $(1)/usr/bin
 endef
 
-EXTRA_CFLAGS+=-DSFE_SUPPORT_IPV6
-PKG_EXTMOD_SUBDIRS=shortcut-fe
-
-ifneq ($(CONFIG_PACKAGE_kmod-shortcut-fe),)
-define Build/InstallDev
-	$(INSTALL_DIR) $(1)/usr/include/shortcut-fe
-	$(CP) -rf $(PKG_BUILD_DIR)/shortcut-fe/sfe.h $(1)/usr/include/shortcut-fe
-endef
+ifneq (, $(filter $(CONFIG_IPV6),m y))
+SFE_MAKE_OPTS:=SFE_SUPPORT_IPV6=y
 endif
 
-define KernelPackage/shortcut-fe-drv
-  SECTION:=kernel
-  CATEGORY:=Kernel modules
-  SUBMENU:=Network Support
-  DEPENDS:=+kmod-shortcut-fe
-  TITLE:=Simulated sfe driver for ECM
-  FILES:=$(PKG_BUILD_DIR)/simulated-driver/shortcut-fe-drv.ko
-  AUTOLOAD:=$(call AutoLoad,10,shortcut-fe-drv)
-endef
-
-define KernelPackage/shortcut-fe-drv/Description
-Simulated sfe driver which act as an adapter to convert message between a connection manager and the SFE core engine.
-endef
-
-ifneq ($(CONFIG_PACKAGE_kmod-shortcut-fe-drv),)
-MAKE_OPTS+=simulated-driver=y
-endif
-
-ifneq ($(CONFIG_PACKAGE_kmod-shortcut-fe),)
-MAKE_OPTS+=shortcut-fe=y
-endif
+EXTRA_CFLAGS+= -I$(PKG_BUILD_DIR)/exports
 
 define Build/Compile
-	$(MAKE) -C "$(LINUX_DIR)" $(strip $(MAKE_OPTS)) \
+	$(MAKE) -C "$(LINUX_DIR)"  $(strip $(SFE_MAKE_OPTS))\
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
 		M="$(PKG_BUILD_DIR)" \
 		EXTRA_CFLAGS="$(EXTRA_CFLAGS)" \
-		SFE_SUPPORT_IPV6=1 \
 		modules
 endef
 
-ifneq ($(CONFIG_PACKAGE_kmod-shortcut-fe-drv),)
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-sfe),)
 define Build/InstallDev
-	$(INSTALL_DIR) $(1)/usr/include/shortcut-fe
-	$(CP) -rf $(PKG_BUILD_DIR)/simulated-driver/sfe_drv.h $(1)/usr/include/shortcut-fe
+	$(INSTALL_DIR) $(1)/usr/include/qca-nss-sfe
+	$(CP) -rf $(PKG_BUILD_DIR)/exports/sfe_api.h $(1)/usr/include/qca-nss-sfe
 endef
 endif
 
-$(eval $(call KernelPackage,shortcut-fe-drv))
-$(eval $(call KernelPackage,shortcut-fe))
+$(eval $(call KernelPackage,qca-nss-sfe))
