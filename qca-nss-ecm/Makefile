@@ -103,7 +103,7 @@ $(call KernelPackage/qca-nss-ecm/Default)
   TITLE+= (with premium features)
   VARIANT:=premium
   DEPENDS+=+PACKAGE_kmod-qca-hyfi-bridge:kmod-qca-hyfi-bridge +PACKAGE_kmod-qca-mcs:kmod-qca-mcs +kmod-nat46 \
-	+kmod-l2tp +kmod-pppol2tp +kmod-pptp +kmod-shortcut-fe-drv \
+	+kmod-l2tp +kmod-pppol2tp +kmod-pptp +kmod-qca-nss-sfe \
 	+kmod-bonding PACKAGE_kmod-emesh-sp:kmod-emesh-sp
 endef
 
@@ -134,7 +134,7 @@ define KernelPackage/qca-nss-ecm-noload
   TITLE+= (with noload features)
   PROVIDES:=kmod-qca-nss-ecm
   VARIANT:=noload
-  DEPENDS+=+kmod-l2tp +kmod-pppol2tp +kmod-pptp +kmod-shortcut-fe-drv \
+  DEPENDS+=+kmod-l2tp +kmod-pppol2tp +kmod-pptp +kmod-qca-nss-sfe \
 	   +kmod-bonding +PACKAGE_kmod-qca-mcs:kmod-qca-mcs
 endef
 
@@ -177,7 +177,7 @@ endef
 
 EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/qca-nss-drv \
-	-I$(STAGING_DIR)/usr/include/shortcut-fe \
+	-I$(STAGING_DIR)/usr/include/qca-nss-sfe \
 	-I$(STAGING_DIR)/usr/include/nat46
 
 ifeq ($(CONFIG_PACKAGE_kmod-qca-hyfi-bridge), y)

@@ -52,22 +52,20 @@ support_bridge() {
 load_sfe() {
 	local kernel_version=$(uname -r)
 
-	[ -e "/lib/modules/$kernel_version/shortcut-fe.ko" ] && {
-		[ -d /sys/module/shortcut_fe ] || insmod shortcut-fe
+	[ -e "/lib/modules/$kernel_version/qca-nss-sfe.ko" ] && {
+		[ -d /sys/module/qca_nss_sfe ] || insmod qca-nss-sfe
 	}
 
-	[ -e "/lib/modules/$kernel_version/shortcut-fe-ipv6.ko" ] && {
-		[ -d /sys/module/shortcut_fe_ipv6 ] || insmod shortcut-fe-ipv6
-	}
+}
 
-	[ -e "/lib/modules/$kernel_version/shortcut-fe-drv.ko" ] && {
-		[ -d /sys/module/shortcut_fe_drv ] || insmod shortcut-fe-drv
-	}
+unload_sfe() {
+
+	[ -d /sys/module/qca_nss_sfe ] && rmmod qca-nss-sfe
 }
 
 load_ecm() {
+
 	[ -d /sys/module/ecm ] || {
-		[ ! -e /proc/device-tree/MP_256 ] && load_sfe
 		insmod ecm front_end_selection=$(get_front_end_mode)
 
 		if [ $(get_front_end_mode) == 3 ]; then
@@ -108,13 +106,8 @@ unload_ecm() {
 }
 
 start() {
-	# If SFE CM is loaded, return.
-	if [ -d /sys/module/shortcut_fe_cm ]; then
-		echo "shortcut_fe CM is loaded, unload it first"
-		echo "cmd: /etc/init.d/shortcut_fe stop"
-		return
-	fi
 
+	load_sfe
 	load_ecm
 
 	# If the acceleration engine is NSS, enable wifi redirect.
@@ -148,4 +141,5 @@ stop() {
 	fi
 
 	unload_ecm
+	unload_sfe
 }
