@@ -22,6 +22,20 @@ else
 subtarget:=$(CONFIG_TARGET_BOARD)
 endif
 
+define KernelPackage/qca-nss-ppe
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  TITLE:=Kernel driver for PPE (core driver)
+  DEPENDS:=@TARGET_ipq95xx +kmod-qca-ssdk-nohnat
+  FILES:=$(PKG_BUILD_DIR)/drv/ppe_drv/qca-nss-ppe.ko
+  AUTOLOAD:=$(call AutoLoad,31,qca-nss-ppe)
+endef
+
+define KernelPackage/qca-nss-ppe/Description
+Kernel module for PPE core driver
+endef
+
 define KernelPackage/qca-nss-ppe-bridge-mgr
   SECTION:=kernel
   CATEGORY:=Kernel modules
@@ -60,6 +74,7 @@ endef
 define Build/InstallDev/qca-nss-ppe
 	$(INSTALL_DIR) $(1)/usr/include/qca-nss-ppe
 	$(CP) $(PKG_BUILD_DIR)/exports/* $(1)/usr/include/qca-nss-ppe/
+	$(CP) $(PKG_BUILD_DIR)/drv/exports/* $(1)/usr/include/qca-nss-ppe/
 endef
 
 define Build/InstallDev
@@ -90,5 +105,6 @@ define Build/Compile
 		modules
 endef
 
+$(eval $(call KernelPackage,qca-nss-ppe))
 $(eval $(call KernelPackage,qca-nss-ppe-bridge-mgr))
 $(eval $(call KernelPackage,qca-nss-ppe-vlan-mgr))
