@@ -59,6 +59,24 @@ define KernelPackage/qca-nss-ecm/Default
   PROVIDES:=kmod-qca-nss-ecm
 endef
 
+define KernelPackage/qca-nss-ecm-nonss/Default
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Support
+  DEPENDS:=@TARGET_ipq50xx +PACKAGE_kmod-qca-hyfi-bridge:kmod-qca-hyfi-bridge +PACKAGE_kmod-qca-mcs:kmod-qca-mcs +kmod-nat46 \
+	+iptables-mod-extra +kmod-ipt-conntrack +kmod-pppoe @!LINUX_3_18 +PACKAGE_kmod-qca-ovsmgr:kmod-qca-ovsmgr \
+	+kmod-l2tp +kmod-pppol2tp +kmod-pptp +kmod-qca-nss-sfe \
+	+kmod-bonding PACKAGE_kmod-emesh-sp:kmod-emesh-sp
+  TITLE:=QCA NSS Enhanced Connection Manager (ECM)
+  FILES:=$(PKG_BUILD_DIR)/*.ko $(FILES_EXAMPLES) $(PKG_BUILD_DIR)/examples/ecm_ae_select.ko
+  KCONFIG:=CONFIG_BRIDGE_NETFILTER=y \
+	CONFIG_NF_CONNTRACK_EVENTS=y \
+	CONFIG_NF_CONNTRACK_CHAIN_EVENTS=y \
+	CONFIG_NF_CONNTRACK_DSCPREMARK_EXT=y
+  MENU:=1
+  PROVIDES:=kmod-qca-nss-ecm
+endef
+
 define KernelPackage/qca-nss-ecm/Description/Default
 This package contains the QCA NSS Enhanced Connection Manager
 endef
@@ -107,13 +125,28 @@ $(call KernelPackage/qca-nss-ecm/Default)
 	+kmod-bonding PACKAGE_kmod-emesh-sp:kmod-emesh-sp
 endef
 
+define KernelPackage/qca-nss-ecm-nonss
+  $(call KernelPackage/qca-nss-ecm-nonss/Default)
+  TITLE+= (with no-nss for host mode)
+  VARIANT:=nonss
+endef
+
 define KernelPackage/qca-nss-ecm-premium/Description/Default
 $(call KernelPackage/qca-nss-ecm/Description/Default)
 with the premium features enabled
 endef
 
+define KernelPackage/qca-nss-ecm-nonss/Description/Default
+$(call KernelPackage/qca-nss-ecm/Description/Default)
+with the No-NSS features enabled
+endef
+
 define KernelPackage/qca-nss-ecm-premium/Default/install
 $(call KernelPackage/qca-nss-ecm/install)
+endef
+
+define KernelPackage/qca-nss-ecm-nonss/install
+$(call KernelPackage/qca-nss-ecm-standard/install, $(1))
 endef
 
 define KernelPackage/qca-nss-ecm-premium
@@ -175,8 +208,12 @@ define Build/InstallDev
 	$(call Build/InstallDev/qca-nss-ecm,$(1))
 endef
 
+ifneq ($(VARIANT), nonss)
 EXTRA_CFLAGS+= \
-	-I$(STAGING_DIR)/usr/include/qca-nss-drv \
+	-I$(STAGING_DIR)/usr/include/qca-nss-drv
+endif
+
+EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/qca-nss-sfe \
 	-I$(STAGING_DIR)/usr/include/nat46
 
@@ -270,7 +307,9 @@ endif
 
 # Enable NSS frontend for all the platforms except ipq40xx and ipq95xx
 ifeq ($(CONFIG_TARGET_ipq_ipq40xx)$(CONFIG_TARGET_ipq40xx)$(CONFIG_TARGET_ipq95xx),)
+ifneq ($(BUILD_VARIANT), nonss)
 ECM_MAKE_OPTS+=ECM_FRONT_END_NSS_ENABLE=y
+endif
 endif
 
 define Build/InstallDev
@@ -316,3 +355,4 @@ $(eval $(call KernelPackage,qca-nss-ecm-noload))
 $(eval $(call KernelPackage,qca-nss-ecm-standard))
 $(eval $(call KernelPackage,qca-nss-ecm-premium-noload))
 $(eval $(call KernelPackage,qca-nss-ecm-premium))
+$(eval $(call KernelPackage,qca-nss-ecm-nonss))
