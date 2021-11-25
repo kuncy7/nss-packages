@@ -147,6 +147,7 @@ endef
 
 define KernelPackage/qca-nss-ecm-nonss/install
 $(call KernelPackage/qca-nss-ecm-standard/install, $(1))
+	sed -i 's/auto/sfe/g' $(1)/etc/config/ecm
 endef
 
 define KernelPackage/qca-nss-ecm-premium
