@@ -65,7 +65,7 @@ define KernelPackage/qca-nss-ppe-vlan-mgr
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-ppe-vlan)
 endef
 
-define KernelPackage/qca-nss-drv-vlan-mgr/Description
+define KernelPackage/qca-nss-ppe-vlan-mgr/Description
 Kernel modules for NSS PPE vlan manager
 endef
 
