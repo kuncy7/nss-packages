@@ -88,6 +88,23 @@ define KernelPackage/qca-nss-ppe-pppoe-mgr/Description
 Kernel modules for NSS PPE PPPoE manager
 endef
 
+define KernelPackage/qca-nss-ppe-lag-mgr
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  TITLE:=Kernel driver for NSS LAG manager
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq95xx_32 \
+		+kmod-qca-nss-ppe \
+		+kmod-qca-nss-ppe-vlan-mgr \
+		+kmod-bonding
+  FILES:=$(PKG_BUILD_DIR)/clients/lag/qca-nss-ppe-lag.ko
+  AUTOLOAD:=$(call AutoLoad,51,qca-nss-ppe-lag)
+endef
+
+define KernelPackage/qca-nss-ppe-lag-mgr/Description
+Kernel modules for NSS PPE LAG manager
+endef
+
 define Build/InstallDev/qca-nss-ppe
 	$(INSTALL_DIR) $(1)/usr/include/qca-nss-ppe
 	$(CP) $(PKG_BUILD_DIR)/exports/* $(1)/usr/include/qca-nss-ppe/
@@ -116,6 +133,10 @@ ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-ppe-pppoe-mgr),)
 MAKE_OPTS+=pppoe-mgr=y
 endif
 
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-ppe-lag-mgr),)
+MAKE_OPTS+=lag-mgr=y
+endif
+
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" $(strip $(MAKE_OPTS)) \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
@@ -130,3 +151,4 @@ $(eval $(call KernelPackage,qca-nss-ppe))
 $(eval $(call KernelPackage,qca-nss-ppe-bridge-mgr))
 $(eval $(call KernelPackage,qca-nss-ppe-vlan-mgr))
 $(eval $(call KernelPackage,qca-nss-ppe-pppoe-mgr))
+$(eval $(call KernelPackage,qca-nss-ppe-lag-mgr))
