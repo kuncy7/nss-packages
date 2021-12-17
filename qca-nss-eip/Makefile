@@ -20,6 +20,9 @@ subtarget:=$(CONFIG_TARGET_BOARD)
 endif
 
 NSS_EIP_DIR:=eip197
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-eip-crypto),y)
+eip_crypto:=m
+endif
 
 define KernelPackage/qca-nss-eip
   SECTION:=kernel
@@ -43,6 +46,35 @@ define KernelPackage/qca-nss-eip/install
 	$(CP) $(PKG_BUILD_DIR)/driver/exports/* $(1)/usr/include/qca-nss-eip
 endef
 
+define KernelPackage/qca-nss-eip-crypto
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq_ipq95xx_32\
+		+kmod-qca-nss-eip\
+		+kmod-crypto-authenc
+  TITLE:=Kernel NSS EIP crypto client
+  FILES:=$(PKG_BUILD_DIR)/clients/$(eip_crypto)/qca-nss-eip-crypto.ko
+  AUTOLOAD:=$(call AutoLoad,52,qca-nss-eip-crypto)
+endef
+
+define KernelPackage/qca-nss-eip-crypto/Description
+This package contains a NSS EIP crypto client for QCA chipset
+endef
+
+define Build/InstallDev/qca-nss-eip-crypto
+	$(INSTALL_DIR) $(1)/usr/include/qca-nss-eip
+	$(CP) $(PKG_BUILD_DIR)/clients/exports/* $(1)/usr/include/qca-nss-eip
+endef
+
+define Build/InstallDev
+	$(call Build/InstallDev/qca-nss-eip,$(1))
+endef
+
+define Build/InstallDev
+	$(call Build/InstallDev/qca-nss-eip-crypto,$(1))
+endef
+
 EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/qca-nss-eip
 
@@ -54,8 +86,10 @@ define Build/Compile
 		M="$(PKG_BUILD_DIR)" \
 		EXTRA_CFLAGS="$(EXTRA_CFLAGS)" \
 		NSS_EIP_DIR=$(NSS_EIP_DIR) \
+		eip_crypto=$(eip_crypto) \
 		SoC="$(subtarget)" \
 		modules
 endef
 
 $(eval $(call KernelPackage,qca-nss-eip))
+$(eval $(call KernelPackage,qca-nss-eip-crypto))
