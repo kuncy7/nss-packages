@@ -42,9 +42,8 @@ define KernelPackage/qca-nss-ppe-bridge-mgr
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS PPE bridge manager
   DEPENDS:=@TARGET_ipq95xx||TARGET_ipq95xx_32 \
-		+TARGET_ipq95xx:kmod-qca-nss-ppe-vlan-mgr \
-		+PACKAGE_kmod-qca-nss-dp:kmod-qca-nss-dp \
-		+kmod-qca-ssdk-nohnat \
+		+kmod-qca-nss-ppe \
+		+kmod-qca-nss-ppe-vlan-mgr \
 		+PACKAGE_kmod-bonding:kmod-bonding
   FILES:=$(PKG_BUILD_DIR)/clients/bridge/qca-nss-ppe-bridge-mgr.ko
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-ppe-bridge-mgr)
