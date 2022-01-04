@@ -59,9 +59,8 @@ define KernelPackage/qca-nss-ppe-vlan-mgr
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS PPE vlan manager
   DEPENDS:=@TARGET_ipq95xx||TARGET_ipq95xx_32 \
-	   +kmod-qca-ssdk-nohnat \
-	   +PACKAGE_kmod-qca-nss-dp:kmod-qca-nss-dp \
-	   +PACKAGE_kmod-bonding:kmod-bonding
+		+kmod-qca-nss-ppe \
+		+PACKAGE_kmod-bonding:kmod-bonding
   FILES:=$(PKG_BUILD_DIR)/clients/vlan/qca-nss-ppe-vlan.ko
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-ppe-vlan)
 endef
@@ -118,7 +117,6 @@ EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/qca-ssdk \
 	-I$(STAGING_DIR)/usr/include/qca-ssdk/fal \
 	-I$(STAGING_DIR)/usr/include/qca-ssdk/init \
-	-I$(STAGING_DIR)/usr/include/qca-nss-dp \
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-ppe-bridge-mgr),)
 MAKE_OPTS+=bridge-mgr=y
