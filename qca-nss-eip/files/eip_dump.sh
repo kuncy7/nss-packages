@@ -198,7 +198,7 @@ dump_stats() {
 }
 
 #Invoke default dump function
-dump_all() {
+dump_reg() {
 	print_version
 	dump_hia_reg
 	dump_pe_reg
@@ -206,6 +206,28 @@ dump_all() {
 	dump_dma_reg 1
 	dump_dma_reg 2
 	dump_dma_reg 3
+	dump_dma_reg 4
+	dump_dma_reg 5
+	dump_dma_reg 6
+	dump_dma_reg 7
+}
+
+dump_ipsec() {
+	id=$1
+	for iface in /sys/class/net/$id ; do
+		if [ -d "$iface" ]; then
+			echo "ifconfig ${iface##*/}"
+			ifconfig ${iface##*/}
+		fi
+	done
+	echo "Total Tunnel: `ls -d /sys/kernel/debug/qca-nss-eip/eip197/ipsectun* | wc -l`"
+	find /sys/kernel/debug/qca-nss-eip/eip197/$id -type f -print -exec cat {} \;
+	find /sys/kernel/debug/qca-nss-eip/eip197/eip_hy_ipsec_ctx* -type f -print -exec cat {} \;
+}
+
+#Invoke default dump function
+dump_all() {
+	dump_reg
 
 	dump_cmd_desc 0 1
 	dump_res_desc 0 1
@@ -215,25 +237,22 @@ dump_all() {
 	dump_res_desc 2 1
 	dump_cmd_desc 3 1
 	dump_res_desc 3 1
+	dump_cmd_desc 4 1
+	dump_cmd_desc 5 1
+	dump_cmd_desc 6 1
+	dump_cmd_desc 7 1
 
 	dump_stats
-}
 
-#Invoke default dump function
-dump_reg() {
-	print_version
-	dump_hia_reg
-	dump_pe_reg
-	dump_dma_reg 0
-	dump_dma_reg 1
-	dump_dma_reg 2
-	dump_dma_reg 3
+	dump_ipsec "ipsectun*"
 }
 
 usage_msg () {
 	echo "Usage:"
 	echo "eip_dump.sh <param>"
 	echo "	all: Dumps Everything"
+	echo "	ipsec: Dumps statistics for all IPsec tunnel"
+	echo "	ipsectun<0|1|..>: Dumps statistics for specified ipsectunX"
 	echo "	reg: Dumps general Register configuration"
 	echo "	stats: Dumps all statistics"
 	echo "	desc [ring] [count] : Dumps recent command & result descriptor equal to count"
@@ -259,6 +278,12 @@ case "${1:-all}" in
 		;;
 	"cmd")
 		dump_cmd_desc ${2:-0} ${3:-1}
+		;;
+	"ipsec")
+		dump_ipsec "ipsectun*"
+		;;
+	ipsec*)
+		dump_ipsec $1
 		;;
 	*)
 		usage_msg
