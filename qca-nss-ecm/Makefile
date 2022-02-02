@@ -131,6 +131,18 @@ define KernelPackage/qca-nss-ecm-nonss
   VARIANT:=nonss
 endef
 
+define KernelPackage/qca-nss-ecm-wifi-plugin
+  TITLE+= (with no-nss for host mode)
+  VARIANT:=premium
+  DEPENDS+=+kmod-qca-wifi +kmod-qca-nss-ecm
+  FILES+=$(PKG_BUILD_DIR)/ecm_wifi_plugins/ecm-wifi-plugin.ko
+endef
+
+define KernelPackage/qca-nss-ecm-wifi-plugin/Description/Default
+$(call KernelPackage/qca-nss-ecm/Description/Default)
+with the ecm-wifi-plugin enabled
+endef
+
 define KernelPackage/qca-nss-ecm-premium/Description/Default
 $(call KernelPackage/qca-nss-ecm/Description/Default)
 with the premium features enabled
@@ -214,12 +226,18 @@ EXTRA_CFLAGS+= \
 endif
 
 EXTRA_CFLAGS+= \
+	-I$(STAGING_DIR)/usr/include/qca-wifi \
 	-I$(STAGING_DIR)/usr/include/qca-nss-sfe \
 	-I$(STAGING_DIR)/usr/include/nat46
 
 ifeq ($(CONFIG_PACKAGE_kmod-qca-hyfi-bridge), y)
 ECM_MAKE_OPTS:=ECM_CLASSIFIER_HYFI_ENABLE=y
 EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/hyfibr
+endif
+
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-ecm-wifi-plugin),)
+CONFIG_QCA_NSS_ECM_WIFI_PLUGIN=y
+ECM_MAKE_OPTS+=ECM_CLASSIFIER_MSCS_ENABLE=y
 endif
 
 ifeq ($(CONFIG_PACKAGE_kmod-qca-mcs), y)
@@ -330,6 +348,7 @@ define Build/Compile
 		EXAMPLES_BUILD_PCC="$(CONFIG_QCA_NSS_ECM_EXAMPLES_PCC)" \
 		EXAMPLES_BUILD_MARK="$(CONFIG_QCA_NSS_ECM_EXAMPLES_MARK)" \
 		EXAMPLES_BUILD_OVS="$(CONFIG_QCA_NSS_ECM_OVS)" \
+		BUILD_ECM_WIFI_PLUGIN="$(CONFIG_QCA_NSS_ECM_WIFI_PLUGIN)" \
 		modules
 endef
 
@@ -360,3 +379,4 @@ $(eval $(call KernelPackage,qca-nss-ecm-standard))
 $(eval $(call KernelPackage,qca-nss-ecm-premium-noload))
 $(eval $(call KernelPackage,qca-nss-ecm-premium))
 $(eval $(call KernelPackage,qca-nss-ecm-nonss))
+$(eval $(call KernelPackage,qca-nss-ecm-wifi-plugin))
