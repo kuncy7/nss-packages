@@ -5,6 +5,7 @@ PKG_NAME:=qca-nss-dp
 PKG_SOURCE_PROTO:=git
 PKG_BRANCH:=master
 PKG_RELEASE:=1
+MAKE_OPTS:=
 
 include $(INCLUDE_DIR)/local-development.mk
 ifeq ($(DUMP)$(PKG_VERSION),)
@@ -56,6 +57,9 @@ endif
 ifeq ($(CONFIG_TARGET_ipq95xx_generic_QSDK_MinEnt), y)
 EXTRA_CFLAGS+= -DNSS_DP_POINT_OFFLOAD
 endif
+ifneq ($(CONFIG_TARGET_ipq95xx),)
+MAKE_OPTS+=dp-ppe-ds=y
+endif
 
 NSS_DP_HAL_DIR:=$(PKG_BUILD_DIR)/hal
 ifneq (, $(findstring _64, $(subtarget)))
@@ -81,7 +85,7 @@ define Build/Configure
 endef
 
 define Build/Compile
-	$(MAKE) -C "$(LINUX_DIR)" \
+	$(MAKE) -C "$(LINUX_DIR)" $(strip $(MAKE_OPTS)) \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
 		M="$(PKG_BUILD_DIR)" \
