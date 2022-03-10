@@ -44,7 +44,8 @@ define KernelPackage/qca-nss-ppe-bridge-mgr
   DEPENDS:=@TARGET_ipq95xx||TARGET_ipq95xx_32 \
 		+kmod-qca-nss-ppe \
 		+kmod-qca-nss-ppe-vlan-mgr \
-		+PACKAGE_kmod-bonding:kmod-bonding
+		+PACKAGE_kmod-bonding:kmod-bonding \
+		+PACKAGE_kmod-qca-ovsmgr:kmod-qca-ovsmgr
   FILES:=$(PKG_BUILD_DIR)/clients/bridge/qca-nss-ppe-bridge-mgr.ko
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-ppe-bridge-mgr)
 endef
@@ -120,6 +121,11 @@ EXTRA_CFLAGS+= \
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-ppe-bridge-mgr),)
 MAKE_OPTS+=bridge-mgr=y
+# enable OVS bridge if ovsmgr is enabled
+ifneq ($(CONFIG_PACKAGE_kmod-qca-ovsmgr),)
+MAKE_OPTS+=NSS_PPE_BRIDGE_MGR_OVS_ENABLE=y
+EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-ovsmgr
+endif
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-ppe-vlan-mgr),)
