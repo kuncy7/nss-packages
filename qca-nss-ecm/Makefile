@@ -121,7 +121,7 @@ $(call KernelPackage/qca-nss-ecm/Default)
   TITLE+= (with premium features)
   VARIANT:=premium
   DEPENDS+=+PACKAGE_kmod-qca-hyfi-bridge:kmod-qca-hyfi-bridge +PACKAGE_kmod-qca-mcs:kmod-qca-mcs +kmod-nat46 \
-	+kmod-l2tp +kmod-pppol2tp +kmod-pptp +kmod-qca-nss-sfe \
+	   +kmod-l2tp +kmod-pppol2tp +kmod-pptp +TARGET_ipq95xx:kmod-qca-nss-sfe \
 	+kmod-bonding PACKAGE_kmod-emesh-sp:kmod-emesh-sp
 endef
 
@@ -179,7 +179,7 @@ define KernelPackage/qca-nss-ecm-noload
   TITLE+= (with noload features)
   PROVIDES:=kmod-qca-nss-ecm
   VARIANT:=noload
-  DEPENDS+=+kmod-l2tp +kmod-pppol2tp +kmod-pptp +kmod-qca-nss-sfe \
+  DEPENDS+=+kmod-l2tp +kmod-pppol2tp +kmod-pptp +TARGET_ipq95xx:kmod-qca-nss-sfe \
 	   +kmod-bonding +PACKAGE_kmod-qca-mcs:kmod-qca-mcs
 endef
 
@@ -265,7 +265,12 @@ ifneq ($(CONFIG_LOWMEM_FLASH),y)
 ifneq ($(CONFIG_XFRM),)
 ECM_MAKE_OPTS+=ECM_XFRM_ENABLE=y
 endif
+ifeq ($(BUILD_VARIANT), nonss)
 ECM_MAKE_OPTS+=ECM_FRONT_END_SFE_ENABLE=y
+endif
+ifneq ($(CONFIG_TARGET_ipq95xx),)
+ECM_MAKE_OPTS+=ECM_FRONT_END_SFE_ENABLE=y
+endif
 ECM_MAKE_OPTS+=ECM_NON_PORTED_SUPPORT_ENABLE=y
 endif
 endif
