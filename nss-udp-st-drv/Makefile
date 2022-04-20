@@ -16,7 +16,7 @@ define KernelPackage/$(PKG_NAME)
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Support
-  DEPENDS:=@TARGET_ipq50xx||TARGET_ipq95xx
+  DEPENDS:=@TARGET_ipq50xx||TARGET_ipq95xx +kmod-pppoe
   TITLE:=Kernel driver for NSS UDP Speedtest
   FILES:=$(PKG_BUILD_DIR)/nss-udp-st.ko
 endef
