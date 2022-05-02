@@ -26,6 +26,16 @@ define KernelPackage/qca-nss-drv
   AUTOLOAD:=$(call AutoLoad,32,qca-nss-drv)
 endef
 
+define KernelPackage/qca-nss-drv-lite
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  DEPENDS:=@TARGET_ipq95xx +PACKAGE_kmod-qca-nss-dp:kmod-qca-nss-dp @!LINUX_3_18
+  TITLE:=Kernel driver for NSS (core driver)
+  FILES:=$(PKG_BUILD_DIR)/qca-nss-drv.ko
+  AUTOLOAD:=$(call AutoLoad,32,qca-nss-drv)
+endef
+
 define KernelPackage/qca-nss-drv/install
 	$(INSTALL_DIR) $(1)/lib/debug
 	$(INSTALL_DIR) $(1)/etc/init.d
@@ -45,6 +55,14 @@ define KernelPackage/qca-nss-drv/Description
 This package contains a NSS driver for QCA chipset
 endef
 
+define KernelPackage/qca-nss-drv-lite/Description
+$(call KernelPackage/qca-nss-drv/Description)
+endef
+
+define KernelPackage/qca-nss-drv-lite/install
+$(call KernelPackage/qca-nss-drv/install,$(1))
+endef
+
 define Build/InstallDev
 	mkdir -p $(1)/usr/include/qca-nss-drv
 	$(CP) $(PKG_BUILD_DIR)/exports/* $(1)/usr/include/qca-nss-drv/
@@ -55,7 +73,11 @@ ifneq (, $(findstring $(subtarget), "ipq807x" "ipq807x_64" "ipq60xx" "ipq60xx_64
 endif
 endef
 
-EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-gmac -I$(STAGING_DIR)/usr/include/qca-nss-dp -I$(STAGING_DIR)/usr/include/qca-ssdk
+EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-dp -I$(STAGING_DIR)/usr/include/qca-ssdk
+
+ifeq (, $(findstring $(subtarget), "ipq95xx"))
+EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-gmac
+endif
 
 # Keeping default as ipq806x for branches that does not have subtarget framework
 ifeq ($(CONFIG_TARGET_ipq),y)
@@ -67,9 +89,11 @@ endif
 ifeq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),256)
 EXTRA_CFLAGS+= -DNSS_MEM_PROFILE_LOW
 LOW_MEM_PROFILE_MAKE_OPTS=y
+DISABLE_DRV_MAKE_OPTS=y
 else ifeq ($(CONFIG_LOWMEM_FLASH),y)
 EXTRA_CFLAGS+= -DNSS_MEM_PROFILE_LOW
 LOW_MEM_PROFILE_MAKE_OPTS=y
+DISABLE_DRV_MAKE_OPTS=y
 else ifeq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),512)
 EXTRA_CFLAGS+= -DNSS_MEM_PROFILE_MEDIUM
 endif
@@ -78,10 +102,14 @@ ifeq ($(CONFIG_KERNEL_SKB_FIXED_SIZE_2K),y)
 EXTRA_CFLAGS+= -DNSS_SKB_FIXED_SIZE_2K
 endif
 
+ifneq (, $(findstring $(subtarget), "ipq95xx"))
+POINT_OFFLOAD_MAKE_OPTS=y
+DISABLE_DRV_MAKE_OPTS=y
+endif
+
 DRV_MAKE_OPTS:=
-ifeq ($(LOW_MEM_PROFILE_MAKE_OPTS),y)
+ifeq ($(DISABLE_DRV_MAKE_OPTS),y)
 DRV_MAKE_OPTS+=NSS_DRV_C2C_ENABLE=n \
-        NSS_DRV_CAPWAP_ENABLE=n \
         NSS_DRV_CLMAP_ENABLE=n \
         NSS_DRV_CRYPTO_ENABLE=n \
         NSS_DRV_DTLS_ENABLE=n \
@@ -120,6 +148,23 @@ ifneq (, $(findstring $(subtarget), "ipq50xx"))
 endif
 endif
 
+ifeq ($(LOW_MEM_PROFILE_MAKE_OPTS),y)
+DRV_MAKE_OPTS+=NSS_DRV_CAPWAP_ENABLE=n
+endif
+
+ifeq ($(POINT_OFFLOAD_MAKE_OPTS),y)
+DRV_MAKE_OPTS+=NSS_DRV_POINT_OFFLOAD=y \
+	NSS_DRV_BRIDGE_ENABLE=n \
+	NSS_DRV_ETH_RX_ENABLE=n \
+	NSS_DRV_IPV4_ENABLE=n \
+	NSS_DRV_IPV6_ENABLE=n \
+	NSS_DRV_LSO_RX_ENABLE=n \
+	NSS_DRV_PPPOE_ENABLE=n \
+	NSS_DRV_UDP_ST_ENABLE=n \
+	NSS_DRV_VLAN_ENABLE=n \
+	NSS_DRV_WIFIOFFLOAD_ENABLE=n
+endif
+
 # Disable DRV IPv6 support when global IPv6 support is disabled.
 ifneq ($(CONFIG_IPV6),y)
 DRV_MAKE_OPTS+=NSS_DRV_IPV6_ENABLE=n
@@ -139,3 +184,4 @@ define Build/Compile
 endef
 
 $(eval $(call KernelPackage,qca-nss-drv))
+$(eval $(call KernelPackage,qca-nss-drv-lite))
