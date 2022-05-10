@@ -134,7 +134,7 @@ endef
 define KernelPackage/qca-nss-ecm-wifi-plugin
   TITLE+= (with no-nss for host mode)
   VARIANT:=premium
-  DEPENDS+=+kmod-qca-wifi +kmod-qca-nss-ecm
+  DEPENDS+=@TARGET_ipq95xx +kmod-qca-wifi +kmod-qca-nss-ecm
   FILES+=$(PKG_BUILD_DIR)/ecm_wifi_plugins/ecm-wifi-plugin.ko
 endef
 
