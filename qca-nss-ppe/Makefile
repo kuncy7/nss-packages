@@ -41,10 +41,9 @@ define KernelPackage/qca-nss-ppe-bridge-mgr
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS PPE bridge manager
-  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq95xx_32\
-		+TARGET_ipq95xx:kmod-qca-nss-ppe-vlan-mgr \
-		+PACKAGE_kmod-qca-nss-dp:kmod-qca-nss-dp \
-		+kmod-qca-ssdk-nohnat \
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq95xx_32 \
+		+kmod-qca-nss-ppe \
+		+kmod-qca-nss-ppe-vlan-mgr \
 		+PACKAGE_kmod-bonding:kmod-bonding
   FILES:=$(PKG_BUILD_DIR)/clients/bridge/qca-nss-ppe-bridge-mgr.ko
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-ppe-bridge-mgr)
@@ -60,15 +59,48 @@ define KernelPackage/qca-nss-ppe-vlan-mgr
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS PPE vlan manager
   DEPENDS:=@TARGET_ipq95xx||TARGET_ipq95xx_32 \
-	   +kmod-qca-ssdk-nohnat \
-	   +PACKAGE_kmod-qca-nss-dp:kmod-qca-nss-dp \
-	   +PACKAGE_kmod-bonding:kmod-bonding
+		+kmod-qca-nss-ppe \
+		+PACKAGE_kmod-bonding:kmod-bonding
   FILES:=$(PKG_BUILD_DIR)/clients/vlan/qca-nss-ppe-vlan.ko
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-ppe-vlan)
 endef
 
 define KernelPackage/qca-nss-drv-vlan-mgr/Description
 Kernel modules for NSS PPE vlan manager
+endef
+
+define KernelPackage/qca-nss-ppe-pppoe-mgr
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  TITLE:=Kernel driver for NSS PPE PPPoE manager
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq95xx_32 \
+		+kmod-qca-nss-ppe \
+		+kmod-pppoe @!LINUX_3_18 \
+		+PACKAGE_kmod-bonding:kmod-bonding
+  FILES:=$(PKG_BUILD_DIR)/clients/pppoe/qca-nss-ppe-pppoe-mgr.ko
+  AUTOLOAD:=$(call AutoLoad,51,qca-nss-ppe-pppoe-mgr)
+endef
+
+define KernelPackage/qca-nss-ppe-pppoe-mgr/Description
+Kernel modules for NSS PPE PPPoE manager
+endef
+
+define KernelPackage/qca-nss-ppe-lag-mgr
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  TITLE:=Kernel driver for NSS LAG manager
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq95xx_32 \
+		+kmod-qca-nss-ppe \
+		+kmod-qca-nss-ppe-vlan-mgr \
+		+kmod-bonding
+  FILES:=$(PKG_BUILD_DIR)/clients/lag/qca-nss-ppe-lag.ko
+  AUTOLOAD:=$(call AutoLoad,51,qca-nss-ppe-lag)
+endef
+
+define KernelPackage/qca-nss-ppe-lag-mgr/Description
+Kernel modules for NSS PPE LAG manager
 endef
 
 define Build/InstallDev/qca-nss-ppe
@@ -85,7 +117,6 @@ EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/qca-ssdk \
 	-I$(STAGING_DIR)/usr/include/qca-ssdk/fal \
 	-I$(STAGING_DIR)/usr/include/qca-ssdk/init \
-	-I$(STAGING_DIR)/usr/include/qca-nss-dp \
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-ppe-bridge-mgr),)
 MAKE_OPTS+=bridge-mgr=y
@@ -93,6 +124,14 @@ endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-ppe-vlan-mgr),)
 MAKE_OPTS+=vlan-mgr=y
+endif
+
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-ppe-pppoe-mgr),)
+MAKE_OPTS+=pppoe-mgr=y
+endif
+
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-ppe-lag-mgr),)
+MAKE_OPTS+=lag-mgr=y
 endif
 
 define Build/Compile
@@ -108,3 +147,5 @@ endef
 $(eval $(call KernelPackage,qca-nss-ppe))
 $(eval $(call KernelPackage,qca-nss-ppe-bridge-mgr))
 $(eval $(call KernelPackage,qca-nss-ppe-vlan-mgr))
+$(eval $(call KernelPackage,qca-nss-ppe-pppoe-mgr))
+$(eval $(call KernelPackage,qca-nss-ppe-lag-mgr))
