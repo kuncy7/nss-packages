@@ -41,7 +41,7 @@ define KernelPackage/qca-nss-ppe-bridge-mgr
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS PPE bridge manager
-  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq95xx_32 \
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq95xx_32||TARGET_ipq53xx \
 		+kmod-qca-nss-ppe \
 		+kmod-qca-nss-ppe-vlan-mgr \
 		+PACKAGE_kmod-bonding:kmod-bonding
@@ -58,7 +58,7 @@ define KernelPackage/qca-nss-ppe-vlan-mgr
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS PPE vlan manager
-  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq95xx_32 \
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq95xx_32||TARGET_ipq53xx \
 		+kmod-qca-nss-ppe \
 		+PACKAGE_kmod-bonding:kmod-bonding
   FILES:=$(PKG_BUILD_DIR)/clients/vlan/qca-nss-ppe-vlan.ko
@@ -74,7 +74,7 @@ define KernelPackage/qca-nss-ppe-pppoe-mgr
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS PPE PPPoE manager
-  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq95xx_32 \
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq95xx_32||TARGET_ipq53xx \
 		+kmod-qca-nss-ppe \
 		+kmod-pppoe @!LINUX_3_18 \
 		+PACKAGE_kmod-bonding:kmod-bonding
@@ -91,7 +91,7 @@ define KernelPackage/qca-nss-ppe-lag-mgr
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS LAG manager
-  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq95xx_32 \
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq95xx_32||TARGET_ipq53xx \
 		+kmod-qca-nss-ppe \
 		+kmod-qca-nss-ppe-vlan-mgr \
 		+kmod-bonding
