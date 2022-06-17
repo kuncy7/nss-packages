@@ -121,7 +121,7 @@ $(call KernelPackage/qca-nss-ecm/Default)
   TITLE+= (with premium features)
   VARIANT:=premium
   DEPENDS+=+PACKAGE_kmod-qca-hyfi-bridge:kmod-qca-hyfi-bridge +PACKAGE_kmod-qca-mcs:kmod-qca-mcs +kmod-nat46 \
-	   +kmod-l2tp +kmod-pppol2tp +kmod-pptp +TARGET_ipq95xx:kmod-qca-nss-sfe \
+	+kmod-l2tp +kmod-pppol2tp +kmod-pptp +TARGET_ipq95xx:kmod-qca-nss-sfe +TARGET_ipq95xx:kmod-qca-nss-ppe \
 	+kmod-bonding PACKAGE_kmod-emesh-sp:kmod-emesh-sp
 endef
 
@@ -179,7 +179,7 @@ define KernelPackage/qca-nss-ecm-noload
   TITLE+= (with noload features)
   PROVIDES:=kmod-qca-nss-ecm
   VARIANT:=noload
-  DEPENDS+=+kmod-l2tp +kmod-pppol2tp +kmod-pptp +TARGET_ipq95xx:kmod-qca-nss-sfe \
+  DEPENDS+=+kmod-l2tp +kmod-pppol2tp +kmod-pptp +TARGET_ipq95xx:kmod-qca-nss-sfe +TARGET_ipq95xx:kmod-qca-nss-ppe \
 	   +kmod-bonding +PACKAGE_kmod-qca-mcs:kmod-qca-mcs
 endef
 
@@ -228,6 +228,7 @@ endif
 EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/qca-wifi \
 	-I$(STAGING_DIR)/usr/include/qca-nss-sfe \
+	-I$(STAGING_DIR)/usr/include/qca-nss-ppe \
 	-I$(STAGING_DIR)/usr/include/nat46
 
 ifeq ($(CONFIG_PACKAGE_kmod-qca-hyfi-bridge), y)
@@ -269,10 +270,6 @@ ifeq ($(BUILD_VARIANT), nonss)
 ECM_MAKE_OPTS+=ECM_FRONT_END_SFE_ENABLE=y
 FILES_EXAMPLES+=$(PKG_BUILD_DIR)/examples/ecm_sfe_l2.ko
 endif
-ifneq ($(CONFIG_TARGET_ipq95xx),)
-ECM_MAKE_OPTS+=ECM_FRONT_END_SFE_ENABLE=y
-FILES_EXAMPLES+=$(PKG_BUILD_DIR)/examples/ecm_sfe_l2.ko
-endif
 ECM_MAKE_OPTS+=ECM_NON_PORTED_SUPPORT_ENABLE=y
 endif
 endif
@@ -297,6 +294,9 @@ endif
 
 ifneq ($(CONFIG_TARGET_ipq95xx),)
 ECM_MAKE_OPTS+=ECM_INTERFACE_VXLAN_ENABLE=y
+ECM_MAKE_OPTS+=ECM_FRONT_END_SFE_ENABLE=y
+ECM_MAKE_OPTS+=ECM_FRONT_END_PPE_ENABLE=y
+FILES_EXAMPLES+=$(PKG_BUILD_DIR)/examples/ecm_sfe_l2.ko
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-ovsmgr),)
