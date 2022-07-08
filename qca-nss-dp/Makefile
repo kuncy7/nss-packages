@@ -52,6 +52,10 @@ else ifeq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),512)
 EXTRA_CFLAGS+= -DNSS_DP_MEM_PROFILE_MEDIUM
 endif
 
+ifeq ($(CONFIG_TARGET_ipq95xx_generic_QSDK_MinEnt), y)
+EXTRA_CFLAGS+= -DNSS_DP_POINT_OFFLOAD
+endif
+
 NSS_DP_HAL_DIR:=$(PKG_BUILD_DIR)/hal
 ifneq (, $(findstring _64, $(subtarget)))
 hal_arch:=$(subst _64,,$(subtarget))
