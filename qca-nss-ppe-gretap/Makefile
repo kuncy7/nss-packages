@@ -28,7 +28,7 @@ define KernelPackage/qca-nss-ppe-gretap
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for PPE GRE tunnel (client)
-  DEPENDS:=@TARGET_ipq95xx +kmod-qca-nss-ppe-tun +kmod-gre6 +kmod-gre
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx +kmod-qca-nss-ppe-tun +kmod-gre6 +kmod-gre
   FILES:=$(PKG_BUILD_DIR)/clients/gretap/qca-nss-ppe-gretap.ko
   AUTOLOAD:=$(call AutoLoad,53,qca-nss-ppe-gretap)
 endef
