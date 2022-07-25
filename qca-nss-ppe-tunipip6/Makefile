@@ -28,7 +28,7 @@ define KernelPackage/qca-nss-ppe-tunipip6
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for PPE tunipip6 tunnel (client)
-  DEPENDS:=@TARGET_ipq95xx +kmod-qca-nss-ppe-tun
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx +kmod-qca-nss-ppe-tun
   FILES:=$(PKG_BUILD_DIR)/clients/tunipip6/qca-nss-ppe-tunipip6.ko
   AUTOLOAD:=$(call AutoLoad,54,qca-nss-ppe-tunipip6)
 endef
