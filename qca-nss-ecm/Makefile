@@ -238,6 +238,10 @@ endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-ecm-wifi-plugin),)
 CONFIG_QCA_NSS_ECM_WIFI_PLUGIN=y
+ifneq ($(CONFIG_PACKAGE_kmod-emesh-sp),)
+ECM_MAKE_OPTS+=ECM_CLASSIFIER_MSCS_SCS_ENABLE=y
+EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/emesh-sp
+endif
 ECM_MAKE_OPTS+=ECM_CLASSIFIER_MSCS_ENABLE=y
 endif
 
@@ -315,6 +319,10 @@ EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/emesh-sp
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-mscs),)
+ifneq ($(CONFIG_PACKAGE_kmod-emesh-sp),)
+ECM_MAKE_OPTS+=ECM_CLASSIFIER_MSCS_SCS_ENABLE=y
+EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/emesh-sp
+endif
 ECM_MAKE_OPTS+=ECM_CLASSIFIER_MSCS_ENABLE=y
 endif
 
