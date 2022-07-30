@@ -180,7 +180,7 @@ define KernelPackage/qca-nss-ecm-noload
   PROVIDES:=kmod-qca-nss-ecm
   VARIANT:=noload
   DEPENDS+=+kmod-l2tp +kmod-pppol2tp +kmod-pptp +TARGET_ipq95xx:kmod-qca-nss-sfe +TARGET_ipq95xx:kmod-qca-nss-ppe \
-	   +kmod-bonding +PACKAGE_kmod-qca-mcs:kmod-qca-mcs
+	   +kmod-bonding +PACKAGE_kmod-qca-mcs:kmod-qca-mcs +PACKAGE_kmod-qca-nss-ppe-mapt:kmod-nat46
 endef
 
 define KernelPackage/qca-nss-ecm-noload/Description
