@@ -47,6 +47,7 @@ define KernelPackage/qca-nss-ecm/Default
 	+TARGET_ipq_ipq50xx_64:kmod-qca-nss-drv \
 	+TARGET_ipq50xx:kmod-qca-nss-drv \
 	+iptables-mod-extra +kmod-ipt-conntrack \
+	+kmod-vxlan \
 	+kmod-pppoe @!LINUX_3_18 \
 	+PACKAGE_kmod-qca-ovsmgr:kmod-qca-ovsmgr
   TITLE:=QCA NSS Enhanced Connection Manager (ECM)
@@ -66,6 +67,7 @@ define KernelPackage/qca-nss-ecm-nonss/Default
   DEPENDS:=@TARGET_ipq50xx +PACKAGE_kmod-qca-hyfi-bridge:kmod-qca-hyfi-bridge +PACKAGE_kmod-qca-mcs:kmod-qca-mcs +kmod-nat46 \
 	+iptables-mod-extra +kmod-ipt-conntrack +kmod-pppoe @!LINUX_3_18 +PACKAGE_kmod-qca-ovsmgr:kmod-qca-ovsmgr \
 	+kmod-l2tp +kmod-pppol2tp +kmod-pptp +kmod-qca-nss-sfe \
+	+kmod-vxlan \
 	+kmod-bonding PACKAGE_kmod-emesh-sp:kmod-emesh-sp
   TITLE:=QCA NSS Enhanced Connection Manager (ECM)
   FILES:=$(PKG_BUILD_DIR)/*.ko $(FILES_EXAMPLES) $(PKG_BUILD_DIR)/examples/ecm_ae_select.ko
