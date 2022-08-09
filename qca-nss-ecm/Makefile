@@ -122,6 +122,7 @@ $(call KernelPackage/qca-nss-ecm/Default)
   VARIANT:=premium
   DEPENDS+=+PACKAGE_kmod-qca-hyfi-bridge:kmod-qca-hyfi-bridge +PACKAGE_kmod-qca-mcs:kmod-qca-mcs +kmod-nat46 \
 	+kmod-l2tp +kmod-pppol2tp +kmod-pptp +TARGET_ipq95xx:kmod-qca-nss-sfe +TARGET_ipq95xx:kmod-qca-nss-ppe \
+	+TARGET_ipq53xx:kmod-qca-nss-sfe +TARGET_ipq53xx:kmod-qca-nss-ppe \
 	+kmod-bonding PACKAGE_kmod-emesh-sp:kmod-emesh-sp
 endef
 
@@ -134,7 +135,8 @@ endef
 define KernelPackage/qca-nss-ecm-wifi-plugin
   TITLE+= (with no-nss for host mode)
   VARIANT:=premium
-  DEPENDS+=@TARGET_ipq95xx +kmod-qca-wifi +kmod-qca-nss-ecm
+  DEPENDS+=@TARGET_ipq95xx||TARGET_ipq53xx \
+		+kmod-qca-wifi +kmod-qca-nss-ecm
   FILES+=$(PKG_BUILD_DIR)/ecm_wifi_plugins/ecm-wifi-plugin.ko
 endef
 
@@ -180,6 +182,7 @@ define KernelPackage/qca-nss-ecm-noload
   PROVIDES:=kmod-qca-nss-ecm
   VARIANT:=noload
   DEPENDS+=+kmod-l2tp +kmod-pppol2tp +kmod-pptp +TARGET_ipq95xx:kmod-qca-nss-sfe +TARGET_ipq95xx:kmod-qca-nss-ppe \
+	   +TARGET_ipq53xx:kmod-qca-nss-sfe +TARGET_ipq53xx:kmod-qca-nss-ppe \
 	   +kmod-bonding +PACKAGE_kmod-qca-mcs:kmod-qca-mcs +PACKAGE_kmod-qca-nss-ppe-mapt:kmod-nat46
 endef
 
@@ -303,6 +306,13 @@ ECM_MAKE_OPTS+=ECM_FRONT_END_PPE_ENABLE=y
 FILES_EXAMPLES+=$(PKG_BUILD_DIR)/examples/ecm_sfe_l2.ko
 endif
 
+ifneq ($(CONFIG_TARGET_ipq53xx),)
+ECM_MAKE_OPTS+=ECM_INTERFACE_VXLAN_ENABLE=y
+ECM_MAKE_OPTS+=ECM_FRONT_END_SFE_ENABLE=y
+ECM_MAKE_OPTS+=ECM_FRONT_END_PPE_ENABLE=y
+FILES_EXAMPLES+=$(PKG_BUILD_DIR)/examples/ecm_sfe_l2.ko
+endif
+
 ifneq ($(CONFIG_PACKAGE_kmod-qca-ovsmgr),)
 ECM_MAKE_OPTS+=ECM_INTERFACE_OVS_BRIDGE_ENABLE=y \
 		ECM_CLASSIFIER_OVS_ENABLE=y
@@ -342,8 +352,8 @@ else
 subtarget:=$(CONFIG_TARGET_BOARD)
 endif
 
-# Enable NSS frontend for all the platforms except ipq40xx and ipq95xx
-ifeq ($(CONFIG_TARGET_ipq_ipq40xx)$(CONFIG_TARGET_ipq40xx)$(CONFIG_TARGET_ipq95xx),)
+# Enable NSS frontend for all the platforms except ipq40xx, ipq95xx and ipq53xx
+ifeq ($(CONFIG_TARGET_ipq_ipq40xx)$(CONFIG_TARGET_ipq40xx)$(CONFIG_TARGET_ipq95xx)$(CONFIG_TARGET_ipq53xx),)
 ifneq ($(BUILD_VARIANT), nonss)
 ECM_MAKE_OPTS+=ECM_FRONT_END_NSS_ENABLE=y
 endif

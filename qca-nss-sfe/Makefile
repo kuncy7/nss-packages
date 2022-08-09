@@ -17,7 +17,7 @@ define KernelPackage/qca-nss-sfe
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Support
-  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq50xx +kmod-pppoe
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq50xx||TARGET_ipq53xx +kmod-pppoe
   TITLE:=Kernel data path for SFE
   FILES:=$(PKG_BUILD_DIR)/qca-nss-sfe.ko
   KCONFIG:=CONFIG_NF_CONNTRACK_EVENTS=y
