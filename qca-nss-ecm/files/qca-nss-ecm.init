@@ -134,7 +134,7 @@ start() {
 	local kernel_version=$(uname -r)
 
 	[ -e "/lib/modules/$kernel_version/ecm-wifi-plugin.ko" ] && {
-		[ -d /sys/module/ecm_wifi_plugin ] || insmod ecm-wifi-plugin
+		[ -d /sys/module/ecm_wifi_plugin ] || [ -f /tmp/.wifi-config-done ] && insmod ecm-wifi-plugin
 	}
 }
 
