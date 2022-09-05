@@ -56,7 +56,6 @@ define KernelPackage/qca-nss-eip-crypto
 		+kmod-crypto-authenc
   TITLE:=Kernel NSS EIP crypto client
   FILES:=$(PKG_BUILD_DIR)/clients/crypto/qca-nss-eip-crypto.ko
-  AUTOLOAD:=$(call AutoLoad,52,qca-nss-eip-crypto)
 endef
 
 define KernelPackage/qca-nss-eip-crypto/Description
