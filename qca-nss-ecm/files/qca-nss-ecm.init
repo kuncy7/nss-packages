@@ -72,9 +72,19 @@ unload_sfe() {
 	[ -d /sys/module/qca_nss_sfe ] && rmmod qca-nss-sfe
 }
 
+ecm_dependency() {
+	[ -e /lib/modules/$(uname -r)/emesh-sp.ko ] && insmod emesh-sp
+	[ -e /lib/modules/$(uname -r)/nf_conntrack.ko ] && modprobe nf_conntrack
+	[ -e /lib/modules/$(uname -r)/qca-nss-ppe.ko ] && modprobe qca-nss-ppe
+	[ -e /lib/modules/$(uname -r)/qca-ovsmgr.ko ] && modprobe qca-ovsmgr
+	[ -e /lib/modules/$(uname -r)/bonding.ko ] && modprobe bonding
+	[ -e /lib/modules/$(uname -r)/l2tp_ppp.ko ] && modprobe l2tp_ppp
+}
+
 load_ecm() {
 
 	[ -d /sys/module/ecm ] || {
+		ecm_dependency
 		insmod ecm front_end_selection=$(get_front_end_mode)
 
 		if [ $(get_front_end_mode) == 4 ]; then
