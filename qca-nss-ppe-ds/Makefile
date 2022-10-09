@@ -23,6 +23,14 @@ else
 subtarget:=$(CONFIG_TARGET_BOARD)
 endif
 
+ifneq (, $(findstring _64, $(subtarget)))
+hal_arch:=$(subst _64,,$(subtarget))
+else ifneq (, $(findstring _32, $(subtarget)))
+hal_arch:=$(subst _32,,$(subtarget))
+else
+hal_arch:=$(subtarget)
+endif
+
 define KernelPackage/qca-nss-ppe-ds
   SECTION:=kernel
   CATEGORY:=Kernel modules
@@ -34,6 +42,13 @@ define KernelPackage/qca-nss-ppe-ds
   FILES:=$(PKG_BUILD_DIR)/drv/ppe_ds/qca-nss-ppe-ds.ko
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-ppe-ds)
 endef
+
+ifeq ($(hal_arch),"ipq95xx")
+define KernelPackage/qca-nss-ppe-ds/install
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/qca-nss-ppe-ds.init $(1)/etc/init.d/qca-nss-ppe-ds
+endef
+endif
 
 define KernelPackage/qca-nss-ppe-ds/Description
 Kernel module for PPE DS core driver

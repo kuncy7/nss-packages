@@ -1,0 +1,65 @@
+#!/bin/sh /etc/rc.common
+#
+# Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+#
+# Permission to use, copy, modify, and/or distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#
+
+configure_irq_affinity() {
+		echo configuring core mask $1 for PPE-DS node 1
+		echo configuring core mask $2 for PPE-DS node 2
+		echo configuring core mask $3 for PPE-DS node 3
+
+		# For IRQ to core mapping
+		irq_num=`grep edma_ppeds_rxfill_0 /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $1 > /proc/irq/$irq_num/smp_affinity
+
+		irq_num=`grep edma_ppeds_rxfill_1 /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $2 > /proc/irq/$irq_num/smp_affinity
+
+		irq_num=`grep edma_ppeds_rxfill_2 /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $3 > /proc/irq/$irq_num/smp_affinity
+
+		irq_num=`grep edma_ppeds_txcmpl_0 /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $1 > /proc/irq/$irq_num/smp_affinity
+
+		irq_num=`grep edma_ppeds_txcmpl_1 /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $2 > /proc/irq/$irq_num/smp_affinity
+
+		irq_num=`grep edma_ppeds_txcmpl_2 /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $3 > /proc/irq/$irq_num/smp_affinity
+
+		irq_num=`grep pci1_wlan_grp_dp /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		for entry in $irq_num
+		do
+			echo $1 > /proc/irq/$entry/smp_affinity
+		done
+
+		irq_num=`grep pci2_wlan_grp_dp /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		for entry in $irq_num
+		do
+			echo $2 > /proc/irq/$entry/smp_affinity
+		done
+
+
+		irq_num=`grep pci3_wlan_grp_dp /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		for entry in $irq_num
+		do
+			echo $3 > /proc/irq/$entry/smp_affinity
+		done
+		echo " Configured the RPS for PPE DS mode"
+}
+
+start() {
+		configure_irq_affinity $1 $2 $3
+}
