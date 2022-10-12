@@ -57,9 +57,19 @@ configure_irq_affinity() {
 		do
 			echo $3 > /proc/irq/$entry/smp_affinity
 		done
+
+		irq_num=`grep pci1_ppe_wbm_rel /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $1 > /proc/irq/$irq_num/smp_affinity
+
+		irq_num=`grep pci2_ppe_wbm_rel /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $2 > /proc/irq/$irq_num/smp_affinity
+
+		irq_num=`grep pci3_ppe_wbm_rel /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $3 > /proc/irq/$irq_num/smp_affinity
+
 		echo " Configured the RPS for PPE DS mode"
 }
 
 start() {
-		configure_irq_affinity $1 $2 $3
+		configure_irq_affinity 4 2 4
 }
