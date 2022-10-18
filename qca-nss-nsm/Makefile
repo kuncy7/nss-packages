@@ -16,7 +16,7 @@ define KernelPackage/$(PKG_NAME)
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Support
-  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq95xx_32 +PACKAGE_kmod-qca-nss-sfe:kmod-qca-nss-sfe
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq95xx_32 +kmod-qca-nss-sfe +kmod-qca-nss-ppe +kmod-qca-nss-dp
   TITLE:=Network Status Module
   FILES:=$(PKG_BUILD_DIR)/qca-nss-nsm.ko
 endef
@@ -32,6 +32,8 @@ endef
 
 EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-nsm
 EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-sfe
+EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-ppe
+EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-dp
 
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" \
