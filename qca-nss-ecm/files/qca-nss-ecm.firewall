@@ -16,3 +16,7 @@
 #
 
 iptables -A FORWARD -m physdev --physdev-is-bridged -j ACCEPT
+iptables --new-chain RATE-LIMIT
+iptables --append RATE-LIMIT --match limit --limit 1000/sec --limit-burst 1000 --jump RETURN
+iptables --append RATE-LIMIT --jump DROP
+iptables --insert zone_wan_forward 5 --match conntrack --ctstate NEW --jump RATE-LIMIT
