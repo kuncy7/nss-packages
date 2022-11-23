@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_NAME:=qca-nss-ppe-capwapmgr
+PKG_NAME:=qca-nss-ppe-dtlsmgr
 PKG_SOURCE_PROTO:=git
 PKG_BRANCH:=master
 PKG_RELEASE:=2
@@ -23,25 +23,25 @@ else
 subtarget:=$(CONFIG_TARGET_BOARD)
 endif
 
-define KernelPackage/qca-nss-ppe-capwapmgr
+define KernelPackage/qca-nss-ppe-dtlsmgr
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  TITLE:=Kernel driver for NSS capwap manager
+  TITLE:=Kernel driver for NSS dtls manager
   DEPENDS:=@TARGET_ipq95xx +kmod-qca-nss-drv-lite \
 		+kmod-pppoe @!LINUX_3_18 \
 		+kmod-qca-nss-ppe-vp \
-		+kmod-qca-nss-ppe-dtlsmgr
-  FILES:=$(PKG_BUILD_DIR)/clients/capwapmgr/qca-nss-capwapmgr.ko
+		+kmod-qca-nss-cfi-cryptoapi
+  FILES:=$(PKG_BUILD_DIR)/clients/dtlsmgr/qca-nss-dtlsmgr.ko
 endef
 
-define KernelPackage/qca-nss-ppe-capwapmgr/Description
-Kernel modules for NSS capwap manager
+define KernelPackage/qca-nss-ppe-dtlsmgr/Description
+Kernel modules for NSS dtls manager
 endef
 
 
 define Build/InstallDev
-	$(call Build/InstallDev/qca-nss-ppe-capwapmgr,$(1))
+	$(call Build/InstallDev/qca-nss-ppe-dtlsmgr,$(1))
 endef
 
 EXTRA_CFLAGS+= \
@@ -50,10 +50,10 @@ EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/qca-nss-dp \
 	-I$(STAGING_DIR)/usr/include/qca-ssdk \
 	-I$(STAGING_DIR)/usr/include/qca-ssdk/fal \
-	-I$(STAGING_DIR)/usr/include/qca-ssdk/init
+	-I$(STAGING_DIR)/usr/include/qca-ssdk/init \
+	-I$(STAGING_DIR)/usr/include/qca-nss-cfi
 
-MAKE_OPTS+=capwap-mgr=y
-EXTRA_CFLAGS += -DNSS_CAPWAPMGR_ONE_NETDEV
+MAKE_OPTS+=dtls-mgr=y
 
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" $(strip $(MAKE_OPTS)) \
@@ -65,4 +65,4 @@ define Build/Compile
 		modules
 endef
 
-$(eval $(call KernelPackage,qca-nss-ppe-capwapmgr))
+$(eval $(call KernelPackage,qca-nss-ppe-dtlsmgr))
