@@ -28,7 +28,8 @@ define KernelPackage/qca-nss-ppe-rule
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for PPE rule module
-  DEPENDS:=@TARGET_ipq95xx +kmod-qca-nss-ppe +kmod-qca-nss-ppe-vp
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx \
+		+kmod-qca-nss-ppe +kmod-qca-nss-ppe-vp
   FILES:=$(PKG_BUILD_DIR)/drv/ppe_rule/qca-nss-ppe-rule.ko
   AUTOLOAD:=$(call AutoLoad,52,qca-nss-ppe-rule)
 endef
