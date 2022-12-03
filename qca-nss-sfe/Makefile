@@ -17,7 +17,9 @@ define KernelPackage/qca-nss-sfe
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Support
-  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq50xx||TARGET_ipq53xx +kmod-pppoe +TARGET_ipq95xx:kmod-qca-nss-ppe-rule
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq50xx||TARGET_ipq53xx +kmod-pppoe \
+	   +TARGET_ipq95xx:kmod-qca-nss-ppe-rule \
+	   +TARGET_ipq53xx:kmod-qca-nss-ppe-rule
   TITLE:=Kernel data path for SFE
   FILES:=$(PKG_BUILD_DIR)/qca-nss-sfe.ko
   KCONFIG:=CONFIG_NF_CONNTRACK_EVENTS=y
@@ -47,12 +49,12 @@ else ifeq ($(CONFIG_LOWMEM_FLASH),y)
 EXTRA_CFLAGS+= -DSFE_MEM_PROFILE_LOW
 else ifeq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),512)
 EXTRA_CFLAGS+= -DSFE_MEM_PROFILE_MEDIUM
-ifneq ($(CONFIG_TARGET_ipq95xx),)
+ifneq ($(CONFIG_TARGET_ipq95xx)$(CONFIG_TARGET_ipq53xx),)
 EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-ppe
 SFE_MAKE_OPTS+=SFE_RFS_SUPPORTED=y
 endif
 else
-ifneq ($(CONFIG_TARGET_ipq95xx),)
+ifneq ($(CONFIG_TARGET_ipq95xx)$(CONFIG_TARGET_ipq53xx),)
 EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-ppe
 SFE_MAKE_OPTS+=SFE_RFS_SUPPORTED=y
 endif
