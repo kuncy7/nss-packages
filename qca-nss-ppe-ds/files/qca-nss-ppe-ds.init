@@ -16,11 +16,16 @@
 #
 
 configure_irq_affinity() {
-		echo configuring core mask $1 for PPE-DS node 1
-		echo configuring core mask $2 for PPE-DS node 2
-		echo configuring core mask $3 for PPE-DS node 3
+	echo configuring core mask $1 for PPE-DS node 1
+	echo configuring core mask $2 for PPE-DS node 2
+	echo configuring core mask $3 for PPE-DS node 3
 
-		# For IRQ to core mapping
+	[ -f /tmp/sysinfo/board_name ] && {
+		board=ap$(cat /tmp/sysinfo/board_name | awk -F 'ap' '{print$2}')
+	}
+	# For IRQ to core mapping
+	case "$board" in ap-al02-c4)
+		#For RDP 433
 		irq_num=`grep edma_ppeds_rxfill_0 /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
 		echo $1 > /proc/irq/$irq_num/smp_affinity
 
@@ -39,25 +44,6 @@ configure_irq_affinity() {
 		irq_num=`grep edma_ppeds_txcmpl_2 /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
 		echo $3 > /proc/irq/$irq_num/smp_affinity
 
-		irq_num=`grep pci1_wlan_grp_dp /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
-		for entry in $irq_num
-		do
-			echo $1 > /proc/irq/$entry/smp_affinity
-		done
-
-		irq_num=`grep pci2_wlan_grp_dp /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
-		for entry in $irq_num
-		do
-			echo $2 > /proc/irq/$entry/smp_affinity
-		done
-
-
-		irq_num=`grep pci3_wlan_grp_dp /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
-		for entry in $irq_num
-		do
-			echo $3 > /proc/irq/$entry/smp_affinity
-		done
-
 		irq_num=`grep pci1_ppe_wbm_rel /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
 		echo $1 > /proc/irq/$irq_num/smp_affinity
 
@@ -67,9 +53,63 @@ configure_irq_affinity() {
 		irq_num=`grep pci3_ppe_wbm_rel /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
 		echo $3 > /proc/irq/$irq_num/smp_affinity
 
-		echo " Configured the RPS for PPE DS mode"
+		irq_rps=`grep pci1_ppe2tcl /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $1 > /proc/irq/$irq_rps/smp_affinity
+
+		irq_rps=`grep pci2_ppe2tcl /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $2 > /proc/irq/$irq_rps/smp_affinity
+
+		irq_rps=`grep pci3_ppe2tcl /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $3 > /proc/irq/$irq_rps/smp_affinity
+
+		irq_rps=`grep pci1_reo2ppe /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $1 > /proc/irq/$irq_rps/smp_affinity
+
+		irq_rps=`grep pci2_reo2ppe /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $2 > /proc/irq/$irq_rps/smp_affinity
+
+		irq_rps=`grep pci3_reo2ppe /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $3 > /proc/irq/$irq_rps/smp_affinity
+		;;
+	esac
+
+	case "$board" in ap-al02-c9)
+		#For split wifi (RDP 454)
+		irq_rps=`grep edma_ppeds_rxfill_0 /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $1 > /proc/irq/$irq_rps/smp_affinity
+
+		irq_rps=`grep edma_ppeds_rxfill_1 /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $2 > /proc/irq/$irq_rps/smp_affinity
+
+		irq_rps=`grep edma_ppeds_txcmpl_0 /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $1 > /proc/irq/$irq_rps/smp_affinity
+
+		irq_rps=`grep edma_ppeds_txcmpl_1 /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $2 > /proc/irq/$irq_rps/smp_affinity
+
+		irq_num=`grep pci0_ppe_wbm_rel /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $1 > /proc/irq/$irq_num/smp_affinity
+
+		irq_num=`grep pci2_ppe_wbm_rel /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $2 > /proc/irq/$irq_num/smp_affinity
+
+		irq_rps=`grep pci0_ppe2tcl /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $1 > /proc/irq/$irq_rps/smp_affinity
+
+		irq_rps=`grep pci2_ppe2tcl /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $2 > /proc/irq/$irq_rps/smp_affinity
+
+		irq_rps=`grep pci0_reo2ppe /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $1 > /proc/irq/$irq_rps/smp_affinity
+
+		irq_rps=`grep pci2_reo2ppe /proc/interrupts | cut -d ':' -f 1 | tr -d ' '`
+		echo $2 > /proc/irq/$irq_rps/smp_affinity
+		;;
+	esac
+
+	echo " Configured the IRQ affinity for DS mode in $board"
 }
 
 start() {
-		configure_irq_affinity 4 2 4
+	configure_irq_affinity 4 2 4
 }
