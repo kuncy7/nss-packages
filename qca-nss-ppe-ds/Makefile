@@ -36,14 +36,14 @@ define KernelPackage/qca-nss-ppe-ds
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for PPE Direct Switch (core driver)
-  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq95xx_32 \
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq95xx_32||TARGET_ipq53xx||TARGET_ipq53xx_32\
 	+kmod-qca-nss-ppe-vp \
 	+kmod-qca-nss-dp
   FILES:=$(PKG_BUILD_DIR)/drv/ppe_ds/qca-nss-ppe-ds.ko
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-ppe-ds)
 endef
 
-ifeq ($(hal_arch),"ipq95xx")
+ifneq (, $(findstring $(hal_arch),"ipq95xx" "ipq53xx"))
 define KernelPackage/qca-nss-ppe-ds/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/qca-nss-ppe-ds.init $(1)/etc/init.d/qca-nss-ppe-ds
