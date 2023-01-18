@@ -41,6 +41,11 @@ endif
 
 SFE_MAKE_OPTS+=SFE_PROCESS_LOCAL_OUT=y
 
+# Disable SFE Bridge VLAN Filtering support when global kernel config is disabled
+ifneq ($(CONFIG_BRIDGE_VLAN_FILTERING),)
+SFE_MAKE_OPTS+=SFE_BRIDGE_VLAN_FILTERING_ENABLE=y
+endif
+
 EXTRA_CFLAGS+= -I$(PKG_BUILD_DIR)/exports
 
 ifeq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),256)

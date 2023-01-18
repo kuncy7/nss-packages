@@ -347,6 +347,11 @@ ifneq ($(CONFIG_IPV6),)
 ECM_MAKE_OPTS+=ECM_IPV6_ENABLE=y
 endif
 
+# Disable ECM Bridge VLAN Filtering support when global kernel config is disabled
+ifneq ($(CONFIG_BRIDGE_VLAN_FILTERING),)
+ECM_MAKE_OPTS+=ECM_BRIDGE_VLAN_FILTERING_ENABLE=y
+endif
+
 # Keeping default as ipq806x for branches that does not have subtarget framework
 ifeq ($(CONFIG_TARGET_ipq),y)
 subtarget:=$(SUBTARGET)
