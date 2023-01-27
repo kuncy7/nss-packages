@@ -60,6 +60,11 @@ SFE_MAKE_OPTS+=SFE_RFS_SUPPORTED=y
 endif
 endif
 
+#TSO is supported only on Alder and Miami
+ifeq ($(CONFIG_TARGET_ipq95xx)$(CONFIG_TARGET_ipq53xx), y)
+EXTRA_CFLAGS+= -DSFE_TSO_MAX_SEG_LIMIT_ENABLE
+endif
+
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)"  $(strip $(SFE_MAKE_OPTS))\
 		CROSS_COMPILE="$(TARGET_CROSS)" \
