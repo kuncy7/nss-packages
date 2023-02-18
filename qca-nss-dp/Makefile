@@ -73,9 +73,11 @@ endif
 ifneq (, $(findstring $(hal_arch),"ipq95xx" "ipq53xx"))
 define KernelPackage/qca-nss-dp/install
 	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_BIN) ./files/qca-nss-dp.init $(1)/etc/init.d/qca-nss-dp
 	$(INSTALL_BIN) ./files/qca-nss-dp.conf $(1)/etc/config/qca_nss_dp
+	$(INSTALL_BIN) ./files/qca-nss-dp.hotplug $(1)/etc/hotplug.d/iface/17-bridge
 endef
 endif
 
