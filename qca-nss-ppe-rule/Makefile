@@ -54,6 +54,7 @@ EXTRA_CFLAGS+= \
 
 MAKE_OPTS+=ppe-rule=y
 MAKE_OPTS+=PPE_RFS_ENABLED=y
+MAKE_OPTS+=PPE_ACL_ENABLED=y
 
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" $(strip $(MAKE_OPTS)) \
