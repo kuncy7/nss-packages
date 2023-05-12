@@ -15,7 +15,7 @@ define Package/$(PKG_NAME)
   URL:=http://www.qualcomm.com
   MAINTAINER:=Qualcomm Technologies, Inc.
   TITLE:= NSS UDP SpeedTest
-  DEPENDS:= @TARGET_ipq50xx||TARGET_ipq95xx +kmod-nss-udp-st-drv
+  DEPENDS:= @TARGET_ipq50xx||TARGET_ipq95xx||TARGET_ipq53xx +kmod-nss-udp-st-drv
 endef
 
 define Package/$(PKG_NAME)/description/Default
