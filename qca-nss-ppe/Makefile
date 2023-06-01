@@ -48,7 +48,7 @@ define KernelPackage/qca-nss-ppe-bridge-mgr
 		+PACKAGE_kmod-bonding:kmod-bonding \
 		+PACKAGE_kmod-qca-ovsmgr:kmod-qca-ovsmgr
   FILES:=$(PKG_BUILD_DIR)/clients/bridge/qca-nss-ppe-bridge-mgr.ko
-  AUTOLOAD:=$(call AutoLoad,51,qca-nss-ppe-bridge-mgr)
+  AUTOLOAD:=$(call AutoLoad,52,qca-nss-ppe-bridge-mgr)
 endef
 
 define KernelPackage/qca-nss-ppe-bridge-mgr/Description
@@ -98,7 +98,7 @@ define KernelPackage/qca-nss-ppe-lag-mgr
 		+kmod-qca-nss-ppe-vlan-mgr \
 		+kmod-bonding
   FILES:=$(PKG_BUILD_DIR)/clients/lag/qca-nss-ppe-lag.ko
-  AUTOLOAD:=$(call AutoLoad,51,qca-nss-ppe-lag)
+  AUTOLOAD:=$(call AutoLoad,52,qca-nss-ppe-lag)
 endef
 
 define KernelPackage/qca-nss-ppe-lag-mgr/Description
