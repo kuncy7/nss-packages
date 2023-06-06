@@ -30,6 +30,7 @@ define KernelPackage/qca-nss-ppe-vxlanmgr
   TITLE:=Kernel driver for PPE VxLAN tunnel client
   DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx \
 		+kmod-qca-nss-ppe-tun \
+		+kmod-qca-nss-ppe-bridge-mgr \
 		+kmod-vxlan
   FILES:=$(PKG_BUILD_DIR)/clients/vxlanmgr/qca-nss-ppe-vxlanmgr.ko
   AUTOLOAD:=$(call AutoLoad,53,qca-nss-ppe-vxlanmgr)
@@ -40,7 +41,8 @@ Kernel driver for PPE VxLAN tunnel client
 endef
 
 define Build/InstallDev
-	$(call Build/InstallDev/qca-nss-ppe-vxlanmgr,$(1))
+	$(INSTALL_DIR) $(1)/usr/include/qca-nss-ppe
+	$(CP) $(PKG_BUILD_DIR)/exports/* $(1)/usr/include/qca-nss-ppe
 endef
 
 EXTRA_CFLAGS+= \
