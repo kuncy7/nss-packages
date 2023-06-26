@@ -402,7 +402,7 @@ menu "ECM Configuration"
 		bool "Build PCC usage example"
 		help
 			Selecting this will build the PCC classifier usage example module.
-		default n
+		default y if TARGET_ipq95xx || TARGET_ipq53xx
 
 	config QCA_NSS_ECM_EXAMPLES_MARK
 		bool "Build Mark classifier usage example"
