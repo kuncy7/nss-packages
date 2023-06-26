@@ -60,6 +60,7 @@ MAKE_OPTS+=PPE_POLICER_ENABLED=y
 ifneq ($(CONFIG_TARGET_ipq53xx),)
 MAKE_OPTS+=PPE_RULE_IPQ53XX=y
 endif
+MAKE_OPTS+=PPE_MIRROR_ENABLED=y
 
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" $(strip $(MAKE_OPTS)) \
