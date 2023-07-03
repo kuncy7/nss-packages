@@ -79,6 +79,7 @@ ecm_dependency() {
 	[ -e /lib/modules/$(uname -r)/qca-ovsmgr.ko ] && modprobe qca-ovsmgr
 	[ -e /lib/modules/$(uname -r)/bonding.ko ] && modprobe bonding
 	[ -e /lib/modules/$(uname -r)/l2tp_ppp.ko ] && modprobe l2tp_ppp
+	[ -e /lib/modules/$(uname -r)/qca-nss-ppe-vxlanmgr.ko ] && modprobe qca-nss-ppe-vxlanmgr
 }
 
 load_ecm() {
