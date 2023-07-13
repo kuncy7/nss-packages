@@ -31,7 +31,6 @@ define KernelPackage/qca-nss-ppe-mirror-test
   DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx \
 		+kmod-qca-nss-ppe-rule
   FILES:=$(PKG_BUILD_DIR)/test/qca-nss-ppe-mirror-test.ko
-  AUTOLOAD:=$(call AutoLoad,53,qca-nss-ppe-mirror-test)
 endef
 
 define KernelPackage/qca-nss-ppe-mirror-test/Description
