@@ -38,6 +38,11 @@ define KernelPackage/qca-nss-ppe-rule/Description
    Kernel module for PPE rule driver
 endef
 
+define KernelPackage/qca-nss-ppe-rule/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) ./files/acl_dump.sh $(1)/usr/bin/
+endef
+
 define Build/InstallDev/qca-nss-ppe-rule
 	$(INSTALL_DIR) $(1)/usr/include/qca-nss-ppe
 	$(CP) $(PKG_BUILD_DIR)/drv/exports/* $(1)/usr/include/qca-nss-ppe/
