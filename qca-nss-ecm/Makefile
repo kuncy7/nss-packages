@@ -143,7 +143,9 @@ define KernelPackage/qca-nss-ecm-wifi-plugin
   TITLE+= (with no-nss for host mode)
   VARIANT:=premium
   DEPENDS+=@TARGET_ipq95xx||TARGET_ipq53xx \
-		+kmod-qca-wifi +kmod-qca-nss-ecm
+		+PACKAGE_kmod-qca-wifi-unified-profile:kmod-qca-wifi +PACKAGE_kmod-ath:kmod-ath \
+		+kmod-qca-nss-ecm
+
   FILES+=$(PKG_BUILD_DIR)/ecm_wifi_plugins/ecm-wifi-plugin.ko
 endef
 
@@ -237,6 +239,7 @@ EXTRA_CFLAGS+= \
 endif
 
 EXTRA_CFLAGS+= \
+	-I$(STAGING_DIR)/usr/include \
 	-I$(STAGING_DIR)/usr/include/qca-wifi \
 	-I$(STAGING_DIR)/usr/include/qca-nss-sfe \
 	-I$(STAGING_DIR)/usr/include/qca-nss-ppe \
@@ -249,12 +252,18 @@ endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-ecm-wifi-plugin),)
 CONFIG_QCA_NSS_ECM_WIFI_PLUGIN=y
+ifneq ($(CONFIG_PACKAGE_kmod-ath),)
+ifneq ($(CONFIG_PACKAGE_kmod-emesh-sp),)
+ECM_MAKE_OPTS+=ECM_WIFI_PLUGIN_OPEN_PROFILE_ENABLE=y
+endif
+else
 ifneq ($(CONFIG_PACKAGE_kmod-emesh-sp),)
 ECM_MAKE_OPTS+=ECM_CLASSIFIER_MSCS_SCS_ENABLE=y
 EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/emesh-sp
 endif
 ECM_MAKE_OPTS+=ECM_CLASSIFIER_MSCS_ENABLE=y
 ECM_MAKE_OPTS+=ECM_FRONT_END_FSE_ENABLE=y
+endif
 endif
 
 ifeq ($(CONFIG_PACKAGE_kmod-qca-mcs), y)
