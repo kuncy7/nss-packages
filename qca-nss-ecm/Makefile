@@ -106,9 +106,12 @@ define KernelPackage/qca-nss-ecm-standard
   $(call KernelPackage/qca-nss-ecm/Default)
   TITLE+= (with standard features)
   VARIANT:=standard
-  DEPENDS+=+PACKAGE_kmod-qca-mcs:kmod-qca-mcs +PACKAGE_kmod-qca-hyfi-bridge:kmod-qca-hyfi-bridge \
+  DEPENDS+=+PACKAGE_kmod-qca-mcs:kmod-qca-mcs \
 	+TARGET_ipq95xx:kmod-qca-nss-sfe +TARGET_ipq95xx:kmod-qca-nss-ppe \
 	+TARGET_ipq53xx:kmod-qca-nss-sfe +TARGET_ipq53xx:kmod-qca-nss-ppe
+#ifneq ($(CONFIG_LOWMEM_FLASH),y)
+DEPENDS+=+PACKAGE_kmod-qca-hyfi-bridge:kmod-qca-hyfi-bridge
+#endif
 endef
 
 define KernelPackage/qca-nss-ecm-standard/Description
