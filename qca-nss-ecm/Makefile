@@ -108,10 +108,8 @@ define KernelPackage/qca-nss-ecm-standard
   VARIANT:=standard
   DEPENDS+=+PACKAGE_kmod-qca-mcs:kmod-qca-mcs \
 	+TARGET_ipq95xx:kmod-qca-nss-sfe +TARGET_ipq95xx:kmod-qca-nss-ppe \
-	+TARGET_ipq53xx:kmod-qca-nss-sfe +TARGET_ipq53xx:kmod-qca-nss-ppe
-#ifneq ($(CONFIG_LOWMEM_FLASH),y)
-DEPENDS+=+PACKAGE_kmod-qca-hyfi-bridge:kmod-qca-hyfi-bridge
-#endif
+	+TARGET_ipq53xx:kmod-qca-nss-sfe +TARGET_ipq53xx:kmod-qca-nss-ppe \
+	+!LOWMEM_FLASH:kmod-qca-hyfi-bridge
 endef
 
 define KernelPackage/qca-nss-ecm-standard/Description
