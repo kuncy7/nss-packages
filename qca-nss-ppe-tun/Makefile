@@ -37,7 +37,9 @@ define KernelPackage/qca-nss-ppe-tun/Description
 Kernel module for PPE Tunnel Driver
 endef
 
-EXTRA_CFLAGS+= \
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-ppe-rule),)
+EXTRA_CFLAGS+= -DPPE_TUN_RULE_MODULE_ENABLED
+endif
 
 MAKE_OPTS+=ppe-tun=y
 
