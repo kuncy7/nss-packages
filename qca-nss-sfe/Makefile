@@ -76,9 +76,7 @@ EXTRA_CFLAGS+= -DSFE_TSO_MAX_SEG_LIMIT_ENABLE
 endif
 
 define Build/Compile
-	$(MAKE) -C "$(LINUX_DIR)"  $(strip $(SFE_MAKE_OPTS))\
-		CROSS_COMPILE="$(TARGET_CROSS)" \
-		ARCH="$(LINUX_KARCH)" \
+	$(KERNEL_MAKE)  $(strip $(SFE_MAKE_OPTS))\
 		M="$(PKG_BUILD_DIR)" \
 		EXTRA_CFLAGS="$(EXTRA_CFLAGS)" \
 		modules

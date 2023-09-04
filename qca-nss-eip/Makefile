@@ -118,10 +118,8 @@ MAKE_OPTS+=eip_ipsec=m
 endif
 
 define Build/Compile
-	$(MAKE) -C "$(LINUX_DIR)" $(strip $(MAKE_OPTS)) \
+	$(KERNEL_MAKE) $(strip $(MAKE_OPTS)) \
 		CC="$(TARGET_CC)" \
-		CROSS_COMPILE="$(TARGET_CROSS)" \
-		ARCH="$(LINUX_KARCH)" \
 		M="$(PKG_BUILD_DIR)" \
 		EXTRA_CFLAGS="$(EXTRA_CFLAGS)" \
 		NSS_EIP_DIR=$(NSS_EIP_DIR) \
