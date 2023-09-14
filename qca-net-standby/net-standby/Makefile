@@ -38,7 +38,7 @@ EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/qca-ssdk/fal \
 	-I$(STAGING_DIR)/usr/include/qca-ssdk/init \
 	-I$(STAGING_DIR)/usr/include/qca-nss-dp \
-	-include $(LINUX_DIR)/usr/include/linux/netstandby.h
+	-I$(LINUX_DIR)/user_headers/include/
 
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" $(strip $(MAKE_OPTS)) \
