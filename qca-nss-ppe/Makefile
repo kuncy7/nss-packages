@@ -37,6 +37,11 @@ define KernelPackage/qca-nss-ppe/Description
 Kernel module for PPE core driver
 endef
 
+define KernelPackage/qca-nss-ppe/install
+        $(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) ./files/ppe_flow_dump $(1)/usr/bin/
+endef
+
 define Build/InstallDev/qca-nss-ppe
 	$(INSTALL_DIR) $(1)/usr/include/qca-nss-ppe
 	$(CP) $(PKG_BUILD_DIR)/exports/* $(1)/usr/include/qca-nss-ppe/
