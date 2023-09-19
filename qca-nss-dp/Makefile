@@ -18,7 +18,7 @@ define KernelPackage/qca-nss-dp
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  DEPENDS:=@TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq_ipq60xx||TARGET_ipq_ipq60xx_64||TARGET_ipq60xx||TARGET_ipq_ipq50xx||TARGET_ipq_ipq50xx_64||TARGET_ipq50xx||TARGET_ipq95xx||TARGET_ipq53xx\
+  DEPENDS:=@TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq_ipq60xx||TARGET_ipq_ipq60xx_64||TARGET_ipq60xx||TARGET_ipq_ipq50xx||TARGET_ipq_ipq50xx_64||TARGET_ipq50xx||TARGET_ipq95xx||TARGET_ipq53xx \
 		+kmod-qca-ssdk-nohnat \
 		+TARGET_ipq95xx:kmod-qca-nss-ppe \
 		+TARGET_ipq53xx:kmod-qca-nss-ppe
@@ -57,9 +57,12 @@ endif
 ifeq ($(CONFIG_TARGET_ipq95xx_generic_QSDK_MinEnt), y)
 EXTRA_CFLAGS+= -DNSS_DP_POINT_OFFLOAD
 endif
+#TODO : Remove kernel version check once enable dp-ppe-ds on 6.1 kernel
+ifneq ($(CONFIG_LINUX_6_1),y)
 ifneq ($(CONFIG_TARGET_ipq95xx)$(CONFIG_TARGET_ipq53xx),)
 EXTRA_CFLAGS+= -DNSS_DP_NETSTANDBY
 MAKE_OPTS+=dp-ppe-ds=y
+endif
 endif
 
 NSS_DP_HAL_DIR:=$(PKG_BUILD_DIR)/hal

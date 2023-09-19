@@ -26,9 +26,9 @@ ifneq ($(findstring 3.14, $(LINUX_VER)),)
   CFI_OCF_DIR:=ocf/v1.0
   CFI_IPSEC_DIR:=ipsec/v1.0
 else
-#4.4/5.4 Kernel
-ifneq (, $(findstring $(subtarget), "ipq807x" "ipq807x_64" "ipq60xx" "ipq60xx_64" "ipq50xx" "ipq50xx_64""ipq95xx" "ipq95xx_32"))
-#4.4/5.4 + ipq807x/ipq60xx/ipq50xx
+#4.4/5.4/6.1 Kernel
+ifneq (, $(findstring $(subtarget), "ipq807x" "ipq807x_64" "ipq60xx" "ipq60xx_64" "ipq50xx" "ipq50xx_64" "ipq95xx" "ipq95xx_32"))
+#4.4/5.4/6.1 + ipq807x/ipq60xx/ipq50xx/ipq95xx
   CFI_OCF_DIR:=ocf/v2.0
   CFI_CRYPTOAPI_DIR:=cryptoapi/v2.0
 else

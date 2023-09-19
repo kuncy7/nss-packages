@@ -33,10 +33,7 @@ endef
 EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-sfe
 
 define Build/Compile
-	$(MAKE) -C "$(LINUX_DIR)" \
-		CROSS_COMPILE="$(TARGET_CROSS)" \
-		ARCH="$(LINUX_KARCH)" \
-		M="$(PKG_BUILD_DIR)" \
+	$(KERNEL_MAKE) M="$(PKG_BUILD_DIR)" \
 		EXTRA_CFLAGS="$(EXTRA_CFLAGS)" \
 		modules
 endef
