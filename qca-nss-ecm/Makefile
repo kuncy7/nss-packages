@@ -109,7 +109,8 @@ define KernelPackage/qca-nss-ecm-standard
   DEPENDS+=+PACKAGE_kmod-qca-mcs:kmod-qca-mcs \
 	+TARGET_ipq95xx:kmod-qca-nss-sfe +TARGET_ipq95xx:kmod-qca-nss-ppe \
 	+TARGET_ipq53xx:kmod-qca-nss-sfe +TARGET_ipq53xx:kmod-qca-nss-ppe \
-	+!LOWMEM_FLASH:kmod-qca-hyfi-bridge
+	+!LOWMEM_FLASH:kmod-qca-hyfi-bridge +TARGET_ipq53xx:kmod-bonding \
+	+TARGET_ipq95xx:kmod-bonding
 endef
 
 define KernelPackage/qca-nss-ecm-standard/Description
@@ -280,6 +281,12 @@ ECM_MAKE_OPTS+=	ECM_INTERFACE_IPSEC_ENABLE=y \
 		ECM_INTERFACE_RAWIP_ENABLE=y
 
 ifeq ($(CONFIG_TARGET_ipq_ipq40xx)$(CONFIG_TARGET_ipq40xx),)
+ECM_MAKE_OPTS+=ECM_INTERFACE_BOND_ENABLE=y
+endif
+endif
+
+ifeq ($(LOCAL_VARIANT),standard)
+ifeq ($(CONFIG_TARGET_ipq53xx)$(CONFIG_TARGET_ipq95xx),y)
 ECM_MAKE_OPTS+=ECM_INTERFACE_BOND_ENABLE=y
 endif
 endif
