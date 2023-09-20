@@ -78,6 +78,13 @@ ifeq ($(CONFIG_TARGET_ipq95xx)$(CONFIG_TARGET_ipq53xx), y)
 EXTRA_CFLAGS+= -DSFE_TSO_MAX_SEG_LIMIT_ENABLE
 endif
 
+#L2TPv3 is supported only on Alder and Miami Premium and 512M profile
+ifeq ($(CONFIG_TARGET_ipq95xx)$(CONFIG_TARGET_ipq53xx), y)
+ifneq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),256)
+SFE_MAKE_OPTS+=SFE_L2TPV3_SUPPORTED=y
+endif
+endif
+
 define Build/Compile
 	$(KERNEL_MAKE)  $(strip $(SFE_MAKE_OPTS))\
 		M="$(PKG_BUILD_DIR)" \
