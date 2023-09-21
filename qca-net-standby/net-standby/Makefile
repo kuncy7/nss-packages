@@ -22,9 +22,8 @@ define KernelPackage/netstandby-drv
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Standby module
-  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx +kmod-qca-nss-ppe +kmod-qca-nss-ppe-rule +kmod-qca-nss-dp @!LINUX_3_18
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx +kmod-qca-nss-ppe +kmod-qca-nss-ppe-rule +kmod-qca-nss-dp +kmod-qca-wifi @!LINUX_3_18
   FILES:=$(PKG_BUILD_DIR)/qca-net-standby.ko
-  AUTOLOAD:=$(call AutoLoad,53,qca-net-standby)
 endef
 
 define KernelPackage/netstandby-drv/Description
