@@ -60,7 +60,7 @@ endif
 #TODO : Remove kernel version check once enable dp-ppe-ds on 6.1 kernel
 ifneq ($(CONFIG_LINUX_6_1),y)
 ifneq ($(CONFIG_TARGET_ipq95xx)$(CONFIG_TARGET_ipq53xx),)
-EXTRA_CFLAGS+= -DNSS_DP_NETSTANDBY
+MAKE_OPTS+=dp-net-standby=y
 MAKE_OPTS+=dp-ppe-ds=y
 endif
 endif
