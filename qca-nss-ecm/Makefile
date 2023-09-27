@@ -67,7 +67,7 @@ define KernelPackage/qca-nss-ecm-nonss/Default
   DEPENDS:=@TARGET_ipq50xx +PACKAGE_kmod-qca-hyfi-bridge:kmod-qca-hyfi-bridge +PACKAGE_kmod-qca-mcs:kmod-qca-mcs +kmod-nat46 \
 	+iptables-mod-extra +kmod-ipt-conntrack +kmod-pppoe @!LINUX_3_18 +PACKAGE_kmod-qca-ovsmgr:kmod-qca-ovsmgr \
 	+kmod-l2tp +kmod-pppol2tp +kmod-pptp +kmod-qca-nss-sfe +TARGET_ipq95xx:kmod-qca-nss-ppe-vxlanmgr +TARGET_ipq53xx:kmod-qca-nss-ppe-vxlanmgr \
-	+kmod-vxlan \
+	+TARGET_ipq54xx:kmod-qca-nss-ppe-vxlanmgr +kmod-vxlan \
 	+kmod-bonding PACKAGE_kmod-emesh-sp:kmod-emesh-sp
   TITLE:=QCA NSS Enhanced Connection Manager (ECM)
   FILES:=$(PKG_BUILD_DIR)/*.ko $(FILES_EXAMPLES) $(PKG_BUILD_DIR)/examples/ecm_ae_select.ko
@@ -109,8 +109,9 @@ define KernelPackage/qca-nss-ecm-standard
   DEPENDS+=+PACKAGE_kmod-qca-mcs:kmod-qca-mcs \
 	+TARGET_ipq95xx:kmod-qca-nss-sfe +TARGET_ipq95xx:kmod-qca-nss-ppe \
 	+TARGET_ipq53xx:kmod-qca-nss-sfe +TARGET_ipq53xx:kmod-qca-nss-ppe \
+	+TARGET_ipq54xx:kmod-qca-nss-sfe +TARGET_ipq54xx:kmod-qca-nss-ppe \
 	+!LOWMEM_FLASH:kmod-qca-hyfi-bridge +TARGET_ipq53xx:kmod-bonding \
-	+TARGET_ipq95xx:kmod-bonding
+	+TARGET_ipq95xx:kmod-bonding +TARGET_ipq54xx:kmod-bonding
 endef
 
 define KernelPackage/qca-nss-ecm-standard/Description
@@ -129,7 +130,7 @@ $(call KernelPackage/qca-nss-ecm/Default)
   DEPENDS+=+PACKAGE_kmod-qca-hyfi-bridge:kmod-qca-hyfi-bridge +PACKAGE_kmod-qca-mcs:kmod-qca-mcs +kmod-nat46 \
 	+kmod-l2tp +kmod-pppol2tp +kmod-pptp +TARGET_ipq95xx:kmod-qca-nss-sfe +TARGET_ipq95xx:kmod-qca-nss-ppe \
 	+TARGET_ipq53xx:kmod-qca-nss-sfe +TARGET_ipq53xx:kmod-qca-nss-ppe +TARGET_ipq95xx:kmod-qca-nss-ppe-vxlanmgr +TARGET_ipq53xx:kmod-qca-nss-ppe-vxlanmgr\
-	+kmod-bonding PACKAGE_kmod-emesh-sp:kmod-emesh-sp
+	+TARGET_ipq54xx:kmod-qca-nss-sfe +TARGET_ipq54xx:kmod-qca-nss-ppe +TARGET_ipq54xx:kmod-qca-nss-ppe-vxlanmgr +kmod-bonding PACKAGE_kmod-emesh-sp:kmod-emesh-sp
 endef
 
 define KernelPackage/qca-nss-ecm-nonss
@@ -141,7 +142,7 @@ endef
 define KernelPackage/qca-nss-ecm-wifi-plugin
   TITLE+= (with no-nss for host mode)
   VARIANT:=premium
-  DEPENDS+=@TARGET_ipq95xx||TARGET_ipq53xx \
+  DEPENDS+=@TARGET_ipq95xx||TARGET_ipq53xx||TARGET_ipq54xx \
 		+PACKAGE_kmod-qca-wifi-unified-profile:kmod-qca-wifi +PACKAGE_kmod-ath:kmod-ath \
 		+kmod-qca-nss-ecm
 
@@ -191,6 +192,7 @@ define KernelPackage/qca-nss-ecm-noload
   VARIANT:=noload
   DEPENDS+=+kmod-l2tp +kmod-pppol2tp +kmod-pptp +TARGET_ipq95xx:kmod-qca-nss-sfe +TARGET_ipq95xx:kmod-qca-nss-ppe \
 	   +TARGET_ipq53xx:kmod-qca-nss-sfe +TARGET_ipq53xx:kmod-qca-nss-ppe \
+	   +TARGET_ipq54xx:kmod-qca-nss-sfe +TARGET_ipq54xx:kmod-qca-nss-ppe \
 	   +kmod-bonding +PACKAGE_kmod-qca-mcs:kmod-qca-mcs +PACKAGE_kmod-qca-nss-ppe-mapt:kmod-nat46 \
 	   +TARGET_ipq95xx:kmod-emesh-sp
 endef
@@ -286,7 +288,7 @@ endif
 endif
 
 ifeq ($(LOCAL_VARIANT),standard)
-ifeq ($(CONFIG_TARGET_ipq53xx)$(CONFIG_TARGET_ipq95xx),y)
+ifeq ($(CONFIG_TARGET_ipq53xx)$(CONFIG_TARGET_ipq95xx)$(CONFIG_TARGET_ipq54xx),y)
 ECM_MAKE_OPTS+=ECM_INTERFACE_BOND_ENABLE=y
 endif
 endif
@@ -304,7 +306,7 @@ ECM_MAKE_OPTS+=ECM_NON_PORTED_SUPPORT_ENABLE=y
 endif
 endif
 
-ifneq ($(CONFIG_TARGET_ipq53xx)$(CONFIG_TARGET_ipq95xx),)
+ifneq ($(CONFIG_TARGET_ipq53xx)$(CONFIG_TARGET_ipq95xx)$(CONFIG_TARGET_ipq54xx),)
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-ecm-premium)$(CONFIG_PACKAGE_kmod-qca-nss-ecm-nonss),)
 ECM_MAKE_OPTS+=ECM_INTERFACE_VXLAN_ENABLE=y
 endif
@@ -335,6 +337,13 @@ FILES_EXAMPLES+=$(PKG_BUILD_DIR)/examples/ecm_sfe_l2.ko
 endif
 
 ifneq ($(CONFIG_TARGET_ipq53xx),)
+ECM_MAKE_OPTS+=ECM_FRONT_END_SFE_ENABLE=y
+ECM_MAKE_OPTS+=ECM_FRONT_END_PPE_ENABLE=y
+ECM_MAKE_OPTS+=ECM_MHT_ENABLE=y
+FILES_EXAMPLES+=$(PKG_BUILD_DIR)/examples/ecm_sfe_l2.ko
+endif
+
+ifneq ($(CONFIG_TARGET_ipq54xx),)
 ECM_MAKE_OPTS+=ECM_FRONT_END_SFE_ENABLE=y
 ECM_MAKE_OPTS+=ECM_FRONT_END_PPE_ENABLE=y
 ECM_MAKE_OPTS+=ECM_MHT_ENABLE=y
@@ -372,7 +381,7 @@ ifneq ($(CONFIG_PACKAGE_kmod-macvlan),)
 ECM_MAKE_OPTS+=ECM_INTERFACE_MACVLAN_ENABLE=y
 endif
 
-ifeq ($(CONFIG_TARGET_ipq53xx)$(CONFIG_TARGET_ipq95xx), y)
+ifeq ($(CONFIG_TARGET_ipq53xx)$(CONFIG_TARGET_ipq95xx)$(CONFIG_TARGET_ipq54xx), y)
 ifneq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),256)
 ECM_MAKE_OPTS+=ECM_INTERFACE_L2TPV3_ENABLE=y
 endif
@@ -395,8 +404,8 @@ else
 subtarget:=$(CONFIG_TARGET_BOARD)
 endif
 
-# Enable NSS frontend for all the platforms except ipq40xx, ipq95xx and ipq53xx
-ifeq ($(CONFIG_TARGET_ipq_ipq40xx)$(CONFIG_TARGET_ipq40xx)$(CONFIG_TARGET_ipq95xx)$(CONFIG_TARGET_ipq53xx),)
+# Enable NSS frontend for all the platforms except ipq40xx, ipq95xx, ipq53xx and ipq54xx
+ifeq ($(CONFIG_TARGET_ipq_ipq40xx)$(CONFIG_TARGET_ipq40xx)$(CONFIG_TARGET_ipq95xx)$(CONFIG_TARGET_ipq53xx)$(CONFIG_TARGET_ipq54xx),)
 ifneq ($(BUILD_VARIANT), nonss)
 ECM_MAKE_OPTS+=ECM_FRONT_END_NSS_ENABLE=y
 endif
