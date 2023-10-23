@@ -15,6 +15,11 @@ endif
 PKG_BUILD_DEPENDS :=
 MAKE_OPTS:=
 
+#Wifi module is not enabled in netstandby module for 6.x kernel (upstream)
+ifneq ($(CONFIG_LINUX_6_1),y)
+ EXTRA_CFLAGS+= -DNETSTANDBY_WIFI_SS_ENABLE
+endif
+
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/netstandby-drv
@@ -40,7 +45,7 @@ EXTRA_CFLAGS+= \
 	-I$(LINUX_DIR)/user_headers/include/
 
 define Build/Compile
-	$(MAKE) -C "$(LINUX_DIR)" $(strip $(MAKE_OPTS)) \
+	$(KERNEL_MAKE) -C "$(LINUX_DIR)" $(strip $(MAKE_OPTS)) \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
 		M="$(PKG_BUILD_DIR)" \

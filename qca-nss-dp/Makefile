@@ -60,11 +60,8 @@ EXTRA_CFLAGS+= -DNSS_DP_POINT_OFFLOAD
 endif
 
 ifneq ($(CONFIG_TARGET_ipq95xx)$(CONFIG_TARGET_ipq53xx)$(CONFIG_TARGET_ipq54xx),)
-#TODO : Remove kernel version check once enable NETSTANDBY on 6.1 kernel
-ifneq ($(CONFIG_LINUX_6_1),y)
 EXTRA_CFLAGS+= -DNSS_DP_NETSTANDBY
 MAKE_OPTS+=dp-net-standby=y
-endif
 MAKE_OPTS+=dp-ppe-ds=y
 endif
 
