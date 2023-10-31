@@ -28,7 +28,7 @@ define KernelPackage/qca-nss-ppe-l2tp
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for PPE L2TP tunnel (client)
-  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx +kmod-qca-nss-ppe-tun +kmod-ppp +kmod-l2tp +kmod-pppol2tp
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx||TARGET_ipq54xx +kmod-qca-nss-ppe-tun +kmod-ppp +kmod-l2tp +kmod-pppol2tp
   FILES:=$(PKG_BUILD_DIR)/clients/l2tp/qca-nss-ppe-l2tp.ko
   AUTOLOAD:=$(call AutoLoad,53,qca-nss-ppe-l2tp)
 endef
