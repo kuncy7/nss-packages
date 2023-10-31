@@ -28,7 +28,7 @@ define KernelPackage/qca-nss-ppe-qdisc
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel module for configuring schedulers and shapers in PPE
-  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx +kmod-qca-nss-ppe
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx||TARGET_ipq54xx +kmod-qca-nss-ppe
   FILES:=$(PKG_BUILD_DIR)/drv/ppe_qdisc/qca-nss-ppe-qdisc.ko
   AUTOLOAD:=$(call AutoLoad,52,qca-nss-ppe-qdisc)
 endef
