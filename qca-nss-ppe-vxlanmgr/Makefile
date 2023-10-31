@@ -28,7 +28,7 @@ define KernelPackage/qca-nss-ppe-vxlanmgr
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for PPE VxLAN tunnel client
-  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx \
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx||TARGET_ipq54xx \
 		+kmod-qca-nss-ppe-tun \
 		+kmod-qca-nss-ppe-bridge-mgr \
 		+kmod-vxlan
