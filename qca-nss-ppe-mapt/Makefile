@@ -28,7 +28,7 @@ define KernelPackage/qca-nss-ppe-mapt
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for PPE mapt tunnel (client)
-  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx +kmod-qca-nss-ppe-tun +kmod-nat46 @!LINUX_3_18
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx||TARGET_ipq54xx +kmod-qca-nss-ppe-tun +kmod-nat46 @!LINUX_3_18
   FILES:=$(PKG_BUILD_DIR)/clients/mapt/qca-nss-ppe-mapt.ko
   AUTOLOAD:=$(call AutoLoad,53,qca-nss-ppe-mapt)
 endef
