@@ -18,9 +18,16 @@
 START=19
 
 qca_nss_ppe_bridge_mgr_dependency() {
+	count=0
 	while [ -e /lib/modules/$(uname -r)/qca-nss-ppe-bridge-mgr.ko ] && [ ! -d /sys/module/qca_nss_ppe_bridge_mgr ]
 	do
+		count=$((count+1))
 		sleep 1
+		if [ $count -ge 30 ]
+		then
+			echo "qca-nss-ppe-bridge-mgr.ko module is not loaded" > /dev/kmsg
+			exit 0
+		fi
 	done
 }
 
