@@ -372,6 +372,12 @@ ifneq ($(CONFIG_PACKAGE_kmod-macvlan),)
 ECM_MAKE_OPTS+=ECM_INTERFACE_MACVLAN_ENABLE=y
 endif
 
+ifeq ($(CONFIG_TARGET_ipq53xx)$(CONFIG_TARGET_ipq95xx), y)
+ifneq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),256)
+ECM_MAKE_OPTS+=ECM_INTERFACE_L2TPV3_ENABLE=y
+endif
+endif
+
 # Disable ECM IPv6 support when global IPv6 support is disabled.
 ifneq ($(CONFIG_IPV6),)
 ECM_MAKE_OPTS+=ECM_IPV6_ENABLE=y
