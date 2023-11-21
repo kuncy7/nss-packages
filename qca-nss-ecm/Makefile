@@ -243,8 +243,13 @@ EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include \
 	-I$(STAGING_DIR)/usr/include/qca-wifi \
 	-I$(STAGING_DIR)/usr/include/qca-nss-sfe \
-	-I$(STAGING_DIR)/usr/include/qca-nss-ppe \
-	-I$(STAGING_DIR)/usr/include/nat46
+	-I$(STAGING_DIR)/usr/include/qca-nss-ppe
+
+ifneq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),256)
+ifneq ($(CONFIG_LOWMEM_FLASH),y)
+EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/nat46
+endif
+endif
 
 ifeq ($(CONFIG_PACKAGE_kmod-qca-hyfi-bridge), y)
 ECM_MAKE_OPTS:=ECM_CLASSIFIER_HYFI_ENABLE=y
@@ -318,16 +323,24 @@ else ifeq ($(CONFIG_LOWMEM_FLASH),y)
 ECM_MAKE_OPTS+=ECM_FRONT_END_CONN_LIMIT_ENABLE=y
 endif
 
+ifneq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),256)
+ifneq ($(CONFIG_LOWMEM_FLASH),y)
 ifneq ($(CONFIG_PACKAGE_kmod-nat46),)
 ECM_MAKE_OPTS+=ECM_INTERFACE_MAP_T_ENABLE=y
+endif
+endif
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ovpn-link),)
 ECM_MAKE_OPTS+=ECM_INTERFACE_OVPN_ENABLE=y
 endif
 
+ifneq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),256)
+ifneq ($(CONFIG_LOWMEM_FLASH),y)
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-vxlanmgr),)
 ECM_MAKE_OPTS+=ECM_INTERFACE_VXLAN_ENABLE=y
+endif
+endif
 endif
 
 ifneq ($(CONFIG_TARGET_ipq95xx),)
