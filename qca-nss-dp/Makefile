@@ -84,6 +84,7 @@ define KernelPackage/qca-nss-dp/install
 	$(INSTALL_BIN) ./files/qca-nss-dp.init $(1)/etc/init.d/qca-nss-dp
 	$(INSTALL_BIN) ./files/qca-nss-dp.conf $(1)/etc/config/qca_nss_dp
 	$(INSTALL_BIN) ./files/edma_dump $(1)/usr/bin/edma_dump
+	$(INSTALL_BIN) ./files/edma_recover.sh $(1)/usr/bin/
 endef
 endif
 
