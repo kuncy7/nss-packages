@@ -15,19 +15,26 @@ endif
 PKG_BUILD_DEPENDS :=
 MAKE_OPTS:=
 
-#Wifi module is not enabled in netstandby module for 6.x kernel (upstream)
-ifneq ($(CONFIG_LINUX_6_1),y)
- EXTRA_CFLAGS+= -DNETSTANDBY_WIFI_SS_ENABLE
+include $(INCLUDE_DIR)/package.mk
+
+ifeq ($(CONFIG_DEFAULT_kmod-ath12k),y)
+OPEN_PROFILE=y
 endif
 
-include $(INCLUDE_DIR)/package.mk
+ifeq ($(CONFIG_DEFAULT_kmod-ath11k),y)
+OPEN_PROFILE=y
+endif
 
 define KernelPackage/netstandby-drv
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Standby module
+ifeq ($(OPEN_PROFILE),y)
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx +kmod-qca-nss-ppe +kmod-qca-nss-ppe-rule +kmod-qca-nss-dp @!LINUX_3_18
+else
   DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx +kmod-qca-nss-ppe +kmod-qca-nss-ppe-rule +kmod-qca-nss-dp +kmod-qca-wifi @!LINUX_3_18
+endif
   FILES:=$(PKG_BUILD_DIR)/qca-net-standby.ko
 endef
 
@@ -43,6 +50,11 @@ EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/qca-ssdk/init \
 	-I$(STAGING_DIR)/usr/include/qca-nss-dp \
 	-I$(LINUX_DIR)/user_headers/include/
+
+#Disabling wifi reg in netstandby driver for open profile
+ifneq ($(OPEN_PROFILE),y)
+EXTRA_CFLAGS+= -DNETSTANDBY_WIFI_SS_ENABLE
+endif
 
 define Build/Compile
 	$(KERNEL_MAKE) -C "$(LINUX_DIR)" $(strip $(MAKE_OPTS)) \
