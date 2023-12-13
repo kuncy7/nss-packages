@@ -53,7 +53,8 @@ define KernelPackage/qca-nss-netfn-capwap
   DEPENDS:=@TARGET_ipq53xx \
 	  +kmod-qca-nss-ppe \
 	  +kmod-qca-nss-ppe-vp \
-	  +kmod-qca-nss-netfn-pkt-steer
+	  +kmod-qca-nss-netfn-pkt-steer \
+	  +kmod-qca-nss-netfn-flow-cookie
   TITLE:=NSS network function capwap offload
   FILES:=$(PKG_BUILD_DIR)/offload/capwap/qca-nss-netfn-capwap.ko
 endef
@@ -91,8 +92,37 @@ define Build/InstallDev/qca-nss-flowmgr
 	$(CP) $(PKG_BUILD_DIR)/exports/* $(1)/usr/include/qca-nss-netfn/
 endef
 
+define KernelPackage/qca-nss-netfn-flow-cookie
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  TITLE:=Kernel driver for network function flow Cookie manager
+  DEPENDS:=@TARGET_ipq53xx
+  FILES:=$(PKG_BUILD_DIR)/offload/flow_cookie/qca-nss-netfn-flow-cookie.ko
+endef
+
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-netfn-flow-cookie),)
+MAKE_OPTS+=flowcookie=y
+endif
+
+define KernelPackage/qca-nss-netfn-flow-cookie/Description
+Kernel modules for network function flow Cookie manager
+endef
+
+
+define Build/InstallDev/qca-nss-netfn-flow-cookie
+	$(INSTALL_DIR) $(1)/usr/include/qca-nss-netfn
+	$(CP) $(PKG_BUILD_DIR)/exports/* $(1)/usr/include/qca-nss-netfn/
+endef
+
+define KernelPackage/qca-nss-netfn-flow-cookie/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) ../qca-nss-netfn-flow-cookie/files/netfn_flow_dump $(1)/usr/bin/
+endef
+
 define Build/InstallDev
         $(call Build/InstallDev/qca-nss-flowmgr,$(1))
+	$(call Build/InstallDev/qca-nss-netfn-flow-cookie,$(1))
 endef
 
 define KernelPackage/qca-nss-netfn-dtls
@@ -170,3 +200,4 @@ $(eval $(call KernelPackage,qca-nss-netfn-pkt-steer))
 $(eval $(call KernelPackage,qca-nss-flowmgr))
 $(eval $(call KernelPackage,qca-nss-netfn-dtls))
 $(eval $(call KernelPackage,qca-nss-netfn-capwapmgr))
+$(eval $(call KernelPackage,qca-nss-netfn-flow-cookie))
