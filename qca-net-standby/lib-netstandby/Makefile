@@ -14,12 +14,6 @@ define Package/lib-netstandby
   DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx +libnl +kmod-netstandby-drv
 endef
 
-
-#Wifi module is not enabled in netstandby module for 6.x kernel (upstream)
-ifneq ($(CONFIG_LINUX_6_1),y)
- EXTRA_CFLAGS+= -DNETSTANDBY_WIFI_SS_ENABLE
-endif
-
 define Package/lib-netstandby/Description
  Library to facilitate communication from user to kernel for the Network standby families.
 endef
