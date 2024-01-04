@@ -52,7 +52,6 @@ define KernelPackage/qca-nss-netfn-capwap
 	  +kmod-qca-nss-netfn-pkt-steer
   TITLE:=NSS network function capwap offload
   FILES:=$(PKG_BUILD_DIR)/offload/capwap/qca-nss-netfn-capwap.ko
-  AUTOLOAD:=$(call AutoLoad,54,qca-nss-netfn-capwap)
 endef
 
 define KernelPackage/qca-nss-netfn-capwap/Description
