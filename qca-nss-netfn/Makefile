@@ -83,7 +83,7 @@ define KernelPackage/qca-nss-flowmgr
 endef
 
 define KernelPackage/qca-nss-flowmgr/Description
-Networking module for network function flow manager.
+	Networking module for network function flow manager.
 endef
 
 define Build/InstallDev/qca-nss-flowmgr
@@ -94,6 +94,30 @@ endef
 define Build/InstallDev
         $(call Build/InstallDev/qca-nss-flowmgr,$(1))
 endef
+
+define KernelPackage/qca-nss-netfn-dtls
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Support
+  DEPENDS:=@TARGET_ipq53xx \
+	  +kmod-qca-nss-ppe-vp \
+	  +kmod-qca-nss-eip
+  TITLE:=NSS network function DTLS offload
+  FILES:=$(PKG_BUILD_DIR)/offload/dtls/qca-nss-netfn-dtls.ko
+endef
+
+define KernelPackage/qca-nss-netfn-dtls/Description
+  NSS network function DTLS offload module.
+endef
+
+define KernelPackage/qca-nss-netfn-dtls/install
+  $(INSTALL_DIR) $(1)/usr/bin
+endef
+
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-netfn-dtls),)
+  EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-eip
+  MAKE_OPTS+=dtls=m
+endif
 
 EXTRA_CFLAGS+= \
 	-I$(PKG_BUILD_DIR)/exports \
@@ -113,3 +137,4 @@ endef
 $(eval $(call KernelPackage,qca-nss-netfn-capwap))
 $(eval $(call KernelPackage,qca-nss-netfn-pkt-steer))
 $(eval $(call KernelPackage,qca-nss-flowmgr))
+$(eval $(call KernelPackage,qca-nss-netfn-dtls))
