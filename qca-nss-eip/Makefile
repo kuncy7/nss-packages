@@ -67,17 +67,10 @@ define KernelPackage/qca-nss-eip-crypto/Description
 This package contains a NSS EIP crypto client for QCA chipset
 endef
 
-define Build/InstallDev/qca-nss-eip-crypto
+define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include/qca-nss-eip
 	$(CP) $(PKG_BUILD_DIR)/clients/exports/* $(1)/usr/include/qca-nss-eip
-endef
-
-define Build/InstallDev
-	$(call Build/InstallDev/qca-nss-eip,$(1))
-endef
-
-define Build/InstallDev
-	$(call Build/InstallDev/qca-nss-eip-crypto,$(1))
+	$(CP) $(PKG_BUILD_DIR)/driver/exports/* $(1)/usr/include/qca-nss-eip
 endef
 
 define KernelPackage/qca-nss-eip-ipsec
