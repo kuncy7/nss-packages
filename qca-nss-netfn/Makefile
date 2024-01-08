@@ -13,8 +13,6 @@ endif
 
 PKG_BUILD_DEPENDS :=
 MAKE_OPTS:=
-MAKE_OPTS+=capwap=y
-MAKE_OPTS+=pkt_steer=y
 MAKE_OPTS+=NETFN_FLOWMGR_AE_PPE_ENABLE=y
 MAKE_OPTS+=NETFN_FLOWMGR_AE_SFE_ENABLE=y
 
@@ -36,6 +34,10 @@ define KernelPackage/qca-nss-netfn-pkt-steer
   AUTOLOAD:=$(call AutoLoad,53,qca-nss-netfn-pkt-steer)
 endef
 
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-netfn-pkt-steer),)
+MAKE_OPTS+=pkt_steer=y
+endif
+
 define KernelPackage/qca-nss-netfn-pkt-steer/Description
 NSS network function for pkt steer.
 endef
@@ -55,6 +57,10 @@ define KernelPackage/qca-nss-netfn-capwap
   TITLE:=NSS network function capwap offload
   FILES:=$(PKG_BUILD_DIR)/offload/capwap/qca-nss-netfn-capwap.ko
 endef
+
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-netfn-capwap),)
+MAKE_OPTS+=capwap=y
+endif
 
 define KernelPackage/qca-nss-netfn-capwap/Description
 NSS network function capwap offload module.
@@ -91,6 +97,7 @@ endef
 
 EXTRA_CFLAGS+= \
 	-I$(PKG_BUILD_DIR)/exports \
+	-I$(PKG_BUILD_DIR)/offload/exports \
 	-I$(STAGING_DIR)/usr/include/qca-nss-ppe \
 	-I$(STAGING_DIR)/usr/include/qca-nss-sfe
 
