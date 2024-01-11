@@ -63,9 +63,13 @@ define Build/InstallDev/qca-nss-crypto
 	$(CP) $(PKG_BUILD_DIR)/$(NSS_CRYPTO_DIR)/include/* $(1)/usr/include/qca-nss-crypto
 endef
 
+# TODO: Remove this temporary WAR for LM256 compilation with ginger5.4,
+# once the root cause is identified
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-crypto),)
 define Build/InstallDev
 	$(call Build/InstallDev/qca-nss-crypto,$(1))
 endef
+endif
 
 EXTRA_CFLAGS+= \
 	-DCONFIG_NSS_DEBUG_LEVEL=4 \
