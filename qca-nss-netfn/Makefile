@@ -15,6 +15,8 @@ PKG_BUILD_DEPENDS :=
 MAKE_OPTS:=
 MAKE_OPTS+=capwap=y
 MAKE_OPTS+=pkt_steer=y
+MAKE_OPTS+=NETFN_FLOWMGR_AE_PPE_ENABLE=y
+MAKE_OPTS+=NETFN_FLOWMGR_AE_SFE_ENABLE=y
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -62,7 +64,35 @@ define KernelPackage/qca-nss-netfn-capwap/install
 	$(INSTALL_DIR) $(1)/usr/bin
 endef
 
-EXTRA_CFLAGS+= -I$(PKG_BUILD_DIR)/exports -I$(STAGING_DIR)/usr/include/qca-nss-ppe
+define KernelPackage/qca-nss-flowmgr
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  TITLE:=Kernel driver for Network function manager
+  DEPENDS:=@TARGET_ipq53xx \
+	  +kmod-qca-nss-ppe \
+	  +kmod-qca-nss-sfe
+  FILES:=$(PKG_BUILD_DIR)/mgr/flowmgr/qca-nss-flowmgr.ko
+  AUTOLOAD:=$(call AutoLoad,50,qca-nss-flowmgr)
+endef
+
+define KernelPackage/qca-nss-flowmgr/Description
+Networking module for network function flow manager.
+endef
+
+define Build/InstallDev/qca-nss-flowmgr
+	$(INSTALL_DIR) $(1)/usr/include/qca-nss-netfn
+	$(CP) $(PKG_BUILD_DIR)/exports/* $(1)/usr/include/qca-nss-netfn/
+endef
+
+define Build/InstallDev
+        $(call Build/InstallDev/qca-nss-flowmgr,$(1))
+endef
+
+EXTRA_CFLAGS+= \
+	-I$(PKG_BUILD_DIR)/exports \
+	-I$(STAGING_DIR)/usr/include/qca-nss-ppe \
+	-I$(STAGING_DIR)/usr/include/qca-nss-sfe
 
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" $(strip $(MAKE_OPTS)) \
@@ -75,3 +105,4 @@ endef
 
 $(eval $(call KernelPackage,qca-nss-netfn-capwap))
 $(eval $(call KernelPackage,qca-nss-netfn-pkt-steer))
+$(eval $(call KernelPackage,qca-nss-flowmgr))
