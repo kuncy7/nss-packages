@@ -41,6 +41,7 @@ define KernelPackage/qca-nss-ppe/install
         $(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) ./files/ppe_flow_dump $(1)/usr/bin/
 	$(INSTALL_BIN) ./files/ppe_if_map $(1)/usr/bin/
+	$(INSTALL_BIN) ./files/nss_perf_config.sh $(1)/lib/
 endef
 
 define Build/InstallDev/qca-nss-ppe
