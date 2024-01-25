@@ -119,6 +119,37 @@ ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-netfn-dtls),)
   MAKE_OPTS+=dtls=m
 endif
 
+define KernelPackage/qca-nss-netfn-capwapmgr
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Support
+  DEPENDS:=@TARGET_ipq53xx \
+	  +kmod-qca-nss-netfn-capwap \
+	  +kmod-qca-nss-netfn-dtls \
+	  +kmod-qca-nss-flowmgr
+  TITLE:=NSS network function CAPWAP manager
+  FILES:=$(PKG_BUILD_DIR)/mgr/capwapmgr/qca-nss-netfn-capwapmgr.ko
+endef
+
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-netfn-capwapmgr),)
+ EXTRA_CFLAGS += -I$(STAGING_DIR)/usr/include/qca-nss-ppe
+ EXTRA_CFLAGS += -DNETFN_CAPWAPMGR_ONE_NETDEV
+ MAKE_OPTS+=capwapmgr=y
+endif
+
+define KernelPackage/qca-nss-netfn-capwapmgr/Description
+NSS network function capwapmanager.
+endef
+
+define Build/InstallDev/qca-nss-netfn-capwapmgr
+	$(INSTALL_DIR) $(1)/usr/include/qca-nss-netfn
+	$(CP) $(PKG_BUILD_DIR)/exports/* $(1)/usr/include/qca-nss-netfn/
+endef
+
+define Build/InstallDev
+        $(call Build/InstallDev/qca-nss-netfn-capwapmgr,$(1))
+endef
+
 EXTRA_CFLAGS+= \
 	-I$(PKG_BUILD_DIR)/exports \
 	-I$(PKG_BUILD_DIR)/offload/exports \
@@ -138,3 +169,4 @@ $(eval $(call KernelPackage,qca-nss-netfn-capwap))
 $(eval $(call KernelPackage,qca-nss-netfn-pkt-steer))
 $(eval $(call KernelPackage,qca-nss-flowmgr))
 $(eval $(call KernelPackage,qca-nss-netfn-dtls))
+$(eval $(call KernelPackage,qca-nss-netfn-capwapmgr))
