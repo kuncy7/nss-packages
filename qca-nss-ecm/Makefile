@@ -241,6 +241,10 @@ EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/qca-nss-drv
 endif
 
+ifeq ($(CONFIG_KERNEL_KASAN), y)
+EXTRA_CFLAGS+= -Wframe-larger-than=2500
+endif
+
 EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include \
 	-I$(STAGING_DIR)/usr/include/qca-wifi \
