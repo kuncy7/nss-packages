@@ -17,12 +17,23 @@ MAKE_OPTS:=
 
 include $(INCLUDE_DIR)/package.mk
 
+ifeq ($(CONFIG_DEFAULT_kmod-ath12k),y)
+OPEN_PROFILE=y
+endif
+ifeq ($(CONFIG_DEFAULT_kmod-ath11k),y)
+OPEN_PROFILE=y
+endif
+
 define KernelPackage/netstandby-eawtp-drv
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Standby eawtp module
+ifeq ($(OPEN_PROFILE),y)
+  DEPENDS:=@TARGET_ipq53xx +kmod-qca-nss-dp kmod-ath12k @!LINUX_3_18
+else
   DEPENDS:=@TARGET_ipq53xx +kmod-qca-nss-dp +kmod-qca-wifi @!LINUX_3_18
+endif
   FILES:=$(PKG_BUILD_DIR)/qca-net-standby-eawtp.ko
 endef
 
