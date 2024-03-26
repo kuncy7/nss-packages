@@ -53,6 +53,7 @@ define KernelPackage/qca-nss-netfn-capwap
   DEPENDS:=@TARGET_ipq53xx \
 	  +kmod-qca-nss-ppe \
 	  +kmod-qca-nss-ppe-vp \
+	  +kmod-qca-nss-netfn-dtls \
 	  +kmod-qca-nss-netfn-pkt-steer \
 	  +kmod-qca-nss-netfn-flow-cookie
   TITLE:=NSS network function capwap offload
