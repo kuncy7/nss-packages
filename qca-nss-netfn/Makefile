@@ -118,7 +118,7 @@ endef
 
 define KernelPackage/qca-nss-netfn-flow-cookie/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) ../qca-nss-netfn-flow-cookie/files/netfn_flow_dump $(1)/usr/bin/
+	$(INSTALL_BIN) files/netfn_flow_dump $(1)/usr/bin/
 endef
 
 MAKE_OPTS+=netlink=y
