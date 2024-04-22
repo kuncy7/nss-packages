@@ -68,6 +68,9 @@ load_sfe() {
 		[ -d /sys/module/qca_nss_sfe ] || insmod qca-nss-sfe
 	}
 
+	if [ $(get_front_end_mode) == 6 ]; then
+		echo 1 > /sys/sfe/flush_if_fls_breach
+	fi
 }
 
 unload_sfe() {
