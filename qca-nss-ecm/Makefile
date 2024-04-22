@@ -370,6 +370,10 @@ ECM_MAKE_OPTS+=ECM_MHT_ENABLE=y
 FILES_EXAMPLES+=$(PKG_BUILD_DIR)/examples/ecm_sfe_l2.ko
 endif
 
+ifneq ($(findstring 6.6, $(LINUX_VERSION)),)
+ECM_MAKE_OPTS+=ECM_CLASSIFIER_WIFI_ENABLE=y
+endif
+
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-ppe-qdisc),)
 ECM_MAKE_OPTS+=ECM_FRONT_END_PPE_QOS_ENABLE=y
 endif
