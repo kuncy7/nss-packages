@@ -241,6 +241,10 @@ EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/qca-nss-drv
 endif
 
+ifeq ($(CONFIG_KERNEL_KASAN), y)
+EXTRA_CFLAGS+= -Wframe-larger-than=2500
+endif
+
 EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include \
 	-I$(STAGING_DIR)/usr/include/qca-wifi \
@@ -364,6 +368,10 @@ ECM_MAKE_OPTS+=ECM_FRONT_END_SFE_ENABLE=y
 ECM_MAKE_OPTS+=ECM_FRONT_END_PPE_ENABLE=y
 ECM_MAKE_OPTS+=ECM_MHT_ENABLE=y
 FILES_EXAMPLES+=$(PKG_BUILD_DIR)/examples/ecm_sfe_l2.ko
+endif
+
+ifneq ($(findstring 6.6, $(LINUX_VERSION)),)
+ECM_MAKE_OPTS+=ECM_CLASSIFIER_WIFI_ENABLE=y
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-ppe-qdisc),)
