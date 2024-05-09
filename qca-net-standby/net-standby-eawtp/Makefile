@@ -40,7 +40,7 @@ EXTRA_CFLAGS+= \
 	-I$(LINUX_DIR)/user_headers/include/
 
 define Build/Compile
-	$(MAKE) -C "$(LINUX_DIR)" $(strip $(MAKE_OPTS)) \
+	$(KERNEL_MAKE) $(strip $(MAKE_OPTS)) \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
 		M="$(PKG_BUILD_DIR)" \
