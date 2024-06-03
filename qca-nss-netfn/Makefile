@@ -116,11 +116,6 @@ define Build/InstallDev/qca-nss-netfn-flow-cookie
 	$(CP) $(PKG_BUILD_DIR)/exports/* $(1)/usr/include/qca-nss-netfn/
 endef
 
-define KernelPackage/qca-nss-netfn-flow-cookie/install
-	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) files/netfn_flow_dump $(1)/usr/bin/
-endef
-
 MAKE_OPTS+=netlink=y
 
 define KernelPackage/qca-nss-netfn-auto-flowmgr
