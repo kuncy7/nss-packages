@@ -378,6 +378,10 @@ ifneq ($(findstring 6.6, $(LINUX_VERSION)),)
 ECM_MAKE_OPTS+=ECM_CLASSIFIER_WIFI_ENABLE=y
 endif
 
+ifneq ($(CONFIG_PACKAGE_kmod-ath),)
+ECM_MAKE_OPTS+=ECM_CLASSIFIER_WIFI_ENABLE=y
+endif
+
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-ppe-qdisc),)
 ECM_MAKE_OPTS+=ECM_FRONT_END_PPE_QOS_ENABLE=y
 endif
