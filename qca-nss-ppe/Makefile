@@ -77,6 +77,10 @@ MAKE_OPTS+=PPE_TUN_ENABLE=y
 endif
 endif
 
+ifeq ($(CONFIG_TARGET_ipq95xx_generic_QSDK_MinEnt), y)
+EXTRA_CFLAGS+= -DPPE_V4_BAD_LEN_EXCEP_DIS
+endif
+
 define Build/Compile
 	$(KERNEL_MAKE) $(strip $(MAKE_OPTS)) \
 		M="$(PKG_BUILD_DIR)" \
