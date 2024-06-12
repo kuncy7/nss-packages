@@ -16,7 +16,7 @@ define KernelPackage/$(PKG_NAME)
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Support
-  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx +kmod-qca-nss-sfe
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx +kmod-qca-nss-sfe +kmod-qca-nss-ecm
   TITLE:=Flow Statistics
   FILES:=$(PKG_BUILD_DIR)/qca-nss-fls.ko
 endef
@@ -31,6 +31,7 @@ define Build/InstallDev
 endef
 
 EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-sfe
+EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-ecm
 
 define Build/Compile
 	$(KERNEL_MAKE) M="$(PKG_BUILD_DIR)" \
