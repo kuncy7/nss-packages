@@ -16,7 +16,10 @@ define KernelPackage/$(PKG_NAME)
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Support
-  DEPENDS:=@TARGET_ipq50xx||TARGET_ipq95xx||TARGET_ipq53xx +kmod-pppoe
+  DEPENDS:=@TARGET_ipq50xx||TARGET_ipq95xx||TARGET_ipq53xx \
+		+TARGET_ipq53xx||TARGET_ipq95xx:kmod-qca-nss-ppe-vp \
+		+TARGET_ipq53xx||TARGET_ipq95xx:kmod-qca-nss-ppe-tun \
+		+kmod-pppoe
   TITLE:=Kernel driver for NSS UDP Speedtest
   FILES:=$(PKG_BUILD_DIR)/nss-udp-st.ko
 endef
@@ -34,11 +37,17 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/exports/* $(STAGING_DIR)/usr/include/nss-udp-st-drv/
 endef
 
-EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/nss-udp-st-drv/
+ifeq ($(CONFIG_TARGET_ipq95xx)$(CONFIG_TARGET_ipq53xx), y)
+EXTRA_CFLAGS+= \
+	-I$(STAGING_DIR)/usr/include/qca-nss-ppe
+
+NSS_UDP_ST_DRV_MAKE_OPTS+=NSS_UDP_ST_DRV_VP=y
+endif
 
 define Build/Compile
-	$(KERNEL_MAKE) $(EXTRA_CFLAGS) \
+	$(KERNEL_MAKE) $(strip $(NSS_UDP_ST_DRV_MAKE_OPTS)) \
 		M="$(PKG_BUILD_DIR)" \
+		EXTRA_CFLAGS="$(EXTRA_CFLAGS)" \
 		modules
 endef
 
