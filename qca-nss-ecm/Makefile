@@ -110,7 +110,7 @@ define KernelPackage/qca-nss-ecm-standard
 	+TARGET_ipq95xx:kmod-qca-nss-sfe +TARGET_ipq95xx:kmod-qca-nss-ppe \
 	+TARGET_ipq53xx:kmod-qca-nss-sfe +TARGET_ipq53xx:kmod-qca-nss-ppe \
 	+TARGET_ipq54xx:kmod-qca-nss-sfe +TARGET_ipq54xx:kmod-qca-nss-ppe \
-	+!LOWMEM_FLASH:kmod-qca-hyfi-bridge +TARGET_ipq53xx:kmod-bonding \
+	+PACKAGE_kmod-qca-hyfi-bridge:kmod-qca-hyfi-bridge +TARGET_ipq53xx:kmod-bonding \
 	+TARGET_ipq95xx:kmod-bonding +TARGET_ipq54xx:kmod-bonding +PACKAGE_kmod-emesh-sp:kmod-emesh-sp
 endef
 
