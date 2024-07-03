@@ -46,8 +46,10 @@ define KernelPackage/qca-nss-ecm/Default
 	+TARGET_ipq_ipq50xx:kmod-qca-nss-drv \
 	+TARGET_ipq_ipq50xx_64:kmod-qca-nss-drv \
 	+TARGET_ipq50xx:kmod-qca-nss-drv \
-	+iptables-mod-extra +kmod-ipt-conntrack \
-	+kmod-vxlan \
+	+!TARGET_ipq53xx_ipq53xx_32_QSDK_256:iptables-mod-extra \
+	+!TARGET_ipq53xx_ipq53xx_32_QSDK_256:kmod-ipt-conntrack \
+	+TARGET_ipq53xx_ipq53xx_32_QSDK_256:kmod-nf-conntrack \
+	+!TARGET_ipq53xx_ipq53xx_32_QSDK_256:kmod-vxlan \
 	+kmod-pppoe @!LINUX_3_18 \
 	+PACKAGE_kmod-qca-ovsmgr:kmod-qca-ovsmgr
   TITLE:=QCA NSS Enhanced Connection Manager (ECM)
@@ -110,7 +112,8 @@ define KernelPackage/qca-nss-ecm-standard
 	+TARGET_ipq95xx:kmod-qca-nss-sfe +TARGET_ipq95xx:kmod-qca-nss-ppe \
 	+TARGET_ipq53xx:kmod-qca-nss-sfe +TARGET_ipq53xx:kmod-qca-nss-ppe \
 	+TARGET_ipq54xx:kmod-qca-nss-sfe +TARGET_ipq54xx:kmod-qca-nss-ppe \
-	+PACKAGE_kmod-qca-hyfi-bridge:kmod-qca-hyfi-bridge +TARGET_ipq53xx:kmod-bonding \
+	+PACKAGE_kmod-qca-hyfi-bridge:kmod-qca-hyfi-bridge \
+	+!TARGET_ipq53xx_ipq53xx_32_QSDK_256&&TARGET_ipq53xx:kmod-bonding \
 	+TARGET_ipq95xx:kmod-bonding +TARGET_ipq54xx:kmod-bonding +PACKAGE_kmod-emesh-sp:kmod-emesh-sp
 endef
 
@@ -301,7 +304,9 @@ endif
 
 ifeq ($(LOCAL_VARIANT),standard)
 ifeq ($(CONFIG_TARGET_ipq53xx)$(CONFIG_TARGET_ipq95xx)$(CONFIG_TARGET_ipq54xx),y)
+ifeq ($(CONFIG_TARGET_ipq53xx_ipq53xx_32_QSDK_256),)
 ECM_MAKE_OPTS+=ECM_INTERFACE_BOND_ENABLE=y
+endif
 endif
 endif
 
