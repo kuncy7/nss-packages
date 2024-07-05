@@ -123,5 +123,13 @@ configure_irq_affinity() {
 }
 
 start() {
-	configure_irq_affinity 4 2 4 2
+	board=$(cat /tmp/sysinfo/board_name)
+	case $board in
+		*'mi'*)
+		configure_irq_affinity 2 4 2 4
+		;;
+		*)
+		configure_irq_affinity 4 2 4 2
+		;;
+	esac
 }
