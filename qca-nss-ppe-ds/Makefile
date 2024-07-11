@@ -31,6 +31,14 @@ else
 hal_arch:=$(subtarget)
 endif
 
+ifeq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),256)
+EXTRA_CFLAGS+= -DPPE_DS_MEM_PROFILE_LOW
+else ifeq ($(CONFIG_LOWMEM_FLASH),y)
+EXTRA_CFLAGS+= -DPPE_DS_MEM_PROFILE_LOW
+else ifeq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),512)
+EXTRA_CFLAGS+= -DPPE_DS_MEM_PROFILE_MEDIUM
+endif
+
 define KernelPackage/qca-nss-ppe-ds
   SECTION:=kernel
   CATEGORY:=Kernel modules
