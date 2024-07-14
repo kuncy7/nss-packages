@@ -1,15 +1,18 @@
-/* Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 and
- * only version 2 as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+/*  
+    Copyright (c) 2023, The Linux Foundation. All rights reserved.
+
+    This program is free software; you can redistribute it and/ormodify it under the terms of the GNU General
+    Public licenseas published byFree Software Foundation; either version 2theof the License,(at your option) 
+    any later version.O1
+    This program isdistributed in the hope that it will be useful,but WITHOUT ANY WARRANTY; without even the 
+    implied warranty ofOr FITNESS FOR A PARTICULAR PURPOSE.MERCHANTABILITYSee theGNU General Public License 
+    for more details.
+    You should have received a copy of the GNU General Public licensealong withthis program; if not, write to
+    the Free SoftwareFoundation, Inc.r51 Franklin Street,Fifth Floor,Boston,MA 02110-1301,USA.
+    
+    Based on version modification, the author is Quectel <fae-support@quectel.com>
  */
+
 #include <linux/netdevice.h>
 #include <linux/skbuff.h>
 #include <linux/kernel.h>
@@ -19,21 +22,9 @@
 #include <linux/hashtable.h>
 #include <linux/if_ether.h>
 #include <linux/ip.h>
-#include <linux/version.h>
-#include <nss_api_if.h>
+#include <qca-nss-drv/nss_api_if.h>
 
-#ifndef _RMNET_NSS_H_
-#define _RMENT_NSS_H_
-
-struct rmnet_nss_cb {
-        int (*nss_create)(struct net_device *dev);
-        int (*nss_free)(struct net_device *dev);
-        int (*nss_tx)(struct sk_buff *skb);
-};
-
-extern struct rmnet_nss_cb *rmnet_nss_callbacks;
-
-#endif
+#include <linux/rmnet_nss.h>
 
 #define RMNET_NSS_HASH_BITS 8
 #define hash_add_ptr(table, node, key) \
@@ -69,8 +60,6 @@ enum __rmnet_nss_stat {
 };
 
 static unsigned long rmnet_nss_stats[RMNET_NSS_NUM_STATS];
-extern void qmi_rmnet_mark_skb(struct net_device *dev, struct sk_buff *skb);
-static void (*rmnet_mark_skb)(struct net_device *dev, struct sk_buff *skb);
 
 #define RMNET_NSS_STAT(name, counter, desc) \
 	module_param_named(name, rmnet_nss_stats[counter], ulong, 0444); \
@@ -157,44 +146,6 @@ static int rmnet_nss_ethhdr_pull(struct sk_buff *skb)
 	rmnet_nss_inc_stat(RMNET_NSS_RX_NON_ETH);
 	return -1;
 }
-static int rmnet_nss_handle_non_zero_headlen(struct sk_buff *skb)
-{
-	struct iphdr *iph;
-	u8 transport;
-
-	if (skb_headlen(skb) < sizeof(struct iphdr)){
-		rmnet_nss_inc_stat(RMNET_NSS_TX_BAD_IP);
-		return -EINVAL;
-	}
-
-	iph = (struct iphdr *)skb->data;
-
-	if (iph->version == 4) {
-		transport = iph->protocol;
-	} else if (iph->version == 6) {
-		struct ipv6hdr *ip6h = (struct ipv6hdr *)iph;
-		transport = ip6h->nexthdr;
-	} else {
-		rmnet_nss_inc_stat(RMNET_NSS_TX_BAD_IP);
-		return -EINVAL;
-	}
-
-/* Assumption: required headers are copied in case of TCP/UDP by SFE */
-/* In case of TCP/UDP where there are no IP extension headers, the assumption is that SFE copied the IP and Transport header */
-
-	if (transport != IPPROTO_TCP && transport != IPPROTO_UDP) {
-		if (skb_linearize(skb)) {
-			rmnet_nss_inc_stat(RMNET_NSS_TX_LINEARIZE_FAILS);
-			return -EINVAL;
-		}
-	}
-	else if ((transport == IPPROTO_TCP && skb_headlen(skb) < 40) || (transport == IPPROTO_UDP && skb_headlen(skb) < 28)) {
-		pr_err_ratelimited("rmnet_nss: error: Partial copy of headers\n");
-		return -EINVAL;
-	}
-
-	return 0;
-}
 
 /* Copy headers to linear section for non linear packets */
 static int rmnet_nss_adjust_header(struct sk_buff *skb)
@@ -211,7 +162,7 @@ static int rmnet_nss_adjust_header(struct sk_buff *skb)
 
 	if (skb_headlen(skb)) {
 		rmnet_nss_inc_stat(RMNET_NSS_TX_NON_ZERO_HEADLEN_FRAGS);
-		return rmnet_nss_handle_non_zero_headlen(skb);
+		return 0;
 	}
 
 	frag = &skb_shinfo(skb)->frags[0];
@@ -259,71 +210,14 @@ static int rmnet_nss_adjust_header(struct sk_buff *skb)
 
 	/* subtract to account for skb_push */
 	skb->len -= bytes;
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
-	frag->bv_offset += bytes;
-#else
+
 	frag->page_offset += bytes;
-#endif /* (LINUX_VERSION_CODE > KERNEL_VERSION(5, 4, 0)) */
 	skb_frag_size_sub(frag, bytes);
 
 	/* subtract to account for skb_frag_size_sub */
 	skb->data_len -= bytes;
 
 	return 0;
-}
-
-/* Called by NSS in the DL exception case.
- * Since the packet cannot be sent over the accelerated path, we need to
- * handle it. Remove the ethernet header and pass it onward to the stack
- * if possible.
- */
-void rmnet_nss_receive(struct net_device *dev, struct sk_buff *skb,
-		       struct napi_struct *napi)
-{
-	rmnet_nss_inc_stat(RMNET_NSS_EXCEPTIONS);
-
-	if (!skb)
-		return;
-
-	if (rmnet_nss_ethhdr_pull(skb)) {
-		rmnet_nss_inc_stat(RMNET_NSS_EX_BAD_HDR);
-		goto drop;
-	}
-
-	/* reset header pointers */
-	skb_reset_transport_header(skb);
-	skb_reset_network_header(skb);
-	skb_reset_mac_header(skb);
-
-	/* reset packet type */
-	skb->pkt_type = PACKET_HOST;
-
-	skb->dev = dev;
-
-	/* reset protocol type */
-	switch (skb->data[0] & 0xF0) {
-	case 0x40:
-		skb->protocol = htons(ETH_P_IP);
-		break;
-	case 0x60:
-		skb->protocol = htons(ETH_P_IPV6);
-		break;
-	default:
-		rmnet_nss_inc_stat(RMNET_NSS_EX_BAD_IP);
-		goto drop;
-	}
-
-	rmnet_nss_inc_stat(RMNET_NSS_EX_SUCCESS);
-
-	/* Set this so that we dont loop around netif_receive_skb */
-
-	skb->cb[0] = 1;
-
-	netif_receive_skb(skb);
-	return;
-
-drop:
-	kfree_skb(skb);
 }
 
 /* Main downlink handler
@@ -384,16 +278,66 @@ transmit:
 	} else if (rc == NSS_TX_FAILURE_QUEUE) {
 		rmnet_nss_inc_stat(RMNET_NSS_TX_BUSY_LOOP);
 		goto transmit;
-	} else if (rc == NSS_TX_FAILURE_NOT_ENABLED) {
-		/* New stats */
-		rmnet_nss_receive(dev, skb, NULL);
-		return 0;
 	}
 
 fail:
 	rmnet_nss_inc_stat(RMNET_NSS_TX_FAIL);
 	kfree_skb(skb);
 	return 1;
+}
+
+/* Called by NSS in the DL exception case.
+ * Since the packet cannot be sent over the accelerated path, we need to
+ * handle it. Remove the ethernet header and pass it onward to the stack
+ * if possible.
+ */
+void rmnet_nss_receive(struct net_device *dev, struct sk_buff *skb,
+		       struct napi_struct *napi)
+{
+	rmnet_nss_inc_stat(RMNET_NSS_EXCEPTIONS);
+
+	if (!skb)
+		return;
+
+	if (rmnet_nss_ethhdr_pull(skb)) {
+		rmnet_nss_inc_stat(RMNET_NSS_EX_BAD_HDR);
+		goto drop;
+	}
+
+	/* reset header pointers */
+	skb_reset_transport_header(skb);
+	skb_reset_network_header(skb);
+	skb_reset_mac_header(skb);
+
+	/* reset packet type */
+	skb->pkt_type = PACKET_HOST;
+
+	skb->dev = dev;
+
+	/* reset protocol type */
+	switch (skb->data[0] & 0xF0) {
+	case 0x40:
+		skb->protocol = htons(ETH_P_IP);
+		break;
+	case 0x60:
+		skb->protocol = htons(ETH_P_IPV6);
+		break;
+	default:
+		rmnet_nss_inc_stat(RMNET_NSS_EX_BAD_IP);
+		goto drop;
+	}
+
+	rmnet_nss_inc_stat(RMNET_NSS_EX_SUCCESS);
+
+	/* Set this so that we dont loop around netif_receive_skb */
+
+	skb->cb[0] = 1;
+
+	netif_receive_skb(skb);
+	return;
+
+drop:
+	kfree_skb(skb);
 }
 
 /* Called by NSS in the UL acceleration case.
@@ -403,29 +347,15 @@ fail:
  */
 void rmnet_nss_xmit(struct net_device *dev, struct sk_buff *skb)
 {
-	int rc;
+	netdev_tx_t ret;
 
 	skb_pull(skb, sizeof(struct ethhdr));
 	rmnet_nss_inc_stat(RMNET_NSS_RX_ETH);
 
-	/* Use top-half entry point for the netdev so that we enable QDisc support for RmNet redirect. */
-	skb_reset_network_header(skb);
-	skb->dev = dev;
-	switch (skb->data[0] & 0xF0) {
-	case 0x40:
-		skb->protocol = htons(ETH_P_IP);
-		break;
-	case 0x60:
-		skb->protocol = htons(ETH_P_IPV6);
-		break;
-	default:
-		break;
-	}
-	if (rmnet_mark_skb)
-		rmnet_mark_skb(dev, skb);
-
-	rc = dev_queue_xmit(skb);
-	if (unlikely(rc != 0)) {
+	/* NSS takes care of shaping, so bypassing Qdiscs like this is OK */
+	ret = dev->netdev_ops->ndo_start_xmit(skb, dev);
+	if (unlikely(ret == NETDEV_TX_BUSY)) {
+		dev_kfree_skb_any(skb);
 		rmnet_nss_inc_stat(RMNET_NSS_RX_BUSY);
 	}
 }
@@ -440,7 +370,8 @@ int rmnet_nss_create_vnd(struct net_device *dev)
 		return -ENOMEM;
 
 	ctx->rmnet_dev = dev;
-	ctx->nss_ctx = nss_rmnet_rx_create(dev);
+	ctx->nss_ctx = nss_rmnet_rx_create_sync_nexthop(dev, NSS_N2H_INTERFACE,
+						       NSS_C2C_TX_INTERFACE);
 	if (!ctx->nss_ctx) {
 		kfree(ctx);
 		return -1;
@@ -473,7 +404,6 @@ int __init rmnet_nss_init(void)
 {
 	pr_err("%s(): initializing rmnet_nss\n", __func__);
 	RCU_INIT_POINTER(rmnet_nss_callbacks, &rmnet_nss);
-	rmnet_mark_skb = symbol_get(qmi_rmnet_mark_skb);
 	return 0;
 }
 
@@ -485,14 +415,14 @@ void __exit rmnet_nss_exit(void)
 
 	pr_err("%s(): exiting rmnet_nss\n", __func__);
 	RCU_INIT_POINTER(rmnet_nss_callbacks, NULL);
-	if (rmnet_mark_skb)
-		symbol_put(qmi_rmnet_mark_skb);
 
 	/* Tear down all NSS contexts */
 	hash_for_each_safe(rmnet_nss_ctx_hashtable, bkt, tmp, ctx, hnode)
 		rmnet_nss_free_ctx(ctx);
 }
 
+#if 0
 MODULE_LICENSE("GPL v2");
 module_init(rmnet_nss_init);
 module_exit(rmnet_nss_exit);
+#endif
