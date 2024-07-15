@@ -18,7 +18,7 @@ define KernelPackage/qca-nss-phy
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=QCA-NSS-PHY driver
-  FILES:=$(PKG_BUILD_DIR)/src/qca-nss-phy.ko
+  FILES:=$(PKG_BUILD_DIR)/nss_ext/qca-nss-phy.ko
   PROVIDES:=qca-nss-phy
   AUTOLOAD:=$(call AutoLoad,29,qca-nss-phy)
 endef
@@ -27,6 +27,21 @@ define KernelPackage/qca-nss-phy/Description
 This package contains drivers for QCA PHYs such as Manhattan PHY and NAPA PHY.
 It also contains vendor specific extensions for QCA PHYs which are not supported
 by upstream drivers.
+endef
+
+define KernelPackage/qca81xx
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  TITLE:=QCA81XX PHY driver
+  FILES:=$(PKG_BUILD_DIR)/linux_std/qca81xx/qca81xx-phy.ko
+  PROVIDES:=qca81xx
+  AUTOLOAD:=$(call AutoLoad,28,qca81xx)
+endef
+
+define KernelPackage/qca81xx/Description
+This package contains qca81xx linux phy driver, it will be upstream PHY driver
+of LAGUNA PHY.
 endef
 
 ifdef CONFIG_TARGET_NAME
@@ -44,14 +59,16 @@ define Build/Prepare
 endef
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) $(strip $(QCA_NSS_PHY_CONFIG_OPTS))
+	$(KERNEL_MAKE) M=$(PKG_BUILD_DIR)/nss_ext $(strip $(QCA_NSS_PHY_CONFIG_OPTS))
+	$(KERNEL_MAKE) M=$(PKG_BUILD_DIR)/linux_std/qca81xx $(strip $(QCA_NSS_PHY_CONFIG_OPTS))
 endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR)/usr/include/qca-nss-phy
-	$(CP) -rf $(PKG_BUILD_DIR)/include/*h $(STAGING_DIR)/usr/include/qca-nss-phy
+	$(CP) -rf $(PKG_BUILD_DIR)/nss_ext/*h $(STAGING_DIR)/usr/include/qca-nss-phy
 endef
 
 define KernelPackage/qca-nss-phy/install
 endef
 $(eval $(call KernelPackage,qca-nss-phy))
+$(eval $(call KernelPackage,qca81xx))
