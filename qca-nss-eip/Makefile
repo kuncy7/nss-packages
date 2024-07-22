@@ -19,7 +19,7 @@ else
 subtarget:=$(CONFIG_TARGET_BOARD)
 endif
 
-ifneq (, $(findstring $(subtarget), "ipq53xx"))
+ifneq (, $(findstring $(subtarget),"ipq53xx","ipq54xx"))
 NSS_EIP_DIR:=eip196
 else
 NSS_EIP_DIR:=eip197
@@ -33,7 +33,7 @@ define KernelPackage/qca-nss-eip
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx \
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx||TARGET_ipq54xx \
 		+TARGET_ipq95xx:qca-nss-fw-eip-al \
 		+TARGET_ipq95xx:kmod-qca-nss-ppe
   TITLE:=Kernel driver for NSS EIP driver
@@ -56,7 +56,7 @@ define KernelPackage/qca-nss-eip-crypto
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq_ipq95xx_32||TARGET_ipq53xx \
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq_ipq95xx_32||TARGET_ipq53xx||TARGET_ipq54xx \
 		+kmod-qca-nss-eip \
 		+kmod-crypto-authenc
   TITLE:=Kernel NSS EIP crypto client
@@ -77,11 +77,10 @@ define KernelPackage/qca-nss-eip-ipsec
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx \
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx||TARGET_ipq54xx \
 	  	+kmod-qca-nss-eip \
 		kmod-qca-nss-ecm \
-		+TARGET_ipq95xx:kmod-qca-nss-ppe-vp \
-		+TARGET_ipq53xx:kmod-qca-nss-ppe-vp
+		+kmod-qca-nss-ppe-vp
   TITLE:=Kernel IPsec client for NSS EIP driver
   FILES:=$(PKG_BUILD_DIR)/clients/ipsec/qca-nss-eip-ipsec.ko
 endef
@@ -100,9 +99,7 @@ endef
 EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/qca-nss-eip
 
-ifneq ($(CONFIG_TARGET_ipq95xx)$(CONFIG_TARGET_ipq53xx),)
 EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-ppe
-endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-eip-ipsec),)
 EXTRA_CFLAGS+= -I$(PKG_BUILD_DIR)/clients/exports
