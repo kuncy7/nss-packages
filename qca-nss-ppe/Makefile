@@ -28,7 +28,8 @@ define KernelPackage/qca-nss-ppe
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for PPE (core driver)
   DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx||TARGET_ipq54xx \
-		+kmod-qca-ssdk-nohnat +kmod-nat46
+		+kmod-qca-ssdk-nohnat \
+		+!TARGET_ipq53xx_ipq53xx_32_QSDK_256:kmod-nat46
   FILES:=$(PKG_BUILD_DIR)/drv/ppe_drv/qca-nss-ppe.ko
   AUTOLOAD:=$(call AutoLoad,31,qca-nss-ppe)
 endef
