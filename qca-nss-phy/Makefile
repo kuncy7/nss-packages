@@ -44,6 +44,20 @@ This package contains qca81xx linux phy driver, it will be upstream PHY driver
 of LAGUNA PHY.
 endef
 
+define KernelPackage/qca8084
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  TITLE:=QCA8084 PHY driver
+  FILES:=$(PKG_BUILD_DIR)/linux_std/qca8084/qca8084-phy.ko
+  PROVIDES:=qca8084
+  AUTOLOAD:=$(call AutoLoad,28,qca8084)
+endef
+
+define KernelPackage/qca8084/Description
+This package contains qca8084 Linux PHY driver
+endef
+
 ifdef CONFIG_TARGET_NAME
 QCA_NSS_PHY_CONFIG_OPTS+= \
 	TARGET_NAME=$(CONFIG_TARGET_NAME)
@@ -61,6 +75,7 @@ endef
 define Build/Compile
 	$(KERNEL_MAKE) M=$(PKG_BUILD_DIR)/nss_ext $(strip $(QCA_NSS_PHY_CONFIG_OPTS))
 	$(KERNEL_MAKE) M=$(PKG_BUILD_DIR)/linux_std/qca81xx $(strip $(QCA_NSS_PHY_CONFIG_OPTS))
+	$(KERNEL_MAKE) M=$(PKG_BUILD_DIR)/linux_std/qca8084 $(strip $(QCA_NSS_PHY_CONFIG_OPTS))
 endef
 
 define Build/InstallDev
@@ -72,3 +87,4 @@ define KernelPackage/qca-nss-phy/install
 endef
 $(eval $(call KernelPackage,qca-nss-phy))
 $(eval $(call KernelPackage,qca81xx))
+$(eval $(call KernelPackage,qca8084))
