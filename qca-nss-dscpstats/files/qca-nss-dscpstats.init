@@ -27,5 +27,6 @@ start() {
 }
 
 stop() {
+	echo 1 > /sys/kernel/debug/qca-nss-dscpstats/conf/stop
 	[ -d /sys/module/qca_nss_dscpstats ] && rmmod qca-nss-dscpstats
 }
