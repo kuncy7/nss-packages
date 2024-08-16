@@ -18,7 +18,7 @@ define KernelPackage/qca-nss-phy
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=QCA-NSS-PHY driver
-  FILES:=$(PKG_BUILD_DIR)/nss_ext/qca-nss-phy.ko
+  #FILES:=$(PKG_BUILD_DIR)/nss_ext/qca-nss-phy.ko
   PROVIDES:=qca-nss-phy
   AUTOLOAD:=$(call AutoLoad,29,qca-nss-phy)
 endef
@@ -34,7 +34,7 @@ define KernelPackage/qca81xx
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=QCA81XX PHY driver
-  FILES:=$(PKG_BUILD_DIR)/linux_std/qca81xx/qca81xx-phy.ko
+  #FILES:=$(PKG_BUILD_DIR)/linux_std/qca81xx/qca81xx-phy.ko
   PROVIDES:=qca81xx
   AUTOLOAD:=$(call AutoLoad,28,qca81xx)
 endef
@@ -49,7 +49,7 @@ define KernelPackage/qca8084
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=QCA8084 PHY driver
-  FILES:=$(PKG_BUILD_DIR)/linux_std/qca8084/qca8084-phy.ko
+  #FILES:=$(PKG_BUILD_DIR)/linux_std/qca8084/qca8084-phy.ko
   PROVIDES:=qca8084
   AUTOLOAD:=$(call AutoLoad,28,qca8084)
 endef
