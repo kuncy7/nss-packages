@@ -20,7 +20,7 @@ define KernelPackage/qca-nss-phy
   TITLE:=QCA-NSS-PHY driver
   FILES:=$(PKG_BUILD_DIR)/nss_ext/qca-nss-phy.ko
   PROVIDES:=qca-nss-phy
-  AUTOLOAD:=$(call AutoLoad,29,qca-nss-phy)
+  AUTOLOAD:=$(call AutoLoad,08,qca-nss-phy)
 endef
 
 define KernelPackage/qca-nss-phy/Description
@@ -36,7 +36,7 @@ define KernelPackage/qca81xx
   TITLE:=QCA81XX PHY driver
   FILES:=$(PKG_BUILD_DIR)/linux_std/qca81xx/qca81xx-phy.ko
   PROVIDES:=qca81xx
-  AUTOLOAD:=$(call AutoLoad,28,qca81xx)
+  AUTOLOAD:=$(call AutoLoad,07,qca81xx-phy)
 endef
 
 define KernelPackage/qca81xx/Description
@@ -51,7 +51,7 @@ define KernelPackage/qca8084
   TITLE:=QCA8084 PHY driver
   FILES:=$(PKG_BUILD_DIR)/linux_std/qca8084/qca8084-phy.ko
   PROVIDES:=qca8084
-  AUTOLOAD:=$(call AutoLoad,28,qca8084)
+  AUTOLOAD:=$(call AutoLoad,07,qca8084-phy)
 endef
 
 define KernelPackage/qca8084/Description
