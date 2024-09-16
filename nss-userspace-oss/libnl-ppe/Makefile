@@ -11,7 +11,7 @@ define Package/libnl-ppe
   SECTION:=Libs
   CATEGORY:=Libraries
   TITLE:=Library to facilitate communication from user to kernel for the PPE netlink families
-  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx +libpthread +libnl +kmod-qca-nss-ppe-netlink
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx||TARGET_ipq54xx +libpthread +libnl +kmod-qca-nss-ppe-netlink
 endef
 
 define Package/libnl-ppe/description

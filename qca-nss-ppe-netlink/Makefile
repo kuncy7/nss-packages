@@ -22,7 +22,7 @@ define KernelPackage/qca-nss-ppe-netlink
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=PPE netlink Manager
-  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx +kmod-qca-nss-ppe +kmod-qca-nss-ppe-rule @!LINUX_3_18
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx||TARGET_ipq54xx +kmod-qca-nss-ppe +kmod-qca-nss-ppe-rule @!LINUX_3_18
   FILES:=$(PKG_BUILD_DIR)/netlink/qca-nss-ppe-netlink.ko
   AUTOLOAD:=$(call AutoLoad,53,qca-nss-ppe-netlink)
 endef

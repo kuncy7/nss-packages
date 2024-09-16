@@ -10,7 +10,7 @@ define Package/ppecfg
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Userspace utility for configuring PPE functions such as ACL and Policers
-  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx +libpthread +libnl +kmod-qca-nss-ppe-netlink +libnl-ppe
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx||TARGET_ipq54xx +libpthread +libnl +kmod-qca-nss-ppe-netlink +libnl-ppe
 endef
 
 #TODO: Remove dependency on ppe-netlink module
