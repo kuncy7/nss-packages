@@ -51,7 +51,7 @@ define KernelPackage/qca-nss-ppe-ds
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-ppe-ds)
 endef
 
-ifneq (, $(findstring $(hal_arch),"ipq95xx" "ipq53xx"))
+ifneq (, $(findstring $(hal_arch),"ipq95xx" "ipq53xx" "ipq54xx"))
 define KernelPackage/qca-nss-ppe-ds/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/qca-nss-ppe-ds.init $(1)/etc/init.d/qca-nss-ppe-ds

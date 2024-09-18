@@ -10,7 +10,7 @@ define Package/netfn
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Userspace utility for configuring NETFN
-  DEPENDS:=@TARGET_ipq53xx +libpthread +libnl +jansson +libopenssl
+  DEPENDS:=@TARGET_ipq53xx||TARGET_ipq54xx +libpthread +libnl +jansson +libopenssl
 endef
 
 define Package/netfn/description

@@ -16,7 +16,7 @@ define KernelPackage/$(PKG_NAME)
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Support
-  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq95xx_32||TARGET_ipq53xx||TARGET_ipq53xx_32 +kmod-qca-nss-sfe +kmod-qca-nss-ppe +kmod-qca-nss-dp
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq95xx_32||TARGET_ipq53xx||TARGET_ipq53xx_32||TARGET_ipq54xx +kmod-qca-nss-sfe +kmod-qca-nss-ppe +kmod-qca-nss-dp
   TITLE:=Network Status Module
   FILES:=$(PKG_BUILD_DIR)/qca-nss-nsm.ko
 endef

@@ -16,7 +16,7 @@ define KernelPackage/$(PKG_NAME)
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Support
-  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx +kmod-qca-nss-sfe +kmod-qca-nss-ecm
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx||TARGET_ipq54xx +kmod-qca-nss-sfe +kmod-qca-nss-ecm
   TITLE:=Flow Statistics
   FILES:=$(PKG_BUILD_DIR)/qca-nss-fls.ko
 endef

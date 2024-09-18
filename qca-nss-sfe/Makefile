@@ -78,13 +78,13 @@ ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-ppe-qdisc),y)
 SFE_MAKE_OPTS+=SFE_PPE_QOS_SUPPORTED=y
 endif
 
-#TSO is supported only on Alder and Miami
-ifeq ($(CONFIG_TARGET_ipq95xx)$(CONFIG_TARGET_ipq53xx), y)
+#TSO is supported only on Alder, Miami and Marina
+ifeq ($(CONFIG_TARGET_ipq95xx)$(CONFIG_TARGET_ipq53xx)$(CONFIG_TARGET_ipq54xx), y)
 EXTRA_CFLAGS+= -DSFE_TSO_MAX_SEG_LIMIT_ENABLE
 endif
 
-#L2TPv3 is supported only on Alder and Miami Premium and 512M profile
-ifeq ($(CONFIG_TARGET_ipq95xx)$(CONFIG_TARGET_ipq53xx), y)
+#L2TPv3 is supported only on Alder, Miami and Marina Premium and 512M profile
+ifeq ($(CONFIG_TARGET_ipq95xx)$(CONFIG_TARGET_ipq53xx)$(CONFIG_TARGET_ipq54xx), y)
 ifneq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),256)
 SFE_MAKE_OPTS+=SFE_L2TPV3_SUPPORTED=y
 endif
