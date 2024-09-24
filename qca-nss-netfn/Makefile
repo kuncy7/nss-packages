@@ -28,7 +28,7 @@ define KernelPackage/qca-nss-netfn-pkt-steer
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Support
-  DEPENDS:=@TARGET_ipq53xx
+  DEPENDS:=@TARGET_ipq53xx||TARGET_ipq54xx
   TITLE:=NSS network function for pkt steer
   FILES:=$(PKG_BUILD_DIR)/offload/pkt_steer/qca-nss-netfn-pkt-steer.ko
   AUTOLOAD:=$(call AutoLoad,53,qca-nss-netfn-pkt-steer)
@@ -77,7 +77,7 @@ define KernelPackage/qca-nss-flowmgr
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for Network function manager
-  DEPENDS:=@TARGET_ipq53xx \
+  DEPENDS:=@TARGET_ipq53xx||TARGET_ipq54xx \
 	  +kmod-qca-nss-ppe \
 	  +kmod-qca-nss-sfe
   FILES:=$(PKG_BUILD_DIR)/mgr/flowmgr/qca-nss-flowmgr.ko
@@ -98,7 +98,7 @@ define KernelPackage/qca-nss-netfn-flow-cookie
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for network function flow Cookie manager
-  DEPENDS:=@TARGET_ipq53xx
+  DEPENDS:=@TARGET_ipq53xx||TARGET_ipq54xx
   FILES:=$(PKG_BUILD_DIR)/offload/flow_cookie/qca-nss-netfn-flow-cookie.ko
 endef
 
@@ -128,7 +128,7 @@ define KernelPackage/qca-nss-netfn-auto-flowmgr
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Network function test manager netfn auto flowmgr
-  DEPENDS:=@TARGET_ipq53xx \
+  DEPENDS:=@TARGET_ipq53xx||TARGET_ipq54xx \
 		+kmod-qca-nss-flowmgr
   FILES:=$(PKG_BUILD_DIR)/netfn_auto/flowmgr/qca-nss-netfn-auto-flowmgr.ko
 endef
@@ -149,7 +149,7 @@ define KernelPackage/qca-nss-netfn-auto-flowcookie
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Network function test manager netfn auto flowcookie
-  DEPENDS:=@TARGET_ipq53xx \
+  DEPENDS:=@TARGET_ipq53xx||TARGET_ipq54xx \
   		+kmod-qca-nss-netfn-flow-cookie
   FILES:=$(PKG_BUILD_DIR)/netfn_auto/flowcookie/qca-nss-netfn-auto-flowcookie.ko
 endef

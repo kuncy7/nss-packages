@@ -105,7 +105,7 @@ MAKE_OPTS+=NSS_PPE_BRIDGE_MGR_OVS_ENABLE=y
 EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-ovsmgr
 endif
 # disable FDB learning for open profile
-ifeq ($(CONFIG_TARGET_ipq95xx_generic_QSDK_Open)$(CONFIG_TARGET_ipq95xx_ipq95xx_32_QSDK_Open)$(CONFIG_TARGET_ipq53xx_generic_QSDK_Open)$(CONFIG_TARGET_ipq53xx_ipq53xx_32_QSDK_Open), y)
+ifeq ($(CONFIG_TARGET_ipq95xx_generic_QSDK_Open)$(CONFIG_TARGET_ipq95xx_ipq95xx_32_QSDK_Open)$(CONFIG_TARGET_ipq53xx_generic_QSDK_Open)$(CONFIG_TARGET_ipq53xx_ipq53xx_32_QSDK_Open)$(CONFIG_TARGET_ipq54xx_generic_QSDK_Open)$(CONFIG_TARGET_ipq54xx_ipq54xx_32_QSDK_Open), y)
 EXTRA_CFLAGS+=-DNSS_PPE_BRIDGE_MGR_FDB_DISABLE
 endif
 
