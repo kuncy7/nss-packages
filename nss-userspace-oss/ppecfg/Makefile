@@ -10,7 +10,7 @@ define Package/ppecfg
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Userspace utility for configuring PPE functions such as ACL and Policers
-  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx||TARGET_ipq54xx +libpthread +libnl +kmod-qca-nss-ppe-netlink +libnl-ppe
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx||TARGET_ipq54xx +libpthread +libnl +kmod-qca-nss-ppe-netlink +libnl-ppe +libjson-c
 endef
 
 #TODO: Remove dependency on ppe-netlink module
@@ -39,6 +39,9 @@ endef
 define Package/ppecfg/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/obj/ppecfg $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/etc/ppecfg
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ppecfg_acl_config.json $(1)/etc/ppecfg/ppecfg_acl_config.json
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ppecfg_policer_config.json $(1)/etc/ppecfg/ppecfg_policer_config.json
 endef
 
 $(eval $(call BuildPackage,ppecfg))
