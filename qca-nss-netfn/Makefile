@@ -24,6 +24,29 @@ else
 subtarget:=$(CONFIG_TARGET_BOARD)
 endif
 
+define KernelPackage/qca-nss-netfn-tcpst
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Support
+  DEPENDS:=+kmod-qca-nss-ppe \
+	  +kmod-qca-nss-ppe-vp \
+	  +kmod-qca-nss-flowmgr
+  TITLE:=NSS network function tcp speedtest offload
+  FILES:=$(PKG_BUILD_DIR)/offload/tcpst/qca-nss-netfn-tcpst.ko
+endef
+
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-netfn-tcpst),)
+MAKE_OPTS+=tcpst=y
+endif
+
+define KernelPackage/qca-nss-netfn-tcpst/Description
+NSS network function tcpst offload module.
+endef
+
+define KernelPackage/qca-nss-netfn-tcpst/install
+	$(INSTALL_DIR) $(1)/usr/bin
+endef
+
 define KernelPackage/qca-nss-netfn-pkt-steer
   SECTION:=kernel
   CATEGORY:=Kernel modules
@@ -280,6 +303,7 @@ define Build/Compile
 		modules
 endef
 
+$(eval $(call KernelPackage,qca-nss-netfn-tcpst))
 $(eval $(call KernelPackage,qca-nss-netfn-capwap))
 $(eval $(call KernelPackage,qca-nss-netfn-pkt-steer))
 $(eval $(call KernelPackage,qca-nss-flowmgr))
