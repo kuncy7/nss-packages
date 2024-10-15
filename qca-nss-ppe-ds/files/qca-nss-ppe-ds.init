@@ -1,6 +1,6 @@
 #!/bin/sh /etc/rc.common
 #
-# Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+# Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
 #
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -53,5 +53,13 @@ configure_irq_affinity() {
 }
 
 start() {
-	configure_irq_affinity 2 4 2 4
+	board=$(cat /tmp/sysinfo/board_name)
+	case $board in
+		*'ap-al02-c20'*)
+		configure_irq_affinity 2 2 1 4
+		;;
+		*)
+		configure_irq_affinity 2 4 2 4
+		;;
+	esac
 }
