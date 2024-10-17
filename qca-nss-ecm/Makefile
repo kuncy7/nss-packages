@@ -132,8 +132,10 @@ $(call KernelPackage/qca-nss-ecm/Default)
   VARIANT:=premium
   DEPENDS+=+PACKAGE_kmod-qca-hyfi-bridge:kmod-qca-hyfi-bridge +PACKAGE_kmod-qca-mcs:kmod-qca-mcs +kmod-nat46 \
 	+kmod-l2tp +kmod-pppol2tp +kmod-pptp +TARGET_ipq95xx:kmod-qca-nss-sfe +TARGET_ipq95xx:kmod-qca-nss-ppe \
-	+TARGET_ipq53xx:kmod-qca-nss-sfe +TARGET_ipq53xx:kmod-qca-nss-ppe +TARGET_ipq95xx:kmod-qca-nss-ppe-vxlanmgr +TARGET_ipq53xx:kmod-qca-nss-ppe-vxlanmgr\
-	+TARGET_ipq54xx:kmod-qca-nss-sfe +TARGET_ipq54xx:kmod-qca-nss-ppe +TARGET_ipq54xx:kmod-qca-nss-ppe-vxlanmgr +kmod-bonding PACKAGE_kmod-emesh-sp:kmod-emesh-sp
+	+TARGET_ipq53xx:kmod-qca-nss-sfe +TARGET_ipq53xx:kmod-qca-nss-ppe +TARGET_ipq95xx:kmod-qca-nss-ppe-vxlanmgr +TARGET_ipq53xx:kmod-qca-nss-ppe-vxlanmgr \
+	+TARGET_ipq54xx:kmod-qca-nss-sfe +TARGET_ipq54xx:kmod-qca-nss-ppe +TARGET_ipq54xx:kmod-qca-nss-ppe-vxlanmgr \
+	+TARGET_ipq95xx:kmod-qca-nss-ppe-tunipip6 +TARGET_ipq53xx:kmod-qca-nss-ppe-tunipip6 +TARGET_ipq54xx:kmod-qca-nss-ppe-tunipip6 \
+	+kmod-bonding PACKAGE_kmod-emesh-sp:kmod-emesh-sp
 endef
 
 define KernelPackage/qca-nss-ecm-nonss
