@@ -42,6 +42,18 @@ define Package/ppecfg/install
 	$(INSTALL_DIR) $(1)/etc/ppecfg
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ppecfg_acl_config.json $(1)/etc/ppecfg/ppecfg_acl_config.json
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ppecfg_policer_config.json $(1)/etc/ppecfg/ppecfg_policer_config.json
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mcast_policer_config.json $(1)/etc/ppecfg/policer_default_cfg.json
+
+ifeq ($(CONFIG_TARGET_ipq95xx),y)
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mcast_acl_ipq95xx_config.json $(1)/etc/ppecfg/acl_default_cfg.json
+endif
+ifeq ($(CONFIG_TARGET_ipq53xx),y)
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mcast_acl_ipq53xx_config.json $(1)/etc/ppecfg/acl_default_cfg.json
+endif
+ifeq ($(CONFIG_TARGET_ipq54xx),y)
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mcast_acl_ipq54xx_config.json $(1)/etc/ppecfg/acl_default_cfg.json
+endif
+
 endef
 
 $(eval $(call BuildPackage,ppecfg))
