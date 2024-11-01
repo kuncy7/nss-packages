@@ -95,6 +95,11 @@ endif
 # Build individual packages if selected
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-cfi-cryptoapi),)
 MAKE_OPTS+=cryptoapi=y
+# ABLK cipher is depricated on 6.6
+ifneq ($(CONFIG_LINUX_6_6),y)
+MAKE_OPTS+=cryptoapi_ablk=y
+endif
+
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-cfi-ocf),)
