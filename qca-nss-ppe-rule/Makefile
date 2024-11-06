@@ -41,6 +41,7 @@ endef
 define KernelPackage/qca-nss-ppe-rule/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) ./files/acl_dump.sh $(1)/usr/bin/
+	$(INSTALL_BIN) ./files/mcast_hammer.sh $(1)/usr/bin/
 endef
 
 define Build/InstallDev/qca-nss-ppe-rule
@@ -50,11 +51,6 @@ endef
 
 define Build/InstallDev
 	$(call Build/InstallDev/qca-nss-ppe-rule,$(1))
-endef
-
-define KernelPackage/qca-nss-ppe-rule/install
-	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) ./files/mcast_hammer.sh $(1)/usr/bin/
 endef
 
 EXTRA_CFLAGS+= \
