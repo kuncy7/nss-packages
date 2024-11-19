@@ -58,6 +58,20 @@ define KernelPackage/qca8084/Description
 This package contains qca8084 Linux PHY driver
 endef
 
+define KernelPackage/qca8xxx-phc
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  TITLE:=QCA8xxx PHC driver
+  DEPENDS:=+kmod-qca81xx
+  FILES:=$(PKG_BUILD_DIR)/linux_std/ptp/qca8xxx-phc.ko
+  AUTOLOAD:=$(call AutoLoad, 08, qca8xxx-phc)
+endef
+
+define KernelPackage/qca8xxx-phc/Description
+Linux PHC driver of QCA8XXX PHY
+endef
+
 ifdef CONFIG_TARGET_NAME
 QCA_NSS_PHY_CONFIG_OPTS+= \
 	TARGET_NAME=$(CONFIG_TARGET_NAME)
@@ -68,14 +82,16 @@ QCA_NSS_PHY_CONFIG_OPTS+= \
 	CROSS_COMPILE=$(TARGET_CROSS) \
 	ARCH=$(LINUX_KARCH)
 
+QCA_NSS_PHY_CONFIG_OPTS+= nss-phy-ptp=y
+
 define Build/Prepare
 	$(CP) $(LOCAL_SRC)/* $(PKG_BUILD_DIR)/  -a
 endef
 
 define Build/Compile
-	$(KERNEL_MAKE) M=$(PKG_BUILD_DIR)/nss_ext $(strip $(QCA_NSS_PHY_CONFIG_OPTS))
-	$(KERNEL_MAKE) M=$(PKG_BUILD_DIR)/linux_std/qca81xx $(strip $(QCA_NSS_PHY_CONFIG_OPTS))
-	$(KERNEL_MAKE) M=$(PKG_BUILD_DIR)/linux_std/qca8084 $(strip $(QCA_NSS_PHY_CONFIG_OPTS))
+	$(KERNEL_MAKE) M="$(PKG_BUILD_DIR)" \
+		$(strip $(QCA_NSS_PHY_CONFIG_OPTS)) \
+		modules
 endef
 
 define Build/InstallDev
@@ -85,6 +101,8 @@ endef
 
 define KernelPackage/qca-nss-phy/install
 endef
-$(eval $(call KernelPackage,qca-nss-phy))
-$(eval $(call KernelPackage,qca81xx))
+
 $(eval $(call KernelPackage,qca8084))
+$(eval $(call KernelPackage,qca81xx))
+$(eval $(call KernelPackage,qca8xxx-phc))
+$(eval $(call KernelPackage,qca-nss-phy))
