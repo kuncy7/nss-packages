@@ -17,7 +17,7 @@ define KernelPackage/aqr-phy
 	  FILES:=$(PKG_BUILD_DIR)/linux-aqr-phy/drivers/net/phy/aquantia/aqr-phy.ko
   endif
   DEPENDS+=+kmod-hwmon-core
-  AUTOLOAD:=$(call AutoLoad,7,aqr-phy)
+  AUTOLOAD:=$(call AutoLoad,07,aqr-phy)
   PROVIDES:=aqr-phy
 endef
 
