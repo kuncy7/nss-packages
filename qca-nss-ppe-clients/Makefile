@@ -112,6 +112,10 @@ endif
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-ppe-vlan-mgr),)
+ifneq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),256)
+EXTRA_CFLAGS+= -DNSS_VLAN_MGR_WLANIF_DST_XLATE_SUPPORT
+endif
+
 MAKE_OPTS+=vlan-mgr=y
 endif
 
