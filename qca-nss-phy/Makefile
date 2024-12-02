@@ -82,7 +82,11 @@ QCA_NSS_PHY_CONFIG_OPTS+= \
 	CROSS_COMPILE=$(TARGET_CROSS) \
 	ARCH=$(LINUX_KARCH)
 
+ifneq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),256)
+ifneq ($(CONFIG_LOWMEM_FLASH),y)
 QCA_NSS_PHY_CONFIG_OPTS+= nss-phy-ptp=y
+endif
+endif
 
 define Build/Prepare
 	$(CP) $(LOCAL_SRC)/* $(PKG_BUILD_DIR)/  -a
