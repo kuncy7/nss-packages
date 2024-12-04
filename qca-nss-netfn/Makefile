@@ -77,12 +77,16 @@ define KernelPackage/qca-nss-flowmgr
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for Network function manager
-  DEPENDS:=@TARGET_ipq53xx||TARGET_ipq54xx \
+  DEPENDS:=@TARGET_ipq53xx||TARGET_ipq54xx||TARGET_ipq95xx \
 	  +kmod-qca-nss-ppe \
 	  +kmod-qca-nss-sfe
   FILES:=$(PKG_BUILD_DIR)/mgr/flowmgr/qca-nss-flowmgr.ko
   AUTOLOAD:=$(call AutoLoad,50,qca-nss-flowmgr)
 endef
+
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-flowmgr),)
+ MAKE_OPTS+=flowmgr=y
+endif
 
 define KernelPackage/qca-nss-flowmgr/Description
 	Networking module for network function flow manager.
@@ -133,6 +137,10 @@ define KernelPackage/qca-nss-netfn-auto-flowmgr
   FILES:=$(PKG_BUILD_DIR)/netfn_auto/flowmgr/qca-nss-netfn-auto-flowmgr.ko
 endef
 
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-netfn-auto-flowmgr),)
+MAKE_OPTS+=netfn_auto_flowmgr=y
+endif
+
 define KernelPackage/qca-nss-netfn-auto-flowmgr/Description
 Network function test manager netfn auto flowmgr
 endef
@@ -154,6 +162,10 @@ define KernelPackage/qca-nss-netfn-auto-flowcookie
   FILES:=$(PKG_BUILD_DIR)/netfn_auto/flowcookie/qca-nss-netfn-auto-flowcookie.ko
 endef
 
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-netfn-auto-flowcookie),)
+MAKE_OPTS+=netfn_auto_flowcookie=y
+endif
+
 define KernelPackage/qca-nss-netfn-auto-flowcookie/Description
 Network function test manager netfn auto flowcookie
 endef
@@ -174,6 +186,10 @@ define KernelPackage/qca-nss-netfn-auto-capwapmgr
 	+kmod-qca-nss-netfn-capwapmgr
   FILES:=$(PKG_BUILD_DIR)/netfn_auto/capwapmgr/qca-nss-netfn-auto-capwapmgr.ko
 endef
+
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-netfn-auto-capwapmgr),)
+MAKE_OPTS+=netfn_auto_capwapmgr=y
+endif
 
 define KernelPackage/qca-nss-netfn-auto-capwapmgr/Description
 Network function test manager netfn auto capwapmgr
