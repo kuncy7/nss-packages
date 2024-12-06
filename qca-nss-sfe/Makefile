@@ -73,6 +73,10 @@ SFE_MAKE_OPTS+=SFE_RFS_SUPPORTED=y
 endif
 endif
 
+ifneq ($(CONFIG_TARGET_ipq95xx)$(CONFIG_TARGET_ipq53xx)$(CONFIG_TARGET_ipq54xx),)
+SFE_MAKE_OPTS+=SFE_DSA_ACCEL_ENABLE=y
+endif
+
 #PPE_QOS is supported only if PPE Qdisc is enabled
 ifeq ($(CONFIG_PACKAGE_kmod-qca-nss-ppe-qdisc),y)
 SFE_MAKE_OPTS+=SFE_PPE_QOS_SUPPORTED=y
