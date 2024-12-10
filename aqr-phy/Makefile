@@ -2,9 +2,10 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=aqr-phy
-PKG_SOURCE_PROTO:=git
-PKG_BRANCH:=master
 PKG_RELEASE:=1
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL:=https://github.com/Aquantia/linux-aqr-phy-only.git
+PKG_SOURCE_VERSION:=5e182fbacb112c7adc366621d0097f89247d4265
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -14,7 +15,7 @@ define KernelPackage/aqr-phy
   SUBMENU:=Network Support
   TITLE:=Github AQR driver
   ifeq ($(CONFIG_AQUANTIA_PHY),)
-	  FILES:=$(PKG_BUILD_DIR)/linux-aqr-phy/drivers/net/phy/aquantia/aqr-phy.ko
+	  FILES:=$(PKG_BUILD_DIR)/aquantia/aqr-phy.ko
   endif
   DEPENDS+=+kmod-hwmon-core
   AUTOLOAD:=$(call AutoLoad,07,aqr-phy)
@@ -36,21 +37,13 @@ AQR-PHY-CONFIG_OPTS+= \
 	ARCH=$(LINUX_KARCH)
 
 define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)
-	$(CP) ./* $(PKG_BUILD_DIR)/
-	cd $(PKG_BUILD_DIR); \
-        git clone --filter=blob:none --no-checkout --depth 1 \
-	--sparse https://github.com/Aquantia/linux-aqr-phy.git \
-	-b aqr_mainline; \
-	cd linux-aqr-phy/;git sparse-checkout add drivers/net/phy/aquantia; \
-	git checkout; \
-	git checkout c798fde2b7fb6cb6f2bfc75bdea4875d85177f83
-	$(CP) $(PKG_BUILD_DIR)/src/Makefile $(PKG_BUILD_DIR)/linux-aqr-phy/drivers/net/phy/aquantia/
-
+	$(call Build/Prepare/Default)
+	$(CP) ./* $(PKG_BUILD_DIR)
+	$(CP) $(PKG_BUILD_DIR)/src/Makefile $(PKG_BUILD_DIR)/aquantia/
 endef
 
 define Build/Compile
-	$(KERNEL_MAKE) M=$(PKG_BUILD_DIR)/linux-aqr-phy/drivers/net/phy/aquantia $(strip $(AQR-PHY-CONFIG_OPTS))
+	$(KERNEL_MAKE) M=$(PKG_BUILD_DIR)/aquantia $(strip $(AQR-PHY-CONFIG_OPTS))
 endef
 
 define Build/InstallDev
