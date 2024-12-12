@@ -177,6 +177,9 @@ start() {
 	if [ -d /sys/module/qca_ovsmgr ]; then
 		insmod ecm_ovs
 	fi
+
+	# If UDP classifier is present, start it.
+	[ -f /etc/init.d/udp-clf ] && /etc/init.d/udp-clf start
 }
 
 stop() {
@@ -184,6 +187,9 @@ stop() {
 	if [ ! -d /sys/module/ecm ]; then
 		return
 	fi
+
+	# If UDP classifier is present, stop it.
+	[ -f /etc/init.d/udp-clf ] && /etc/init.d/udp-clf stop
 
 	# If the acceleration engine is NSS, disable wifi redirect.
 	[ -d /sys/kernel/debug/ecm/ecm_nss_ipv4 ] && sysctl -w dev.nss.general.redirect=0
