@@ -97,7 +97,7 @@ define KernelPackage/qca-nss-ppe-dsa-mgr
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS PPE DSA manager
-  DEPENDS:=@TARGET_ipq53xx||TARGET_ipq54xx \
+  DEPENDS:=@TARGET_ipq95xx||TARGET_ipq53xx||TARGET_ipq54xx \
 		+kmod-qca-nss-ppe \
 		+kmod-qca-nss-ppe-vlan-mgr
   FILES:=$(PKG_BUILD_DIR)/clients/dsa/qca-nss-ppe-dsa-mgr.ko
