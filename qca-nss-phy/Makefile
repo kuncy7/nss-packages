@@ -65,7 +65,7 @@ define KernelPackage/qca8xxx-phc
   TITLE:=QCA8xxx PHC driver
   DEPENDS:=+kmod-qca81xx
   FILES:=$(PKG_BUILD_DIR)/linux_std/ptp/qca8xxx-phc.ko
-  AUTOLOAD:=$(call AutoLoad, 08, qca8xxx-phc)
+  AUTOLOAD:=$(call AutoLoad, 31, qca8xxx-phc)
 endef
 
 define KernelPackage/qca8xxx-phc/Description
