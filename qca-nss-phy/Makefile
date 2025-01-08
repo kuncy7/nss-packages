@@ -88,6 +88,14 @@ QCA_NSS_PHY_CONFIG_OPTS+= nss-phy-ptp=y
 endif
 endif
 
+SUPPORTED_PHYS = CONFIG_NSSPHY_QCA808X CONFIG_NSSPHY_QCA81XX CONFIG_NSSPHY_QCA803X
+
+ifneq (, $(findstring $(CONFIG_TARGET_BOARD), "ipq95xx"))
+    SUPPORTED_PHYS+=CONFIG_NSSPHY_QCA807X
+endif
+
+QCA_NSS_PHY_CONFIG_OPTS+= supported_phys="$(SUPPORTED_PHYS)"
+
 define Build/Prepare
 	$(CP) $(LOCAL_SRC)/* $(PKG_BUILD_DIR)/  -a
 endef
