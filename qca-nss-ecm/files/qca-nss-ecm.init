@@ -183,6 +183,10 @@ start() {
 		insmod ecm_ovs
 	fi
 
+	# Enable SAWF and EMESH classifier by default for Out-of box prioritization
+	echo 3 > /sys/kernel/debug/ecm/ecm_classifier_emesh/enabled
+	echo 3 > /sys/kernel/debug/ecm/ecm_classifier_emesh/sawf_enabled
+
 	# If UDP classifier is present, start it.
 	[ -f /etc/init.d/udp-clf ] && /etc/init.d/udp-clf start
 }
