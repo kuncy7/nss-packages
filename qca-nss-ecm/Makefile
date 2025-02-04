@@ -198,8 +198,8 @@ define KernelPackage/qca-nss-ecm-noload
   PROVIDES:=kmod-qca-nss-ecm
   VARIANT:=noload
   DEPENDS+=+kmod-l2tp +kmod-pppol2tp +kmod-pptp +TARGET_ipq95xx:kmod-qca-nss-sfe +TARGET_ipq95xx:kmod-qca-nss-ppe \
-	   +TARGET_ipq53xx:kmod-qca-nss-sfe +TARGET_ipq53xx:kmod-qca-nss-ppe \
-	   +TARGET_ipq54xx:kmod-qca-nss-sfe +TARGET_ipq54xx:kmod-qca-nss-ppe \
+	   +TARGET_ipq53xx:kmod-qca-nss-sfe +TARGET_ipq53xx:kmod-qca-nss-ppe +TARGET_ipq53xx:kmod-qca-nss-ppe-tunipip6 \
+	   +TARGET_ipq54xx:kmod-qca-nss-sfe +TARGET_ipq54xx:kmod-qca-nss-ppe +TARGET_ipq54xx:kmod-qca-nss-ppe-tunipip6 \
 	   +kmod-bonding +PACKAGE_kmod-qca-mcs:kmod-qca-mcs +PACKAGE_kmod-qca-nss-ppe-mapt:kmod-nat46 \
 	   +TARGET_ipq95xx:kmod-emesh-sp +TARGET_ipq95xx:kmod-qca-nss-ppe-tunipip6
 endef
