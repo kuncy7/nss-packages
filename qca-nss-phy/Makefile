@@ -35,6 +35,7 @@ define KernelPackage/qca81xx
   SUBMENU:=Network Devices
   TITLE:=QCA81XX PHY driver
   FILES:=$(PKG_BUILD_DIR)/linux_std/qca81xx/qca81xx-phy.ko
+  DEPENDS:=+kmod-hwmon-core
   PROVIDES:=qca81xx
   AUTOLOAD:=$(call AutoLoad,07,qca81xx-phy)
 endef
