@@ -52,6 +52,38 @@ get_front_end_mode() {
 	esac
 }
 
+get_register_ip_post_routing() {
+	config_load "ecm"
+	config_get ip_post_routing_hook global ip_post_routing_hook "enable"
+
+	case $ip_post_routing_hook in
+	enable)
+		echo '1'
+		;;
+	disable)
+		echo '0'
+		;;
+	*)
+		echo 'Invalid option specified for ip post routing hook'
+	esac
+}
+
+get_register_br_post_routing() {
+	config_load "ecm"
+	config_get br_post_routing_hook global br_post_routing_hook "enable"
+
+	case $br_post_routing_hook in
+	enable)
+		echo '1'
+		;;
+	disable)
+		echo '0'
+		;;
+	*)
+		echo 'Invalid option specified for br post routing hook'
+	esac
+}
+
 support_bridge() {
 	#NSS support bridge acceleration
 	[ -d /sys/kernel/debug/ecm/ecm_nss_ipv4 ] && return 0
@@ -97,7 +129,7 @@ load_ecm() {
 
 	[ -d /sys/module/ecm ] || {
 		ecm_dependency
-		insmod ecm front_end_selection=$(get_front_end_mode)
+		insmod ecm front_end_selection=$(get_front_end_mode) register_ip_post_routing=$(get_register_ip_post_routing) register_br_post_routing=$(get_register_br_post_routing)
 
 		if [ $(get_front_end_mode) == 4 ]; then
 			insmod ecm_ae_select
