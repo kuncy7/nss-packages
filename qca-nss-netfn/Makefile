@@ -47,6 +47,29 @@ define KernelPackage/qca-nss-netfn-tcpst/install
 	$(INSTALL_DIR) $(1)/usr/bin
 endef
 
+define KernelPackage/qca-nss-netfn-sk-offload
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  TITLE:=Kernel driver for network function netfn sk offload
+  DEPENDS:=+kmod-qca-nss-ppe \
+    +kmod-qca-nss-ppe-vp \
+    +kmod-qca-nss-flowmgr
+  FILES:=$(PKG_BUILD_DIR)/offload/sk_offload/qca-nss-netfn-sk-offload.ko
+endef
+
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-netfn-sk-offload),)
+MAKE_OPTS+=skoffload=y
+endif
+
+define KernelPackage/qca-nss-netfn-sk-offload/Description
+Kernel modules for network function sk offload
+endef
+
+define KernelPackage/qca-nss-netfn-sk-offload/install
+        $(INSTALL_DIR) $(1)/usr/bin
+endef
+
 define KernelPackage/qca-nss-netfn-pkt-steer
   SECTION:=kernel
   CATEGORY:=Kernel modules
@@ -304,6 +327,7 @@ define Build/Compile
 endef
 
 $(eval $(call KernelPackage,qca-nss-netfn-tcpst))
+$(eval $(call KernelPackage,qca-nss-netfn-sk-offload))
 $(eval $(call KernelPackage,qca-nss-netfn-capwap))
 $(eval $(call KernelPackage,qca-nss-netfn-pkt-steer))
 $(eval $(call KernelPackage,qca-nss-flowmgr))
