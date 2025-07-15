@@ -68,6 +68,7 @@ endef
 
 define KernelPackage/qca-nss-netfn-sk-offload/install
         $(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) files/iperf3_load_balance.sh $(1)/usr/bin/
 endef
 
 define KernelPackage/qca-nss-netfn-pkt-steer
