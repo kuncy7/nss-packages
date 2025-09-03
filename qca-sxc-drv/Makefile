@@ -35,7 +35,6 @@ define KernelPackage/qca-sdc-drv/Description
 Kernel driver for QCA Smart Device classification
 endef
 
-
 define Build/InstallDev
 	$(call Build/InstallDev/qca-sdc-drv,$(1))
 endef
@@ -66,6 +65,11 @@ endif
 ifneq ($(CONFIG_PACKAGE_kmod-qca-sac-drv),)
 MAKE_OPTS+=qca-sac-drv=y
 endif
+
+define KernelPackage/qca-sdc-drv/install
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/qca-sxc-drv.init $(1)/etc/init.d/qca-sxc-drv
+endef
 
 define Build/Compile
 	$(KERNEL_MAKE) $(strip $(MAKE_OPTS)) \
