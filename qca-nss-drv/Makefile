@@ -70,11 +70,11 @@ define KernelPackage/qca-nss-drv
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   DEPENDS:=@(TARGET_ipq806x||TARGET_qualcommax) \
-  				 +TARGET_qualcommax:kmod-qca-nss-dp \
+  				 +TARGET_qualcommax:kmod-qca-ppe-nss \
   				 +TARGET_qualcommax:nss-firmware
   TITLE:=Kernel driver for NSS (core driver)
   FILES:=$(PKG_BUILD_DIR)/qca-nss-drv.ko
-  AUTOLOAD:=$(call AutoLoad,32,qca-nss-drv)
+  # No AUTOLOAD: NSS is strictly opt-in at runtime during bring-up
 endef
 
 define KernelPackage/qca-nss-drv/config
@@ -122,8 +122,11 @@ ifneq (, $(findstring $(subtarget), "ipq807x" "ipq807x_64" "ipq60xx" "ipq60xx_64
 endif
 endef
 
-EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-dp \
-			   -I$(STAGING_DIR)/usr/include/qca-ssdk \
+# Vendor code is not warning-clean; the new openwrt main enables
+# CONFIG_KERNEL_WERROR which leaks -Werror into external modules.
+EXTRA_CFLAGS+= -Wno-error
+
+EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-ppe-nss \
 			   -Wno-missing-declarations -Wno-missing-prototypes \
 			   -Wno-empty-body -Wno-unused-variable
 
@@ -138,6 +141,10 @@ ifdef CONFIG_NSS_FIRMWARE_VERSION_12_5
 endif
 
 DRV_MAKE_OPTS:=
+
+# qca_edma/qca_ppe stack: no qca-ssdk, so PPE virtual-port support
+# (the only ssdk header consumer in nss-drv) is compiled out.
+DRV_MAKE_OPTS += NSS_DRV_PPE_VP_ENABLE=n
 
 ifndef CONFIG_NSS_DRV_BRIDGE_ENABLE
    DRV_MAKE_OPTS += NSS_DRV_BRIDGE_ENABLE=n
