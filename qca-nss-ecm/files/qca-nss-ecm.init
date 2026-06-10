@@ -15,11 +15,14 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-# The shebang above has an extra space intentionally to avoid having
-# openwrt build scripts automatically enable this package starting
-# at boot.
+# No START on purpose: without it the build system cannot enable this
+# service, so ECM can never start at boot. (The historical extra-space
+# shebang trick no longer fools current openwrt main — it shipped
+# images with S26 enabled, which modprobe'd ecm at boot, pulled in
+# qca-nss-drv via module deps and booted the NSS firmware without any
+# armed ports = all wired RX dead.) ECM is loaded strictly at runtime,
+# after the NSS data plane is up: /etc/init.d/qca-nss-ecm start.
 
-START=26
 USE_PROCD=1
 
 sysctl_update() {
@@ -120,6 +123,14 @@ set_front_end() {
 }
 
 load_ecm() {
+  # Loading ecm pulls in qca-nss-drv via module dependencies and boots
+  # the NSS firmware; on the EDMA data plane that is only safe after
+  # the glue armed the ports (fw_mask) and the firmware took them over.
+  [ -d /sys/module/qca_nss_drv ] || {
+    logger -p user.err -s "qca-nss-ecm: NSS data plane is not up (qca-nss-drv not loaded) - refusing to load ecm. Bring the NSS data plane up first (e.g. nss-up.sh: arm fw_mask, then modprobe qca-nss-drv)."
+    return 1
+  }
+
   [ -d /sys/module/ecm ] || {
     local get_front_end_mode
     get_front_end_mode="$(get_front_end_mode)"

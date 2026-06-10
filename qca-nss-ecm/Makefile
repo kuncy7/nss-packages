@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=qca-nss-ecm
-PKG_RELEASE:=7
+PKG_RELEASE:=8
 
 PKG_SOURCE_URL:=https://git.codelinaro.org/clo/qsdk/oss/lklm/qca-nss-ecm.git
 PKG_SOURCE_PROTO:=git
@@ -37,12 +37,12 @@ define KernelPackage/qca-nss-ecm
 		   +PACKAGE_kmod-vxlan:kmod-vxlan \
 		   +PACKAGE_kmod-nat46:kmod-nat46 \
 		   +PACKAGE_kmod-ppp:kmod-ppp \
-		   +PACKAGE_kmod-pppoe:kmod-pppoe \
-		   +PACKAGE_kmod-pppoe:kmod-pptp \
-		   +PACKAGE_kmod-pppoe:kmod-pppol2tp
+		   +PACKAGE_kmod-pppoe:kmod-pppoe
   TITLE:=QCA NSS Enhanced Connection Manager (ECM)
   FILES:=$(PKG_BUILD_DIR)/ecm.ko
-  KCONFIG:=CONFIG_NF_CONNTRACK_DSCPREMARK_EXT=y
+  KCONFIG:= \
+	CONFIG_NF_CONNTRACK_DSCPREMARK_EXT=y \
+	CONFIG_NF_CONNTRACK_EVENTS=y
 endef
 
 define KernelPackage/qca-nss-ecm/Description
@@ -65,6 +65,10 @@ define KernelPackage/qca-nss-ecm/install
 	$(INSTALL_DATA) ./files/qca-nss-ecm.sysctl $(1)/etc/sysctl.d/qca-nss-ecm.conf
 	$(INSTALL_DATA) ./files/disable_offloads.hotplug $(1)/etc/hotplug.d/net/99-disable_offloads
 endef
+
+# Vendor code is not warning-clean; openwrt main enables
+# CONFIG_KERNEL_WERROR which leaks -Werror into external modules.
+EXTRA_CFLAGS+= -Wno-error
 
 EXTRA_CFLAGS+= \
 		 -I$(STAGING_DIR)/usr/include/qca-nss-drv \
@@ -129,19 +133,17 @@ endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-pppoe),)
 ECM_MAKE_OPTS+=ECM_INTERFACE_PPPOE_ENABLE=y \
-			   ECM_INTERFACE_PPTP_ENABLE=y \
 			   ECM_INTERFACE_PPP_ENABLE=y
 else
 ECM_MAKE_OPTS+=ECM_INTERFACE_PPPOE_ENABLE=n \
-			   ECM_INTERFACE_PPTP_ENABLE=n \
 			   ECM_INTERFACE_PPP_ENABLE=n
 endif
 
-ifneq ($(CONFIG_PACKAGE_kmod-pppol2tp),)
-ECM_MAKE_OPTS+=ECM_INTERFACE_L2TPV2_ENABLE=y
-else
-ECM_MAKE_OPTS+=ECM_INTERFACE_L2TPV2_ENABLE=n
-endif
+# The EDMA-rework kernel carries only the PPPoE ppp hooks (0961); the
+# PPTP/L2TP kernel hooks (qosmio 0603-2/0603-3) are not ported, so
+# these interface types must stay off regardless of selected kmods.
+ECM_MAKE_OPTS+=ECM_INTERFACE_PPTP_ENABLE=n \
+			   ECM_INTERFACE_L2TPV2_ENABLE=n
 
 ifneq ($(CONFIG_PACKAGE_kmod-gre)$(CONFIG_PACKAGE_kmod-gre6),)
 ECM_MAKE_OPTS+=ECM_INTERFACE_GRE_TAP_ENABLE=y \
