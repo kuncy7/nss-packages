@@ -63,7 +63,6 @@ PKG_CONFIG_DEPENDS:= \
 include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/package.mk
 
-NSS_CLIENTS_DIR:=$(TOPDIR)/qca/src/qca-nss-clients
 
 define KernelPackage/qca-nss-drv
   SECTION:=kernel
