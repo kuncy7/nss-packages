@@ -1,51 +1,95 @@
 include $(TOPDIR)/rules.mk
-include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=qca-nss-clients
+PKG_RELEASE:=8
+
+PKG_SOURCE_URL:=https://git.codelinaro.org/clo/qsdk/oss/lklm/nss-clients.git
 PKG_SOURCE_PROTO:=git
-PKG_BRANCH:=master
-PKG_RELEASE:=2
+PKG_SOURCE_DATE:=2024-09-11
+PKG_SOURCE_VERSION:=51be82d
+PKG_MIRROR_HASH:=876c3898cb4723fccd4a1c870324724dd7c4061ac89ec88db2226fd749c18b38
+QSDK_VERSION:=12.5
+PKG_VERSION:=$(QSDK_VERSION).$(subst -,.,$(PKG_SOURCE_DATE))~$(PKG_SOURCE_VERSION)
 
-include $(INCLUDE_DIR)/local-development.mk
-ifeq ($(DUMP)$(PKG_VERSION),)
-  PKG_VERSION:=$(shell git ls-remote $(PKG_SOURCE_URL) $(PKG_BRANCH) | cut -b -7)
-endif
+PKG_BUILD_PARALLEL:=1
 
-PKG_BUILD_DEPENDS := PACKAGE_kmod-qca-nss-crypto:kmod-qca-nss-crypto
-MAKE_OPTS:=
+PKG_CONFIG_DEPENDS:=\
+	CONFIG_NSS_DRV_BRIDGE_ENABLE \
+	CONFIG_NSS_DRV_C2C_ENABLE \
+	CONFIG_NSS_DRV_CAPWAP_ENABLE \
+	CONFIG_NSS_DRV_CLMAP_ENABLE \
+	CONFIG_NSS_DRV_DTLS_ENABLE \
+	CONFIG_NSS_DRV_GRE_ENABLE \
+	CONFIG_NSS_DRV_GRE_REDIR_ENABLE \
+	CONFIG_NSS_DRV_IGS_ENABLE \
+	CONFIG_NSS_DRV_IPSEC_ENABLE \
+	CONFIG_NSS_DRV_IPV4_REASM_ENABLE \
+	CONFIG_NSS_DRV_IPV6_ENABLE \
+	CONFIG_NSS_DRV_IPV6_REASM_ENABLE \
+	CONFIG_NSS_DRV_L2TP_ENABLE \
+	CONFIG_NSS_DRV_LAG_ENABLE \
+	CONFIG_NSS_DRV_LSO_RX_ENABLE \
+	CONFIG_NSS_DRV_MAPT_ENABLE \
+	CONFIG_NSS_DRV_MATCH_ENABLE \
+	CONFIG_NSS_DRV_MIRROR_ENABLE \
+	CONFIG_NSS_DRV_OAM_ENABLE \
+	CONFIG_NSS_DRV_QVPN_ENABLE \
+	CONFIG_NSS_DRV_PPPOE_ENABLE \
+	CONFIG_NSS_DRV_PPTP_ENABLE \
+	CONFIG_NSS_DRV_PVXLAN_ENABLE \
+	CONFIG_NSS_DRV_QRFS_ENABLE \
+	CONFIG_NSS_DRV_RMNET_ENABLE \
+	CONFIG_NSS_DRV_SHAPER_ENABLE \
+	CONFIG_NSS_DRV_TLS_ENABLE \
+	CONFIG_NSS_DRV_TSTAMP_ENABLE \
+	CONFIG_NSS_DRV_TUN6RD_ENABLE \
+	CONFIG_NSS_DRV_TUNIPIP6_ENABLE \
+	CONFIG_NSS_DRV_VLAN_ENABLE \
+	CONFIG_NSS_DRV_VXLAN_ENABLE \
+	CONFIG_NSS_DRV_WIFIOFFLOAD_ENABLE \
+	CONFIG_NSS_DRV_WIFI_MESH_ENABLE \
+	CONFIG_NSS_DRV_WIFI_LEGACY_ENABLE
 
+include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/package.mk
 
-# Keep default as ipq806x for branches that does not have subtarget framework
-ifeq ($(CONFIG_TARGET_ipq),y)
-subtarget:=$(SUBTARGET)
+ifeq ($(CONFIG_TARGET_SUBTARGET), "ipq807x")
+  SOC="ipq807x_64"
+  subtarget:=$(CONFIG_TARGET_SUBTARGET)
+else ifeq ($(CONFIG_TARGET_SUBTARGET), "ipq60xx")
+  SOC="ipq60xx_64"
+  subtarget:=$(CONFIG_TARGET_SUBTARGET)
+else ifeq ($(CONFIG_TARGET_SUBTARGET), "ipq50xx")
+  SOC="ipq50xx_64"
+  subtarget:=$(CONFIG_TARGET_SUBTARGET)
 else
-subtarget:=$(CONFIG_TARGET_BOARD)
+  SOC=$(CONFIG_TARGET_BOARD)
 endif
 
 ifneq (, $(findstring $(subtarget), "ipq807x" "ipq807x_64" "ipq60xx" "ipq60xx_64" "ipq50xx" "ipq50xx_64"))
-# DTLS Manager v2.0 for IPQ807x/IPQ60xx/IPQ50xx
+# DTLS Manager v2.0 for Hawkeye/Cypress
   DTLSMGR_DIR:=v2.0
-# IPsec Manager v2.0 for IPQ807x/IPQ60xx/IPQ50xx
+# IPsec Manager v2.0 for Hawkeye/Cypress
   IPSECMGR_DIR:=v2.0
-else
-# DTLS Manager v1.0 for IPQ806x
-  DTLSMGR_DIR:=v1.0
-# IPsec Manager v1.0 for IPQ806x
-  IPSECMGR_DIR:=v1.0
+# KLIPS plugin
+  # IPSECMGR_KLIPS:= $(PKG_BUILD_DIR)/ipsecmgr/$(IPSECMGR_DIR)/plugins/klips/qca-nss-ipsec-klips.ko
 endif
 
 define KernelPackage/qca-nss-drv-tun6rd
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  TITLE:=Kernel driver for NSS (connection manager) - tun6rd
-  DEPENDS:=@!TARGET_ipq95xx +kmod-qca-nss-drv +kmod-sit @!LINUX_3_18
+  TITLE:=NSS connection manager for 6rd tunnels
+  DEPENDS:=@(TARGET_qualcommax||TARGET_ipq806x) \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_TUN6RD_ENABLE \
+	   +6rd \
+	   +kmod-sit
   FILES:=$(PKG_BUILD_DIR)/qca-nss-tun6rd.ko
   AUTOLOAD:=$(call AutoLoad,60,qca-nss-tun6rd)
 endef
 
-define KernelPackage/qca-nss-drv-tun6rd/Description
+define KernelPackage/qca-nss-drv-tun6rd/description
 Kernel modules for NSS connection manager - Support for 6rd tunnel
 endef
 
@@ -53,12 +97,16 @@ define KernelPackage/qca-nss-drv-dtlsmgr
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  TITLE:=Kernel driver for NSS (connection manager) - dtlsmgr
-  DEPENDS:=@!TARGET_ipq95xx +kmod-qca-nss-drv +kmod-qca-nss-cfi-cryptoapi @!LINUX_3_18
+  TITLE:=NSS connection manager for DTLS sessions
+  DEPENDS:=@(TARGET_qualcommax_ipq807x||TARGET_qualcommax_ipq60xx) \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_DTLS_ENABLE \
+	   +kmod-qca-nss-cfi-cryptoapi \
+	   @BROKEN
   FILES:=$(PKG_BUILD_DIR)/dtls/$(DTLSMGR_DIR)/qca-nss-dtlsmgr.ko
 endef
 
-define KernelPackage/qca-nss-drv-dtls/Description
+define KernelPackage/qca-nss-drv-dtls/description
 Kernel modules for NSS connection manager - Support for DTLS sessions
 endef
 
@@ -66,13 +114,16 @@ define KernelPackage/qca-nss-drv-tlsmgr
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  TITLE:=Kernel driver for NSS (connection manager) - tlsmgr
-  DEPENDS:=@TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq_ipq60xx||TARGET_ipq_ipq60xx_64||TARGET_ipq60xx \
-	   +kmod-qca-nss-drv +kmod-qca-nss-cfi-cryptoapi @!LINUX_3_18
+  TITLE:=NSS connection manager for TLS sessions
+  DEPENDS:=@(TARGET_qualcommax_ipq807x||TARGET_qualcommax_ipq60xx) \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_TLS_ENABLE \
+	   +kmod-qca-nss-cfi-cryptoapi \
+	   @BROKEN
   FILES:=$(PKG_BUILD_DIR)/tls/qca-nss-tlsmgr.ko
 endef
 
-define KernelPackage/qca-nss-drv-tls/Description
+define KernelPackage/qca-nss-drv-tls/description
 Kernel modules for NSS connection manager - Support for TLS sessions
 endef
 
@@ -80,13 +131,18 @@ define KernelPackage/qca-nss-drv-l2tpv2
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  TITLE:=Kernel driver for NSS (connection manager) - l2tp
-  DEPENDS:=@!TARGET_ipq95xx +kmod-qca-nss-drv +kmod-ppp +kmod-l2tp @!LINUX_3_18
+  TITLE:=NSS connection manager for L2TPv2 protocol
+  DEPENDS:=@(TARGET_qualcommax||TARGET_ipq806x) \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_L2TP_ENABLE \
+	   +kmod-l2tp \
+	   +kmod-ppp
   FILES:=$(PKG_BUILD_DIR)/l2tp/l2tpv2/qca-nss-l2tpv2.ko
+  KCONFIG:=CONFIG_L2TP=y
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-l2tpv2)
 endef
 
-define KernelPackage/qca-nss-drv-l2tp/Description
+define KernelPackage/qca-nss-drv-l2tp/description
 Kernel modules for NSS connection manager - Support for l2tp tunnel
 endef
 
@@ -94,13 +150,16 @@ define KernelPackage/qca-nss-drv-pptp
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  TITLE:=Kernel driver for NSS (connection manager) - PPTP
-  DEPENDS:=@!TARGET_ipq95xx +kmod-qca-nss-drv +kmod-pptp @!LINUX_3_18
+  TITLE:=NSS connection manager for PPTP protocol
+  DEPENDS:=@(TARGET_qualcommax||TARGET_ipq806x) \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_PPTP_ENABLE \
+	   +kmod-pptp
   FILES:=$(PKG_BUILD_DIR)/pptp/qca-nss-pptp.ko
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-pptp)
 endef
 
-define KernelPackage/qca-nss-drv-pptp/Description
+define KernelPackage/qca-nss-drv-pptp/description
 Kernel modules for NSS connection manager - Support for PPTP tunnel
 endef
 
@@ -108,9 +167,13 @@ define KernelPackage/qca-nss-drv-pppoe
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  TITLE:=Kernel driver for NSS (connection manager) - PPPoE
-  DEPENDS:=@!TARGET_ipq95xx +kmod-qca-nss-drv +kmod-pppoe @!LINUX_3_18 \
-		+PACKAGE_kmod-bonding:kmod-bonding
+  TITLE:=NSS connection manager for PPPoE protocol
+  DEPENDS:=@(TARGET_qualcommax||TARGET_ipq806x) \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_PPPOE_ENABLE \
+	   +kmod-bonding \
+	   +kmod-ppp \
+	   +kmod-pppoe
   FILES:=$(PKG_BUILD_DIR)/pppoe/qca-nss-pppoe.ko
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-pppoe)
 endef
@@ -123,13 +186,16 @@ define KernelPackage/qca-nss-drv-map-t
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  TITLE:=Kernel driver for NSS (connection manager) - MAP-T
-  DEPENDS:=@!TARGET_ipq95xx +kmod-qca-nss-drv +kmod-nat46 @!LINUX_3_18
+  TITLE:=NSS connection manager for MAP-T protocol
+  DEPENDS:=@TARGET_qualcommax \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_MAPT_ENABLE \
+	   +kmod-nat46
   FILES:=$(PKG_BUILD_DIR)/map/map-t/qca-nss-map-t.ko
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-map-t)
 endef
 
-define KernelPackage/qca-nss-drv-map-t/Description
+define KernelPackage/qca-nss-drv-map-t/description
 Kernel modules for NSS connection manager - Support for MAP-T
 endef
 
@@ -137,13 +203,16 @@ define KernelPackage/qca-nss-drv-gre
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  TITLE:=Kernel driver for NSS (connection manager) - GRE
-  DEPENDS:=@!TARGET_ipq95xx +kmod-qca-nss-drv @!LINUX_3_18 +kmod-gre6
+  TITLE:=NSS connection manager for GRE protocol
+  DEPENDS:=@(TARGET_qualcommax||TARGET_ipq806x) \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_GRE_ENABLE \
+	   +kmod-gre6
   FILES:=$(PKG_BUILD_DIR)/gre/qca-nss-gre.ko $(PKG_BUILD_DIR)/gre/test/qca-nss-gre-test.ko
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-gre)
 endef
 
-define KernelPackage/qca-nss-drv-gre/Description
+define KernelPackage/qca-nss-drv-gre/description
 Kernel modules for NSS connection manager - Support for GRE
 endef
 
@@ -151,13 +220,17 @@ define KernelPackage/qca-nss-drv-tunipip6
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  TITLE:=Kernel driver for NSS (connection manager) - DS-lite and ipip6 Tunnel
-  DEPENDS:=@!TARGET_ipq95xx +kmod-qca-nss-drv +kmod-iptunnel6 +kmod-ip6-tunnel @!LINUX_3_18
+  TITLE:=NSS connection manager for IPIP6 tunnels
+  DEPENDS:=@(TARGET_qualcommax||TARGET_ipq806x) \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_TUNIPIP6_ENABLE \
+	   +kmod-ip6-tunnel \
+	   +kmod-iptunnel6
   FILES:=$(PKG_BUILD_DIR)/tunipip6/qca-nss-tunipip6.ko
   AUTOLOAD:=$(call AutoLoad,60,qca-nss-tunipip6)
 endef
 
-define KernelPackage/qca-nss-drv-tunipip6/Description
+define KernelPackage/qca-nss-drv-tunipip6/description
 Kernel modules for NSS connection manager
 Add support for DS-lite and ipip6 tunnel
 endef
@@ -166,8 +239,9 @@ define KernelPackage/qca-nss-drv-profile
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  DEPENDS:=@!TARGET_ipq95xx +kmod-qca-nss-drv @!LINUX_3_18
   TITLE:=Profiler for QCA NSS driver (IPQ806x)
+  DEPENDS:=@TARGET_ipq806x \
+	   +kmod-qca-nss-drv
   FILES:=$(PKG_BUILD_DIR)/profiler/qca-nss-profile-drv.ko
 endef
 
@@ -179,9 +253,13 @@ define KernelPackage/qca-nss-drv-ipsecmgr
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  TITLE:=Kernel driver for NSS (ipsec manager) - ipsecmgr
-  DEPENDS:=@!TARGET_ipq95xx +kmod-qca-nss-drv +kmod-qca-nss-cfi-cryptoapi \
-		+!LINUX_5_4:kmod-qca-nss-cfi-ocf +PACKAGE_kmod-qca-nss-drv-l2tpv2:kmod-qca-nss-drv-l2tpv2
+  TITLE:=NSS connection manager for IPSEC protocol
+  DEPENDS:=@(TARGET_qualcommax_ipq807x||TARGET_qualcommax_ipq60xx) \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_IPSEC_ENABLE \
+	   +kmod-qca-nss-cfi-cryptoapi \
+	   +PACKAGE_kmod-qca-nss-drv-l2tpv2:kmod-qca-nss-drv-l2tpv2 \
+	   @BROKEN
   FILES:=$(PKG_BUILD_DIR)/ipsecmgr/$(IPSECMGR_DIR)/qca-nss-ipsecmgr.ko
   AUTOLOAD:=$(call AutoLoad,60,qca-nss-ipsecmgr)
 endef
@@ -195,8 +273,12 @@ define KernelPackage/qca-nss-drv-ipsecmgr-klips
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS (ipsec klips)
-  DEPENDS:=@!TARGET_ipq95xx +kmod-qca-nss-drv-ipsecmgr kmod-qca-nss-ecm +kmod-qca-nss-cfi-ocf \
-		+PACKAGE_kmod-qca-nss-drv-vxlanmgr:kmod-qca-nss-drv-vxlanmgr
+  DEPENDS:=@(TARGET_qualcommax_ipq807x||TARGET_qualcommax_ipq60xx) \
+	   @LINUX_5_4 \
+	   +kmod-qca-nss-drv-ipsecmgr \
+	   +kmod-qca-nss-cfi-cryptoapi \
+	   +PACKAGE_kmod-qca-nss-drv-vxlanmgr:kmod-qca-nss-drv-vxlanmgr \
+	   @BROKEN
   FILES:=$(PKG_BUILD_DIR)/ipsecmgr/$(IPSECMGR_DIR)/plugins/klips/qca-nss-ipsec-klips.ko
 endef
 
@@ -209,8 +291,12 @@ define KernelPackage/qca-nss-drv-ipsecmgr-xfrm
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS (ipsec xfrm)
-  DEPENDS:=@!TARGET_ipq95xx +kmod-qca-nss-drv-ipsecmgr \
-		+PACKAGE_kmod-qca-nss-drv-vxlanmgr:kmod-qca-nss-drv-vxlanmgr kmod-qca-nss-ecm +kmod-ipsec @!LINUX_3_18
+  DEPENDS:=@(TARGET_qualcommax_ipq807x||TARGET_qualcommax_ipq60xx) \
+	   +kmod-qca-nss-drv-ipsecmgr \
+	   +kmod-qca-nss-ecm \
+	   +PACKAGE_kmod-qca-nss-drv-vxlanmgr:kmod-qca-nss-drv-vxlanmgr \
+	   +kmod-ipsec \
+	   @BROKEN
   FILES:=$(PKG_BUILD_DIR)/ipsecmgr/$(IPSECMGR_DIR)/plugins/xfrm/qca-nss-ipsec-xfrm.ko
 endef
 
@@ -222,13 +308,18 @@ define KernelPackage/qca-nss-drv-capwapmgr
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  DEPENDS:=@!TARGET_ipq95xx +kmod-qca-nss-drv +kmod-qca-nss-drv-dtlsmgr @!LINUX_3_18
-  TITLE:=NSS CAPWAP Manager for QCA NSS driver (IPQ806x)
+  TITLE:=NSS CAPWAP manager for QCA NSS
+  DEPENDS:=@(TARGET_qualcommax_ipq807x||TARGET_qualcommax_ipq60xx) \
+	   +kmod-qca-nss-drv \
+	   +kmod-qca-nss-drv-dtlsmgr \
+	   +@NSS_DRV_TRUSTSEC_ENABLE \
+	   +@NSS_DRV_CAPWAP_ENABLE \
+	   @BROKEN
   FILES:=$(PKG_BUILD_DIR)/capwapmgr/qca-nss-capwapmgr.ko
 endef
 
 define KernelPackage/qca-nss-drv-capwapmgr/Description
-This package contains a NSS CAPWAP Manager
+This package contains a NSS CAPWAP manager
 endef
 
 define KernelPackage/qca-nss-drv-bridge-mgr
@@ -236,14 +327,11 @@ define KernelPackage/qca-nss-drv-bridge-mgr
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS bridge manager
-  DEPENDS:=@TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq_ipq60xx||TARGET_ipq_ipq60xx_64||TARGET_ipq60xx \
-		+TARGET_ipq_ipq807x:kmod-qca-nss-drv-vlan-mgr \
-		+TARGET_ipq_ipq807x_64:kmod-qca-nss-drv-vlan-mgr \
-		+TARGET_ipq807x:kmod-qca-nss-drv-vlan-mgr \
-		+TARGET_ipq60xx:kmod-qca-nss-drv-vlan-mgr \
-		+TARGET_ipq_ipq60xx:kmod-qca-nss-drv-vlan-mgr \
-		+TARGET_ipq_ipq60xx_64:kmod-qca-nss-drv-vlan-mgr @!LINUX_3_18 \
-		+PACKAGE_kmod-bonding:kmod-bonding
+  DEPENDS:=@(TARGET_qualcommax_ipq807x||TARGET_qualcommax_ipq60xx) \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_BRIDGE_ENABLE \
+	   +kmod-qca-nss-drv-vlan-mgr \
+	   +kmod-bonding
 ifneq ($(CONFIG_PACKAGE_kmod-qca-ovsmgr),)
   DEPENDS+=kmod-qca-ovsmgr
 endif
@@ -260,9 +348,10 @@ define KernelPackage/qca-nss-drv-vlan-mgr
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS vlan manager
-  DEPENDS:=@TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq_ipq60xx||TARGET_ipq_ipq60xx_64||TARGET_ipq60xx \
-	   +kmod-qca-nss-drv @!LINUX_3_18 \
-	   +PACKAGE_kmod-bonding:kmod-bonding
+  DEPENDS:=@(TARGET_qualcommax_ipq807x||TARGET_qualcommax_ipq60xx) \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_VLAN_ENABLE \
+	   +kmod-bonding
   FILES:=$(PKG_BUILD_DIR)/vlan/qca-nss-vlan.ko
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-vlan)
 endef
@@ -274,11 +363,15 @@ endef
 define KernelPackage/qca-nss-drv-qdisc
   SECTION:=kernel
   CATEGORY:=Kernel modules
-  SUBMENU:=Network Support
+  SUBMENU:=Network Devices
   TITLE:=Qdisc for configuring shapers in NSS
-  DEPENDS:=@!TARGET_ipq95xx +kmod-qca-nss-drv @!LINUX_3_18
+  DEPENDS:=@(TARGET_qualcommax||TARGET_ipq806x) \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_SHAPER_ENABLE \
+	   +@NSS_DRV_IGS_ENABLE \
+	   +!TARGET_qualcommax_ipq50xx:kmod-qca-nss-drv-bridge-mgr
   FILES:=$(PKG_BUILD_DIR)/nss_qdisc/qca-nss-qdisc.ko
-  AUTOLOAD:=$(call AutoLoad,58,qca-nss-qdisc)
+  KCONFIG:=CONFIG_NET_CLS_ACT=y
 endef
 
 define KernelPackage/qca-nss-drv-qdisc/Description
@@ -288,13 +381,19 @@ endef
 define KernelPackage/qca-nss-drv-igs
   SECTION:=kernel
   CATEGORY:=Kernel modules
-  SUBMENU:=Network Support
-  TITLE:=Action for offloading traffic to an IFB interface to perform ingress shaping.
-  DEPENDS:=@!TARGET_ipq95xx +kmod-qca-nss-drv +kmod-sched-core +kmod-ifb +kmod-qca-nss-drv-qdisc @!LINUX_3_18
+  SUBMENU:=Network Devices
+  TITLE:=NSS connection manager to perform ingress shaping
+  DEPENDS:=@(TARGET_qualcommax||TARGET_ipq806x) \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_IGS_ENABLE \
+	   +kmod-qca-nss-drv-qdisc \
+	   +kmod-ifb \
+	   +kmod-nf-conntrack \
+	   +kmod-sched-core
   FILES:=$(PKG_BUILD_DIR)/nss_qdisc/igs/act_nssmirred.ko
 endef
 
-define KernelPackage/qca-nss-drv-igs/Description
+define KernelPackage/qca-nss-drv-igs/description
 Linux action that helps in offloading traffic to an IFB interface to perform ingress shaping.
 endef
 
@@ -302,20 +401,17 @@ define KernelPackage/qca-nss-drv-lag-mgr
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  TITLE:=Kernel driver for NSS LAG manager
-  DEPENDS:=@!TARGET_ipq95xx +kmod-qca-nss-drv @!LINUX_3_18 \
-	   +TARGET_ipq_ipq807x:kmod-qca-nss-drv-vlan-mgr \
-	   +TARGET_ipq_ipq807x_64:kmod-qca-nss-drv-vlan-mgr @!LINUX_3_18 \
-	   +TARGET_ipq807x:kmod-qca-nss-drv-vlan-mgr @!LINUX_3_18 \
-	   +TARGET_ipq_ipq60xx:kmod-qca-nss-drv-vlan-mgr @!LINUX_3_18 \
-	   +TARGET_ipq_ipq60xx_64:kmod-qca-nss-drv-vlan-mgr @!LINUX_3_18 \
-	   +TARGET_ipq60xx:kmod-qca-nss-drv-vlan-mgr @!LINUX_3_18 \
+  TITLE:=NSS LAG (link aggregation) manager
+  DEPENDS:=@(TARGET_qualcommax_ipq807x||TARGET_qualcommax_ipq60xx) \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_LAG_ENABLE \
+	   +kmod-qca-nss-drv-vlan-mgr \
 	   +kmod-bonding
   FILES:=$(PKG_BUILD_DIR)/lag/qca-nss-lag-mgr.ko
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-lag-mgr)
 endef
 
-define KernelPackage/qca-nss-drv-lag-mgr/Description
+define KernelPackage/qca-nss-drv-lag-mgr/description
 Kernel modules for NSS LAG manager
 endef
 
@@ -323,12 +419,30 @@ define KernelPackage/qca-nss-drv-netlink
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  DEPENDS:=@!TARGET_ipq95xx \
-		+kmod-qca-nss-drv +kmod-pppoe @!LINUX_3_18 \
-		+PACKAGE_kmod-qca-nss-drv-ipsecmgr:kmod-qca-nss-drv-ipsecmgr \
-		+PACKAGE_kmod-qca-nss-drv-dtlsmgr:kmod-qca-nss-drv-dtlsmgr \
-		+PACKAGE_kmod-qca-nss-drv-capwapmgr:kmod-qca-nss-drv-capwapmgr @!LINUX_3_18
-  TITLE:=NSS NETLINK Manager for QCA NSS driver
+  TITLE:=NSS NETLINK manager for QCA NSS driver
+  DEPENDS:=@TARGET_qualcommax \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_IPV6_ENABLE \
+	   +@NSS_DRV_WIFIOFFLOAD_ENABLE \
+	   +@NSS_DRV_UDP_ST_ENABLE:NSS_DRV_RMNET_ENABLE \
+	   +@NSS_DRV_C2C_ENABLE:NSS_DRV_C2C_ENABLE \
+	   +PACKAGE_kmod-qca-nss-drv-capwapmgr:kmod-qca-nss-drv-capwapmgr \
+	   +PACKAGE_kmod-qca-nss-drv-dtlsmgr:kmod-qca-nss-drv-dtlsmgr \
+	   +PACKAGE_kmod-qca-nss-drv-gre:kmod-qca-nss-drv-gre \
+	   +PACKAGE_kmod-qca-nss-drv-ipsecmgr-xfrm:kmod-qca-nss-drv-ipsecmgr \
+	   +PACKAGE_kmod-qca-nss-drv-igs:kmod-qca-nss-drv-igs \
+	   +PACKAGE_kmod-qca-nss-drv-l2tpv2:kmod-qca-nss-drv-l2tpv2 \
+	   +PACKAGE_kmod-qca-nss-drv-lag-mgr:kmod-qca-nss-drv-lag-mgr \
+	   +PACKAGE_kmod-qca-nss-drv-map-t:kmod-qca-nss-drv-map-t \
+	   +PACKAGE_kmod-qca-nss-drv-match:kmod-qca-nss-drv-match \
+	   +PACKAGE_kmod-qca-nss-drv-mirror:kmod-qca-nss-drv-mirror \
+	   +PACKAGE_kmod-qca-nss-drv-pppoe:kmod-qca-nss-drv-pppoe \
+	   +PACKAGE_kmod-qca-nss-drv-pptp:kmod-qca-nss-drv-pptp \
+	   +PACKAGE_kmod-qca-nss-drv-qdisc:kmod-qca-nss-drv-qdisc \
+	   +PACKAGE_kmod-qca-nss-drv-tun6rd:kmod-qca-nss-drv-tun6rd \
+	   +PACKAGE_kmod-qca-nss-drv-tunipip6:kmod-qca-nss-drv-tunipip6 \
+	   +PACKAGE_kmod-qca-nss-drv-vxlanmgr:kmod-qca-nss-drv-vxlanmgr \
+	   +@(PACKAGE_kmod-qca-nss-drv-gre):NSS_DRV_GRE_REDIR_ENABLE
   FILES:=$(PKG_BUILD_DIR)/netlink/qca-nss-netlink.ko
 endef
 
@@ -336,16 +450,26 @@ define KernelPackage/qca-nss-drv-netlink/Description
 Kernel module for NSS netlink manager
 endef
 
+define KernelPackage/qca-nss-drv-netlink/config
+	source "$(SOURCE)/Config.in"
+endef
+
 define KernelPackage/qca-nss-drv-ovpn-mgr
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for NSS OpenVPN manager
-  DEPENDS:=@TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq_ipq60xx||TARGET_ipq_ipq60xx_64||TARGET_ipq60xx +kmod-qca-nss-drv +kmod-qca-nss-cfi-cryptoapi +kmod-tun +kmod-ipt-conntrack @!LINUX_3_18
+  DEPENDS:=@(TARGET_qualcommax_ipq807x||TARGET_qualcommax_ipq60xx) \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_QVPN_ENABLE \
+	   +kmod-qca-nss-cfi-cryptoapi \
+	   +kmod-nf-conntrack \
+	   +kmod-tun \
+	   @BROKEN
   FILES:=$(PKG_BUILD_DIR)/openvpn/src/qca-nss-ovpn-mgr.ko
 endef
 
-define KernelPackage/qca-nss-drv-ovpn-mgr/Description
+define KernelPackage/qca-nss-drv-ovpn-mgr/description
 Kernel module for NSS OpenVPN manager
 endef
 
@@ -354,11 +478,14 @@ define KernelPackage/qca-nss-drv-ovpn-link
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for interfacing NSS OpenVPN manager with ECM
-  DEPENDS:=@TARGET_ipq_ipq807x||TARGET_ipq_ipq807x_64||TARGET_ipq807x||TARGET_ipq_ipq60xx||TARGET_ipq_ipq60xx_64||TARGET_ipq60xx kmod-qca-nss-drv-ovpn-mgr kmod-qca-nss-ecm-premium @!LINUX_3_18
+  DEPENDS:=@(TARGET_qualcommax_ipq807x||TARGET_qualcommax_ipq60xx) \
+	   +kmod-qca-nss-drv-ovpn-mgr \
+	   +kmod-qca-nss-ecm \
+	   @BROKEN
   FILES:=$(PKG_BUILD_DIR)/openvpn/plugins/qca-nss-ovpn-link.ko
 endef
 
-define KernelPackage/qca-nss-drv-ovpn-link/Description
+define KernelPackage/qca-nss-drv-ovpn-link/description
 This module registers with ECM and communicates with NSS OpenVPN manager for supporting OpenVPN offload.
 endef
 
@@ -366,25 +493,31 @@ define KernelPackage/qca-nss-drv-pvxlanmgr
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  DEPENDS:=@!TARGET_ipq95xx +kmod-qca-nss-drv @!LINUX_3_18
-  TITLE:=NSS PVXLAN Manager for QCA NSS driver
+  TITLE:=NSS connection manager for PVxLANs
+  DEPENDS:=@TARGET_qualcommax \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_PVXLAN_ENABLE \
+	   +kmod-vxlan \
+	   @BROKEN
   FILES:=$(PKG_BUILD_DIR)/pvxlanmgr/qca-nss-pvxlanmgr.ko
 endef
 
-define KernelPackage/qca-nss-drv-pvxlanmgr/Description
-Kernel module for managing NSS PVxLAN
+define KernelPackage/qca-nss-drv-pvxlanmgr/description
+NSS kernel module for managing Paravirtualized Extensible LAN (PVxLAN) connections
 endef
 
 define KernelPackage/qca-nss-drv-eogremgr
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  DEPENDS:=@!TARGET_ipq95xx +kmod-qca-nss-drv +kmod-qca-nss-drv-gre @!LINUX_3_18
-  TITLE:=NSS EOGRE Manager for QCA NSS driver
+  TITLE:=NSS EOGRE manager for QCA NSS driver
+  DEPENDS:=@TARGET_qualcommax \
+	   +kmod-qca-nss-drv \
+	   +kmod-qca-nss-drv-gre
   FILES:=$(PKG_BUILD_DIR)/eogremgr/qca-nss-eogremgr.ko
 endef
 
-define KernelPackage/qca-nss-drv-eogremgr/Description
+define KernelPackage/qca-nss-drv-eogremgr/description
 Kernel module for managing NSS EoGRE
 endef
 
@@ -392,12 +525,16 @@ define KernelPackage/qca-nss-drv-clmapmgr
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  DEPENDS:=@!TARGET_ipq95xx +kmod-qca-nss-drv +kmod-qca-nss-drv-eogremgr @!LINUX_3_18
-  TITLE:=NSS clmap Manager for QCA NSS driver
+  TITLE:=NSS clmap manager for QCA NSS driver
+  DEPENDS:=@TARGET_qualcommax \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_CLMAP_ENABLE \
+	   +kmod-qca-nss-drv-eogremgr \
+	   @BROKEN
   FILES:=$(PKG_BUILD_DIR)/clmapmgr/qca-nss-clmapmgr.ko
 endef
 
-define KernelPackage/qca-nss-drv-clmapmgr/Description
+define KernelPackage/qca-nss-drv-clmapmgr/description
 Kernel module for managing NSS clmap
 endef
 
@@ -405,13 +542,16 @@ define KernelPackage/qca-nss-drv-vxlanmgr
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  DEPENDS:=@!TARGET_ipq95xx +kmod-qca-nss-drv +kmod-vxlan @!LINUX_3_18
-  TITLE:=NSS VxLAN Manager for QCA NSS driver
+  TITLE:=NSS VxLAN manager for QCA NSS driver
+  DEPENDS:=@TARGET_qualcommax \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_VXLAN_ENABLE \
+	   +kmod-vxlan
   FILES:=$(PKG_BUILD_DIR)/vxlanmgr/qca-nss-vxlanmgr.ko
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-vxlanmgr)
 endef
 
-define KernelPackage/qca-nss-drv-vxlanmgr/Description
+define KernelPackage/qca-nss-drv-vxlanmgr/description
 Kernel module for managing NSS VxLAN
 endef
 
@@ -419,21 +559,26 @@ define KernelPackage/qca-nss-drv-match
  SECTION:=kernel
  CATEGORY:=Kernel modules
  SUBMENU:=Network Devices
- DEPENDS:=@!TARGET_ipq95xx +kmod-qca-nss-drv @!LINUX_3_18
  TITLE:=NSS Match for QCA NSS driver
+ DEPENDS:=@TARGET_qualcommax \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_MATCH_ENABLE \
+	   +@NSS_DRV_WIFIOFFLOAD_ENABLE
  FILES:=$(PKG_BUILD_DIR)/match/qca-nss-match.ko
 endef
 
-define KernelPackage/qca-nss-drv-match/Description
+define KernelPackage/qca-nss-drv-match/description
 Kernel module for managing NSS Match
 endef
 
 define KernelPackage/qca-nss-drv-mirror
  SECTION:=kernel
  CATEGORY:=Kernel modules
- SUBMENU:=Network Support
- TITLE:=Module for mirroring packets from NSS to host.
- DEPENDS:=@!TARGET_ipq95xx +kmod-qca-nss-drv @!LINUX_3_18
+ SUBMENU:=Network Devices
+ TITLE:=Module for mirroring packets from NSS to host
+ DEPENDS:=@TARGET_qualcommax \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_MIRROR_ENABLE
  FILES:=$(PKG_BUILD_DIR)/mirror/qca-nss-mirror.ko
 endef
 
@@ -444,9 +589,11 @@ endef
 define KernelPackage/qca-nss-drv-mscs
  SECTION:=kernel
  CATEGORY:=Kernel modules
- SUBMENU:=Network Support
- TITLE:=NSS Module to interface between wlan host driver and ECM MSCS classifier.
- DEPENDS:=@!TARGET_ipq95xx +kmod-qca-nss-drv kmod-qca-nss-ecm-premium kmod-qca-wifi @!LINUX_3_18
+ SUBMENU:=Network Devices
+ TITLE:=Module to interface wlan host driver and ECM MSCS classifier.
+ DEPENDS:=@TARGET_qualcommbe \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_WIFIOFFLOAD_ENABLE
  FILES:=$(PKG_BUILD_DIR)/mscs/qca-nss-mscs.ko
 endef
 
@@ -458,8 +605,10 @@ define KernelPackage/qca-nss-drv-wifi-meshmgr
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  DEPENDS:=@!TARGET_ipq95xx +kmod-qca-nss-drv @!LINUX_3_18
-  TITLE:=NSS WiFi-Mesh Manager for QCA NSS driver
+  TITLE:=NSS WiFi-Mesh manager for QCA NSS driver
+  DEPENDS:=@TARGET_qualcommax \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_WIFI_MESH_ENABLE
   FILES:=$(PKG_BUILD_DIR)/wifi_meshmgr/qca-nss-wifi-meshmgr.ko
   AUTOLOAD:=$(call AutoLoad,51,qca-nss-wifi-meshmgr)
 endef
@@ -493,172 +642,215 @@ define KernelPackage/qca-nss-drv-ipsecmgr-xfrm/install
 	$(INSTALL_BIN) ./files/qca-nss-ipsec $(1)/etc/init.d/qca-nss-ipsec
 endef
 
-define KernelPackage/qca-nss-drv-igs/install
+define KernelPackage/qca-nss-drv-netlink/install
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/qca-nss-mirred.init $(1)/etc/init.d/qca-nss-mirred
+	$(INSTALL_BIN) ./files/qca-nss-netlink.init $(1)/etc/init.d/qca-nss-netlink
 endef
 
 EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/qca-nss-drv \
 	-I$(STAGING_DIR)/usr/include/qca-nss-crypto \
 	-I$(STAGING_DIR)/usr/include/qca-nss-cfi \
-	-I$(STAGING_DIR)/usr/include/qca-nss-gmac \
+	-I$(STAGING_DIR)/usr/include/qca-nss-ecm \
 	-I$(STAGING_DIR)/usr/include/qca-ssdk \
 	-I$(STAGING_DIR)/usr/include/qca-ssdk/fal \
 	-I$(STAGING_DIR)/usr/include/nat46
 
 # Build individual packages if selected
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-profile),)
-MAKE_OPTS+=profile=y
+NSS_CLIENTS_MAKE_OPTS+=profile=y
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-capwapmgr),)
-MAKE_OPTS+=capwapmgr=y
+NSS_CLIENTS_MAKE_OPTS+=capwapmgr=y
 EXTRA_CFLAGS += -DNSS_CAPWAPMGR_ONE_NETDEV
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-tun6rd),)
-MAKE_OPTS+=tun6rd=m
+NSS_CLIENTS_MAKE_OPTS+=tun6rd=m
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-dtlsmgr),)
-MAKE_OPTS+=dtlsmgr=y
+NSS_CLIENTS_MAKE_OPTS+=dtlsmgr=y
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-tlsmgr),)
-MAKE_OPTS+=tlsmgr=y
+EXTRA_CFLAGS+= -I$(PKG_BUILD_DIR)/exports
+NSS_CLIENTS_MAKE_OPTS+=tlsmgr=m
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-l2tpv2),)
-MAKE_OPTS+=l2tpv2=y
+NSS_CLIENTS_MAKE_OPTS+=l2tpv2=y
 EXTRA_CFLAGS += -DNSS_L2TPV2_ENABLED
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-pptp),)
-MAKE_OPTS+=pptp=y
+NSS_CLIENTS_MAKE_OPTS+=pptp=y
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-map-t),)
-MAKE_OPTS+=map-t=y
+NSS_CLIENTS_MAKE_OPTS+=map-t=y
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-tunipip6),)
-MAKE_OPTS+=tunipip6=m
+NSS_CLIENTS_MAKE_OPTS+=tunipip6=y
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-qdisc),)
-MAKE_OPTS+=qdisc=y
+NSS_CLIENTS_MAKE_OPTS+=qdisc=y
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-igs),)
-MAKE_OPTS+=igs=y
+NSS_CLIENTS_MAKE_OPTS+=igs=y
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ipsecmgr),)
 EXTRA_CFLAGS+= -I$(PKG_BUILD_DIR)/exports
-MAKE_OPTS+=ipsecmgr=y
+NSS_CLIENTS_MAKE_OPTS+=ipsecmgr=y
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ipsecmgr-klips),)
 EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-ecm
-MAKE_OPTS+=ipsecmgr-klips=m
+NSS_CLIENTS_MAKE_OPTS+=ipsecmgr-klips=m
 # Enable netdev based binding from L2TP to IPsec if KLIPS is enabled
 EXTRA_CFLAGS+= -DNSS_L2TP_IPSEC_BIND_BY_NETDEV
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ipsecmgr-xfrm),)
 EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-ecm
-MAKE_OPTS+=ipsecmgr-xfrm=m
+NSS_CLIENTS_MAKE_OPTS+=ipsecmgr-xfrm=m
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-bridge-mgr),)
-MAKE_OPTS+=bridge-mgr=y
+NSS_CLIENTS_MAKE_OPTS+=bridge-mgr=y
 #enable OVS bridge if ovsmgr is enabled
 ifneq ($(CONFIG_PACKAGE_kmod-qca-ovsmgr),)
-MAKE_OPTS+= NSS_BRIDGE_MGR_OVS_ENABLE=y
+NSS_CLIENTS_MAKE_OPTS+= NSS_BRIDGE_MGR_OVS_ENABLE=y
 EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-ovsmgr
 endif
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-vlan-mgr),)
-MAKE_OPTS+=vlan-mgr=y
+NSS_CLIENTS_MAKE_OPTS+=vlan-mgr=y
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-lag-mgr),)
-MAKE_OPTS+=lag-mgr=y
+NSS_CLIENTS_MAKE_OPTS+=lag-mgr=y
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-gre),)
 EXTRA_CFLAGS+= -I$(PKG_BUILD_DIR)/exports
-MAKE_OPTS+=gre=y
+NSS_CLIENTS_MAKE_OPTS+=gre=y
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-pppoe),)
-MAKE_OPTS+=pppoe=y
+NSS_CLIENTS_MAKE_OPTS+=pppoe=y
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-netlink),)
-MAKE_OPTS+=netlink=y
+NSS_CLIENTS_MAKE_OPTS+=netlink=y
+
+ifdef CONFIG_NSS_DRV_C2C_ENABLE
+NSS_CLIENTS_MAKE_OPTS+=CONFIG_NSS_NLC2C=y
+endif
+
+ifdef CONFIG_NSS_DRV_UDP_ST_ENABLE
+NSS_CLIENTS_MAKE_OPTS+=CONFIG_NSS_NLUDP_ST=y
+endif
+
+ifdef CONFIG_NSS_DRV_QRFS_ENABLE
+NSS_CLIENTS_MAKE_OPTS+=CONFIG_NSS_NLQRFS=y
+endif
+
+ifdef CONFIG_NSS_DRV_GRE_REDIR_ENABLE
+NSS_CLIENTS_MAKE_OPTS+=CONFIG_NSS_NLGRE_REDIR_FAMILY=y
+endif
+
+ifdef CONFIG_NSS_DRV_IPV4_REASM_ENABLE
+NSS_CLIENTS_MAKE_OPTS+=CONFIG_NSS_NLIPV4_REASM=y
+endif
+
+ifdef CONFIG_NSS_DRV_IPV6_REASM_ENABLE
+NSS_CLIENTS_MAKE_OPTS+=CONFIG_NSS_NLIPV6_REASM=y
+endif
+
+ifdef CONFIG_NSS_DRV_LSO_RX_ENABLE
+NSS_CLIENTS_MAKE_OPTS+=CONFIG_NSS_NLLSO_RX=y
+endif
 
 ifeq ($(CONFIG_KERNEL_IPQ_MEM_PROFILE),256)
 EXTRA_CFLAGS+= -DNSS_NETLINK_UDP_ST_NO_RMNET_SUPPORT
 else ifeq ($(CONFIG_LOWMEM_FLASH),y)
 EXTRA_CFLAGS+= -DNSS_NETLINK_UDP_ST_NO_RMNET_SUPPORT
 endif
+
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ovpn-mgr),)
-MAKE_OPTS+=ovpn-mgr=y
+NSS_CLIENTS_MAKE_OPTS+=ovpn-mgr=y
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-ovpn-link),)
-MAKE_OPTS+=ovpn-link=y
+NSS_CLIENTS_MAKE_OPTS+=ovpn-link=y
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-pvxlanmgr),)
-MAKE_OPTS+=pvxlanmgr=y
+# The memset() call in nss_pvxlanmgr_get_tunnel_stats
+# triggers a compilation error with GCC 13, most likely
+# it is a false positive, disable the warning for now.
+EXTRA_CFLAGS+= -Wno-stringop-overread
+NSS_CLIENTS_MAKE_OPTS+=pvxlanmgr=y
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-eogremgr),)
-MAKE_OPTS+=eogremgr=y
+NSS_CLIENTS_MAKE_OPTS+=eogremgr=y
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-clmapmgr),)
-MAKE_OPTS+=clmapmgr=y
+NSS_CLIENTS_MAKE_OPTS+=clmapmgr=y
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-vxlanmgr),)
-MAKE_OPTS+=vxlanmgr=y
+NSS_CLIENTS_MAKE_OPTS+=vxlanmgr=y
 EXTRA_CFLAGS += -DNSS_VXLAN_ENABLED
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-match),)
-MAKE_OPTS+=match=y
+NSS_CLIENTS_MAKE_OPTS+=match=y
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-mirror),)
-MAKE_OPTS+=mirror=y
+NSS_CLIENTS_MAKE_OPTS+=mirror=y
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-mscs),)
 EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/qca-wifi \
 	-I$(STAGING_DIR)/usr/include/qca-nss-ecm
-MAKE_OPTS+=mscs=y
+NSS_CLIENTS_MAKE_OPTS+=mscs=y
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-wifi-meshmgr),)
-MAKE_OPTS+=wifi-meshmgr=y
+NSS_CLIENTS_MAKE_OPTS+=wifi-meshmgr=y
 endif
 
+EXTRA_CFLAGS+= \
+	-Wno-missing-prototypes \
+	-Wno-missing-declarations \
+	-Wno-empty-body
+
 define Build/Compile
-	$(KERNEL_MAKE) $(strip $(MAKE_OPTS)) \
-		M="$(PKG_BUILD_DIR)" \
-		EXTRA_CFLAGS="$(EXTRA_CFLAGS)" \
-		SoC="$(subtarget)" \
-		DTLSMGR_DIR="$(DTLSMGR_DIR)" \
-		IPSECMGR_DIR="$(IPSECMGR_DIR)" \
-		modules
+	+$(MAKE) -C "$(LINUX_DIR)" $(strip $(NSS_CLIENTS_MAKE_OPTS)) \
+	  CROSS_COMPILE="$(TARGET_CROSS)" \
+	  ARCH="$(LINUX_KARCH)" \
+	  M="$(PKG_BUILD_DIR)" \
+	  EXTRA_CFLAGS="$(EXTRA_CFLAGS) -include $(PKG_BUILD_DIR)/compat.h" \
+	  DTLSMGR_DIR="$(DTLSMGR_DIR)" \
+	  IPSECMGR_DIR="$(IPSECMGR_DIR)" \
+	  SoC=$(SOC) \
+	  $(KERNEL_MAKE_FLAGS) \
+	  $(PKG_JOBS) \
+	  modules
 endef
 
 $(eval $(call KernelPackage,qca-nss-drv-profile))
@@ -680,8 +872,8 @@ $(eval $(call KernelPackage,qca-nss-drv-bridge-mgr))
 $(eval $(call KernelPackage,qca-nss-drv-vlan-mgr))
 $(eval $(call KernelPackage,qca-nss-drv-lag-mgr))
 $(eval $(call KernelPackage,qca-nss-drv-gre))
-$(eval $(call KernelPackage,qca-nss-drv-ovpn-mgr))
-$(eval $(call KernelPackage,qca-nss-drv-ovpn-link))
+# $(eval $(call KernelPackage,qca-nss-drv-ovpn-mgr))
+# $(eval $(call KernelPackage,qca-nss-drv-ovpn-link))
 $(eval $(call KernelPackage,qca-nss-drv-pvxlanmgr))
 $(eval $(call KernelPackage,qca-nss-drv-eogremgr))
 $(eval $(call KernelPackage,qca-nss-drv-clmapmgr))
