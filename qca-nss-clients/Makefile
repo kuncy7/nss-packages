@@ -171,11 +171,9 @@ define KernelPackage/qca-nss-drv-pppoe
   DEPENDS:=@(TARGET_qualcommax||TARGET_ipq806x) \
 	   +kmod-qca-nss-drv \
 	   +@NSS_DRV_PPPOE_ENABLE \
-	   +kmod-bonding \
 	   +kmod-ppp \
 	   +kmod-pppoe
   FILES:=$(PKG_BUILD_DIR)/pppoe/qca-nss-pppoe.ko
-  AUTOLOAD:=$(call AutoLoad,51,qca-nss-pppoe)
 endef
 
 define KernelPackage/qca-nss-drv-pppoe/Description
@@ -368,8 +366,7 @@ define KernelPackage/qca-nss-drv-qdisc
   DEPENDS:=@(TARGET_qualcommax||TARGET_ipq806x) \
 	   +kmod-qca-nss-drv \
 	   +@NSS_DRV_SHAPER_ENABLE \
-	   +@NSS_DRV_IGS_ENABLE \
-	   +!TARGET_qualcommax_ipq50xx:kmod-qca-nss-drv-bridge-mgr
+	   +@NSS_DRV_IGS_ENABLE
   FILES:=$(PKG_BUILD_DIR)/nss_qdisc/qca-nss-qdisc.ko
   KCONFIG:=CONFIG_NET_CLS_ACT=y
 endef
@@ -647,6 +644,10 @@ define KernelPackage/qca-nss-drv-netlink/install
 	$(INSTALL_BIN) ./files/qca-nss-netlink.init $(1)/etc/init.d/qca-nss-netlink
 endef
 
+# Vendor code is not warning-clean; openwrt main enables
+# CONFIG_KERNEL_WERROR which leaks -Werror into external modules.
+EXTRA_CFLAGS+= -Wno-error
+
 EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/qca-nss-drv \
 	-I$(STAGING_DIR)/usr/include/qca-nss-crypto \
@@ -698,6 +699,10 @@ endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-qdisc),)
 NSS_CLIENTS_MAKE_OPTS+=qdisc=y
+# PPE shaper mode and NSS-bridge qdisc attach need qca-ssdk and
+# bridge-mgr, neither of which exists on the EDMA stack. The NSS-fw
+# accel mode (accel_mode 0) is unaffected.
+NSS_CLIENTS_MAKE_OPTS+=NSS_QDISC_PPE_ENABLE=n
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-igs),)
