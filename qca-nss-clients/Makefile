@@ -113,6 +113,22 @@ EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/qca-nss-drv
 
 # Build individual packages if selected
+define KernelPackage/qca-nss-drv-map-t
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  TITLE:=NSS connection manager for MAP-T
+  DEPENDS:=@(TARGET_qualcommax||TARGET_ipq806x) \
+	   +kmod-qca-nss-drv \
+	   +kmod-nat46
+  FILES:=$(PKG_BUILD_DIR)/map/map-t/qca-nss-map-t.ko
+  AUTOLOAD:=$(call AutoLoad,51,qca-nss-map-t)
+endef
+
+define KernelPackage/qca-nss-drv-map-t/description
+NSS connection manager for MAP-T - hardware offload of 464xlat/MAP-T.
+endef
+
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-qdisc),)
 NSS_CLIENTS_MAKE_OPTS+=qdisc=y
 # PPE shaper mode and NSS-bridge qdisc attach need qca-ssdk and
@@ -127,6 +143,11 @@ endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-pppoe),)
 NSS_CLIENTS_MAKE_OPTS+=pppoe=y
+endif
+
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-map-t),)
+NSS_CLIENTS_MAKE_OPTS+=map-t=y
+EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/nat46
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-bridge-mgr),)
@@ -153,4 +174,5 @@ endef
 $(eval $(call KernelPackage,qca-nss-drv-pppoe))
 $(eval $(call KernelPackage,qca-nss-drv-qdisc))
 $(eval $(call KernelPackage,qca-nss-drv-igs))
+$(eval $(call KernelPackage,qca-nss-drv-map-t))
 $(eval $(call KernelPackage,qca-nss-drv-bridge-mgr))
