@@ -47,13 +47,9 @@ QCA_MC_SNOOPING_HEADERS= \
 define Build/InstallDev
   mkdir -p $(1)/usr/include/qca-mcs
 	$(foreach header_file,$(QCA_MC_SNOOPING_HEADERS), $(CP) $(header_file) $(1)/usr/include/qca-mcs;)
-	$(foreach header_file,$(QCA_MC_SNOOPING_HEADERS), $(CP) $(header_file) $(1)/usr/include/;)
 endef
 
-# Vendor code is not warning-clean; openwrt main enables CONFIG_KERNEL_WERROR
-# which leaks -Werror into external modules (header-guard, missing-prototypes,
-# unused-variable). Same treatment as qca-nss-ecm / qca-nss-drv.
-EXTRA_CFLAGS+=-Wno-implicit-fallthrough -Wno-error
+EXTRA_CFLAGS+=-Wno-implicit-fallthrough
 
 QCA_MC_SNOOPING_MAKE_OPTS:= \
         $(KERNEL_MAKE_FLAGS) \
@@ -70,7 +66,7 @@ define Build/Compile
       KBUILDPATH=$(LINUX_DIR) \
       $(PKG_MAKE_FLAGS) \
       M=$(PKG_BUILD_DIR) \
-      EXTRA_CFLAGS="$(EXTRA_CFLAGS)" \
+      NOSTDINC_FLAGS="$(KERNEL_NOSTDINC_FLAGS) $(EXTRA_CFLAGS)" \
       $(strip $(QCA_MC_SNOOPING_MAKE_OPTS)) \
       modules
 endef
