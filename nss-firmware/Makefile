@@ -20,6 +20,7 @@ PKG_MAINTAINER:=Sean K <datapronix@protonmail.com>
 
 PKG_CONFIG_DEPENDS:= \
 	CONFIG_NSS_FIRMWARE_VERSION_11_4 \
+	CONFIG_NSS_FIRMWARE_VERSION_12_2 \
 	CONFIG_NSS_FIRMWARE_VERSION_12_5
 
 include $(INCLUDE_DIR)/package.mk
@@ -80,6 +81,13 @@ define Package/nss-firmware/config
                is pinned against. Does NOT work with NSS MESH
                (802.11s).
 
+    config NSS_FIRMWARE_VERSION_12_2
+          bool "NSS Firmware 12.2 Release 156"
+          help
+               The newest firmware published for IPQ5018 (2025-05-01,
+               nine months after 12.5) and the only line that accepts
+               VAP allocation there. Use this one on ipq50xx.
+
     config NSS_FIRMWARE_VERSION_11_4
           bool "NSS Firmware 11.4.0.5 Release 6"
           help
@@ -97,6 +105,11 @@ override NSS_MAJOR=11
 override NSS_MINOR=4
 override NSS_REL=6
 override VERSION_PATH=$(PKG_BUILD_DIR)/QCA_Networking_2021.SPF_11.4/CS
+else ifneq ($(CONFIG_NSS_FIRMWARE_VERSION_12_2),)
+override NSS_MAJOR=12
+override NSS_MINOR=2
+override NSS_REL=156
+override VERSION_PATH=$(PKG_BUILD_DIR)/QCA_Networking_2022.SPF_12.2/ED1
 else
 override NSS_MAJOR=12
 override NSS_MINOR=5
