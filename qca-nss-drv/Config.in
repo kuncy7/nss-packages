@@ -239,7 +239,7 @@ config NSS_DRV_VLAN_ENABLE
 	bool
 	default n
 	prompt "Enable VLAN"
-	depends on TARGET_qualcommax_ipq807x || TARGET_qualcommax_ipq60xx
+	depends on TARGET_qualcommax_ipq807x || TARGET_qualcommax_ipq60xx || TARGET_qualcommax_ipq50xx
 
 config NSS_DRV_VXLAN_ENABLE
 	bool

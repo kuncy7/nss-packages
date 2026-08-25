@@ -185,7 +185,7 @@ endif
 # kmod-bonding.
 ECM_MAKE_OPTS+=ECM_INTERFACE_BOND_ENABLE=n
 
-ifneq ($(CONFIG_PACKAGE_kmod-qmi_wwan_q),)
+ifneq ($(CONFIG_PACKAGE_kmod-qmi_wwan_q)$(CONFIG_PACKAGE_kmod-usb-net-qmi-wwan-quectel),)
 ECM_MAKE_OPTS+=ECM_INTERFACE_RAWIP_ENABLE=y
 endif
 
