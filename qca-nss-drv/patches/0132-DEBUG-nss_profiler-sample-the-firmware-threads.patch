@@ -1,0 +1,734 @@
+DEBUG E116 - profiler watkow firmware.
+
+Blob NSS ma wbudowany sampler (jego blok meminfo nazywa sie
+"profile_dma_ctrl", a w binarce widac symbole profile_take_sample_OCM /
+profile_send_common).  Raportuje dla kazdego watku sprzetowego licznik
+PC, adresy powrotu ze stosu i liczbe wykonanych instrukcji.  To dokladnie
+rozstrzyga pytanie, na ktorym stoimy: czy watek kolejki H2N-dane sie
+kreci, czy stoi zaparkowany - i gdzie stoi.
+
+Profiler to osobny wezel (NSS_PROFILER_INTERFACE), a probki jada
+pierscieniem soft-DMA, nie kolejka danych wifili, wiec dziala takze po
+awarii - tak samo jak sterowanie N2H, ktore ACK-uje przy 1% CPU.
+
+Probki sa agregowane per watek, nie wypisywane pojedynczo: przy kilkuset
+probkach na sekunde surowy strumien byloby nieczytelny, a pytanie
+"czy ten watek cokolwiek wykonal" rozstrzyga agregat (pc_changes oraz
+przyrost inst_count).
+
+Nie uzywamy nss_profile_dma_get_ctrl(): ta funkcja podaje adres
+JADROWY bloku tam, gdzie dma_sync_single_for_cpu() oczekuje adresu DMA,
+co na arm64 daje bezsensowny adres fizyczny - to ta sama klasa bledu,
+ktora dwa razy wywalila nam kernel (E114/E115).  Prawdziwy adres DMA
+bierzemy z listy blokow meminfo i bez niego nie synchronizujemy wcale.
+
+dev.nss.general.prof      = probek na sekunde, 0 zatrzymuje
+dev.nss.general.prof_dump = 1 wypisuje podsumowanie, 2 takze zeruje
+Czysty debug, nie wysylac.
+
+--- a/nss_profiler.c
++++ b/nss_profiler.c
+@@ -22,6 +22,9 @@
+  *	NSS profiler APIs
+  */
+ 
++#include <linux/sysctl.h>
++#include <linux/swab.h>
++
+ #include "nss_tx_rx_common.h"
+ 
+ /*
+@@ -263,3 +266,638 @@
+ 	nss_cmn_msg_init(&npm->cm, if_num, type, len, (void *)cb, app_data);
+ }
+ EXPORT_SYMBOL(nss_profiler_msg_init);
++
++/*
++ * E116: thread profiler
++ *
++ * The firmware carries a sampling profiler (its meminfo block is named
++ * "profile_dma_ctrl") that reports, for every hardware thread, the program
++ * counter, the return addresses on its stack and the number of instructions
++ * it has retired.  That is exactly what is needed to tell a parked thread
++ * from a spinning one, and to find out where a parked thread went to sleep,
++ * without touching the wedged node at all: the profiler is a separate NSS
++ * node (NSS_PROFILER_INTERFACE) whose samples travel over a soft DMA ring,
++ * not over the wifili data queue.
++ *
++ * Samples are aggregated per thread instead of being printed one by one -
++ * at a few hundred samples a second the raw stream would be unreadable, and
++ * the question being asked ("did this thread execute anything?") is answered
++ * by the aggregate.
++ *
++ *	dev.nss.general.prof      = samples per second; 0 stops sampling
++ *	dev.nss.general.prof_dump = 1 prints the per-thread summary
++ *	                            2 prints it and clears the counters
++ */
++#define NSS_PROF_HD_MAGIC	0x4F525000	/* 0 + "PRO" */
++#define NSS_PROF_HD_MMASK	0xFFFFFF00	/* low byte carries the command */
++#define NSS_PROF_MAX_THREADS	16
++#define NSS_PROF_STACK_WORDS	4
++
++/*
++ * The firmware's sample layout.  Kept here rather than pulled from the
++ * profiler client headers so the driver does not depend on that package.
++ */
++struct nss_prof_sample {
++	uint32_t pc;
++	uint32_t pid;
++	uint16_t active;
++	uint16_t d_blocked;
++	uint16_t i_blocked;
++	uint8_t cond_codes;
++	uint8_t thread;
++	uint32_t a_reg;
++	uint32_t parent[NSS_PROF_STACK_WORDS];
++};
++
++struct nss_prof_ext_header {
++	uint16_t d_blocked;
++	uint16_t i_blocked;
++	uint16_t high;
++	uint16_t enabled_threads;
++	uint16_t hrt;
++	uint8_t profiler_tid;
++	uint8_t sample_sets;
++	uint32_t sets_map;
++	uint32_t clocks;
++	uint32_t inst_count[12];
++	uint32_t stats[8];
++};
++
++struct nss_prof_sample_ctrl {
++	uint32_t psc_magic;
++	uint16_t ps_count;
++	uint16_t ps_max_samples;
++	uint32_t ps_dropped;
++	struct nss_prof_ext_header ex_hd;
++};
++
++/*
++ * Per-thread aggregate.  pc_changes is the discriminator: a thread that is
++ * running moves its PC between samples, a parked one never does.
++ */
++struct nss_prof_thread {
++	uint32_t samples;
++	uint32_t pc_first;
++	uint32_t pc_last;
++	uint32_t pc_changes;
++	uint32_t parent[NSS_PROF_STACK_WORDS];
++	uint32_t inst_first;
++	uint32_t inst_last;
++	uint8_t seen;
++};
++
++static struct nss_prof_thread nss_prof_thr[NSS_PROF_MAX_THREADS];
++static DEFINE_SPINLOCK(nss_prof_lock);
++static uint32_t nss_prof_buffers;	/* sample buffers consumed */
++static uint32_t nss_prof_sets;		/* sample sets seen */
++static uint32_t nss_prof_dropped;	/* drops reported by the firmware */
++static uint16_t nss_prof_enabled_mask;	/* threads the core says are enabled */
++static int nss_prof_swap = -1;		/* byte order of the firmware's records */
++static int nss_prof_running;
++static struct nss_profiler_cmd_param nss_prof_cmd;
++static uint32_t nss_prof_ctrl_dma;	/* DMA address of the soft DMA control block */
++static uint32_t nss_prof_msgs;		/* messages logged from the profiler node */
++static int nss_prof_retried;		/* START already retried after NO_DMA */
++static int nss_prof_sswap = -1;		/* byte order of the sample records */
++
++/*
++ * The core runs its hot code from OCM, so program counters land in the
++ * 0x3f...... window; the image itself is loaded at 0x40000000.  A value
++ * outside both windows means the record needs its bytes swapped.
++ */
++#define NSS_PROF_OCM_BASE	0x3f000000
++#define NSS_PROF_OCM_END	0x3f100000
++#define NSS_PROF_IMG_BASE	0x40000000
++#define NSS_PROF_IMG_END	0x40100000
++
++/*
++ * The thread scheduler's idle path: threads waiting for work spin on
++ * `bset` here.  Samples landing in this window say nothing about what the
++ * core was doing, so the trace skips them - otherwise the ring would hold
++ * a tenth of a second of idling instead of the work that led to the wedge.
++ */
++#define NSS_PROF_IDLE_LO	0x3f000590
++#define NSS_PROF_IDLE_HI	0x3f0005a0
++
++#define NSS_PROF_TRACE_ENTRIES	512
++
++struct nss_prof_trace_ent {
++	uint32_t pc;
++	uint32_t parent0;
++	uint32_t parent1;
++	uint8_t thread;
++};
++
++static struct nss_prof_trace_ent nss_prof_trace[NSS_PROF_TRACE_ENTRIES];
++static uint32_t nss_prof_trace_head;	/* next slot to write */
++static uint32_t nss_prof_trace_total;	/* entries ever recorded */
++
++/*
++ * nss_prof_pc_ok()
++ *	Does this look like a program counter of this firmware?
++ */
++static inline bool nss_prof_pc_ok(uint32_t pc)
++{
++	return (pc >= NSS_PROF_OCM_BASE && pc < NSS_PROF_OCM_END) ||
++	       (pc >= NSS_PROF_IMG_BASE && pc < NSS_PROF_IMG_END);
++}
++
++static nss_tx_status_t nss_prof_send(struct nss_ctx_instance *nss_ctx, uint32_t cmd);
++static void nss_prof_put_ctrl(struct nss_ctx_instance *nss_ctx);
++
++/*
++ * nss_prof_get_ctrl()
++ *	Fetch the soft DMA control block with the core's writes made visible.
++ *
++ * The firmware asks for this block as SDRAM (see the "profile_dma_ctrl"
++ * meminfo request), so the host mapping is cacheable and the core's updates
++ * to the producer index have to be invalidated before they can be read.
++ *
++ * nss_profile_dma_get_ctrl() cannot be used for that: it passes the block's
++ * kernel address to dma_sync_single_for_cpu() where a DMA address belongs,
++ * which on arm64 resolves to a bogus physical address.  Look the real DMA
++ * address up in the meminfo block list instead, and refuse to sync at all
++ * if it cannot be found.
++ */
++static struct nss_profile_sdma_ctrl *nss_prof_get_ctrl(struct nss_ctx_instance *nss_ctx)
++{
++	struct nss_profile_sdma_ctrl *ctrl = nss_ctx->meminfo_ctx.sdma_ctrl;
++	struct nss_meminfo_request *r;
++
++	if (!ctrl) {
++		return NULL;
++	}
++
++	if (!nss_prof_ctrl_dma) {
++		/*
++		 * Take the address from the meminfo request the firmware made:
++		 * nss_meminfo_init() writes the allocated DMA address back into
++		 * r->addr.  The block list is not usable for this - its
++		 * kern_addr/dma_addr fields are never filled in (the node comes
++		 * from kmalloc and only index and size are set).
++		 */
++		for (r = nss_ctx->meminfo_ctx.meminfo_map.requests;
++		     r && r->magic == NSS_MEMINFO_REQUEST_MAGIC; r++) {
++			if (!strcmp(r->name, "profile_dma_ctrl")) {
++				nss_prof_ctrl_dma = r->addr;
++				break;
++			}
++		}
++
++		if (!nss_prof_ctrl_dma) {
++			nss_info_always("%px: prof: no DMA address for the control block\n", nss_ctx);
++			return NULL;
++		}
++
++		nss_info_always("%px: prof: control block kern %px dma 0x%x\n",
++				nss_ctx, ctrl, nss_prof_ctrl_dma);
++	}
++
++	dma_sync_single_for_cpu(nss_ctx->dev, (dma_addr_t)nss_prof_ctrl_dma,
++				sizeof(*ctrl), DMA_FROM_DEVICE);
++	NSS_CORE_DSB();
++	return ctrl;
++}
++
++/*
++ * nss_prof_put_ctrl()
++ *	Publish the consumer index the host advanced.
++ */
++static void nss_prof_put_ctrl(struct nss_ctx_instance *nss_ctx)
++{
++	if (!nss_prof_ctrl_dma) {
++		return;
++	}
++
++	NSS_CORE_DSB();
++	dma_sync_single_for_device(nss_ctx->dev, (dma_addr_t)nss_prof_ctrl_dma,
++				   sizeof(struct nss_profile_sdma_ctrl), DMA_TO_DEVICE);
++}
++
++/*
++ * nss_prof_get32()
++ *	Read a firmware word in whichever byte order the records turned out to be.
++ */
++static inline uint32_t nss_prof_get32(uint32_t v)
++{
++	return nss_prof_swap > 0 ? swab32(v) : v;
++}
++
++static inline uint16_t nss_prof_get16(uint16_t v)
++{
++	return nss_prof_swap > 0 ? swab16(v) : v;
++}
++
++/*
++ * nss_prof_account()
++ *	Fold one sample buffer into the per-thread aggregate.
++ */
++static void nss_prof_account(struct nss_profiler_msg *npm)
++{
++	struct nss_prof_sample_ctrl *hd = (struct nss_prof_sample_ctrl *)&npm->payload;
++	struct nss_prof_sample *s;
++	uint32_t magic;
++	uint16_t count;
++	unsigned long flags;
++	int i, t;
++
++	if (npm->cm.len < sizeof(*hd)) {
++		return;
++	}
++
++	/*
++	 * The core writes its headers big endian; settle the byte order once
++	 * from the magic and reuse that verdict for the samples, which the
++	 * firmware leaves in the same order.
++	 */
++	magic = hd->psc_magic;
++	if ((magic & NSS_PROF_HD_MMASK) == NSS_PROF_HD_MAGIC) {
++		nss_prof_swap = 0;
++	} else if ((swab32(magic) & NSS_PROF_HD_MMASK) == NSS_PROF_HD_MAGIC) {
++		nss_prof_swap = 1;
++	} else {
++		nss_warning("prof: bad magic 0x%08x len %d\n", magic, npm->cm.len);
++		return;
++	}
++
++	count = nss_prof_get16(hd->ps_count);
++	if (!count) {
++		return;
++	}
++
++	/*
++	 * Trust the buffer length over the count the core reported.
++	 */
++	if (sizeof(*hd) + (size_t)count * sizeof(*s) > npm->cm.len) {
++		count = (npm->cm.len - sizeof(*hd)) / sizeof(*s);
++	}
++
++	s = (struct nss_prof_sample *)(hd + 1);
++
++	spin_lock_irqsave(&nss_prof_lock, flags);
++
++	nss_prof_buffers++;
++	nss_prof_sets += hd->ex_hd.sample_sets;
++	nss_prof_dropped = nss_prof_get32(hd->ps_dropped);
++	nss_prof_enabled_mask = nss_prof_get16(hd->ex_hd.enabled_threads);
++
++	for (i = 0; i < NSS_PROF_MAX_THREADS && i < 12; i++) {
++		uint32_t inst = nss_prof_get32(hd->ex_hd.inst_count[i]);
++
++		if (!nss_prof_thr[i].seen) {
++			nss_prof_thr[i].inst_first = inst;
++			nss_prof_thr[i].seen = 1;
++		}
++		nss_prof_thr[i].inst_last = inst;
++	}
++
++	/*
++	 * The header is written in host order (its magic matches unswapped),
++	 * but the sample records are not touched by the core - settle their
++	 * byte order separately, from the first plausible program counter.
++	 */
++	if (nss_prof_sswap < 0 && count) {
++		if (nss_prof_pc_ok(s->pc)) {
++			nss_prof_sswap = 0;
++		} else if (nss_prof_pc_ok(swab32(s->pc))) {
++			nss_prof_sswap = 1;
++		}
++	}
++
++	for (i = 0; i < count; i++, s++) {
++		struct nss_prof_thread *th;
++		uint32_t pc = nss_prof_sswap > 0 ? swab32(s->pc) : s->pc;
++
++		t = s->thread & (NSS_PROF_MAX_THREADS - 1);
++		th = &nss_prof_thr[t];
++
++		if (!th->samples) {
++			th->pc_first = pc;
++		} else if (pc != th->pc_last) {
++			th->pc_changes++;
++		}
++
++		th->pc_last = pc;
++		th->samples++;
++		th->seen = 1;
++
++		/*
++		 * Keep the most recent call chain: for a thread that never
++		 * moves again, this is the chain that put it to sleep.
++		 */
++		{
++			int w;
++
++			for (w = 0; w < NSS_PROF_STACK_WORDS; w++) {
++				th->parent[w] = nss_prof_sswap > 0 ?
++						swab32(s->parent[w]) : s->parent[w];
++			}
++		}
++
++		/*
++		 * Record everything except the idle spin, so the ring keeps the
++		 * work that ran just before the core stopped answering.
++		 */
++		if (pc < NSS_PROF_IDLE_LO || pc >= NSS_PROF_IDLE_HI) {
++			struct nss_prof_trace_ent *e =
++				&nss_prof_trace[nss_prof_trace_head];
++
++			e->pc = pc;
++			e->parent0 = th->parent[0];
++			e->parent1 = th->parent[1];
++			e->thread = t;
++
++			nss_prof_trace_head =
++				(nss_prof_trace_head + 1) % NSS_PROF_TRACE_ENTRIES;
++			nss_prof_trace_total++;
++		}
++	}
++
++	spin_unlock_irqrestore(&nss_prof_lock, flags);
++}
++
++/*
++ * nss_prof_n2h_callback()
++ *	Sample buffers that arrive as ordinary messages.
++ */
++static void nss_prof_n2h_callback(void *ctx, struct nss_profiler_msg *npm)
++{
++	/*
++	 * Report the first few messages of each kind: without this the
++	 * firmware's answer to START (an error code, say) is lost silently.
++	 */
++	if (nss_prof_msgs < 12) {
++		nss_prof_msgs++;
++		nss_info_always("nss-prof: msg type %u response %u error %u len %u\n",
++				npm->cm.type, npm->cm.response, npm->cm.error, npm->cm.len);
++	}
++
++	/*
++	 * PROFILE_ERROR_NO_DMA means the core did not see a ring.  The host's
++	 * write of the ring address sits in a cacheable block, so push it out
++	 * and ask again - the same recovery the QSDK profiler client performs.
++	 */
++	if (npm->cm.type == NSS_PROFILER_START_MSG &&
++	    npm->cm.error == PROFILE_ERROR_NO_DMA && !nss_prof_retried) {
++		struct nss_ctx_instance *nss_ctx = (struct nss_ctx_instance *)ctx;
++
++		nss_prof_retried = 1;
++		nss_prof_put_ctrl(nss_ctx);
++		nss_info_always("nss-prof: core reported NO_DMA, flushed the control block and retrying START\n");
++		nss_prof_send(nss_ctx, NSS_PROFILER_START_MSG);
++		return;
++	}
++
++	if (npm->cm.type == NSS_PROFILER_SAMPLES_MSG) {
++		nss_prof_account(npm);
++	}
++}
++
++/*
++ * nss_prof_dma_handler()
++ *	Drain the soft DMA ring the core fills with sample buffers.
++ */
++static void nss_prof_dma_handler(void *arg)
++{
++	struct nss_ctx_instance *nss_ctx = (struct nss_ctx_instance *)arg;
++	struct nss_profile_sdma_ctrl *ctrl = nss_prof_get_ctrl(nss_ctx);
++	struct nss_profile_sdma_producer *dma;
++	struct nss_profile_sdma_consumer *cbc;
++	int cri, idx, widx;
++
++	if (!ctrl) {
++		return;
++	}
++
++	dma = ctrl->producer;
++	cbc = ctrl->consumer;
++	cri = ctrl->cur_ring;
++	idx = ctrl->cidx[cri];
++	widx = ctrl->pidx[cri];
++
++	if (!cbc->ring.kp || !dma->num_bufs) {
++		return;
++	}
++
++	/*
++	 * The ring is ordinary cacheable memory mapped for the device, so each
++	 * buffer has to be invalidated before it is read.  Unlike the control
++	 * block, the ring's DMA address is known exactly - the driver put it in
++	 * desc_ring when it mapped the ring - so this sync is well formed.
++	 */
++	while (idx != widx) {
++		dma_sync_single_for_cpu(nss_ctx->dev,
++					(dma_addr_t)dma->desc_ring + idx * dma->buf_size,
++					dma->buf_size, DMA_FROM_DEVICE);
++		nss_prof_account((struct nss_profiler_msg *)
++				 ((char *)cbc->ring.kp + idx * dma->buf_size));
++		idx = (idx + 1) & (dma->num_bufs - 1);
++	}
++
++	ctrl->cidx[cri] = idx;
++	nss_prof_put_ctrl(nss_ctx);
++}
++
++/*
++ * nss_prof_send()
++ *	Send one profiler command.
++ */
++static nss_tx_status_t nss_prof_send(struct nss_ctx_instance *nss_ctx, uint32_t cmd)
++{
++	nss_prof_cmd.hd_magic = NSS_PROF_HD_MAGIC | cmd;
++	return nss_profiler_if_tx_buf(nss_ctx, &nss_prof_cmd, sizeof(nss_prof_cmd), NULL, NULL);
++}
++
++/*
++ * nss_prof_start()
++ *	Arm the firmware profiler.
++ */
++static int nss_prof_start(struct nss_ctx_instance *nss_ctx, uint32_t rate)
++{
++	struct nss_profile_sdma_producer *dma = NULL;
++	struct nss_profile_sdma_ctrl *ctrl;
++	nss_tx_status_t ret;
++	void *ring;
++
++	ctrl = nss_prof_get_ctrl(nss_ctx);
++	if (!ctrl) {
++		nss_info_always("%px: prof: firmware exports no DMA control block\n", nss_ctx);
++		return -ENODEV;
++	}
++
++	/*
++	 * The core sizes the ring; without that there is nothing to allocate.
++	 */
++	if (!ctrl->producer[0].num_bufs || !ctrl->producer[0].buf_size) {
++		nss_info_always("%px: prof: core has not sized the ring (%u bufs of %u)\n",
++				nss_ctx, ctrl->producer[0].num_bufs, ctrl->producer[0].buf_size);
++		return -ENODEV;
++	}
++
++	if (!nss_profiler_notify_register(NSS_CORE_0, nss_prof_n2h_callback, nss_ctx)) {
++		nss_info_always("%px: prof: cannot register with the profiler node\n", nss_ctx);
++		return -ENXIO;
++	}
++
++	ring = ctrl->consumer[0].ring.kp;
++	if (!ring) {
++		ring = nss_profiler_alloc_dma(nss_ctx, &dma);
++		if (!ring) {
++			nss_info_always("%px: prof: cannot allocate the sample ring\n", nss_ctx);
++			nss_profiler_notify_unregister(NSS_CORE_0);
++			return -ENOMEM;
++		}
++	} else {
++		dma = ctrl->producer;
++	}
++
++	nss_profile_dma_register_cb(nss_ctx, 0, nss_prof_dma_handler, nss_ctx);
++
++	memset(&nss_prof_cmd, 0, sizeof(nss_prof_cmd));
++	nss_prof_cmd.rate = rate;
++	nss_prof_cmd.sram_start = dma->desc_ring;
++
++	/*
++	 * The ring address was just written into a cacheable block; the core
++	 * only sees it once that write reaches memory.
++	 */
++	nss_prof_put_ctrl(nss_ctx);
++
++	nss_info_always("%px: prof: starting at %u samples/s, ring %px (%u bufs of %u, dma 0x%x)\n",
++			nss_ctx, rate, ring, dma->num_bufs, dma->buf_size, dma->desc_ring);
++
++	nss_prof_retried = 0;
++	ret = nss_prof_send(nss_ctx, NSS_PROFILER_START_MSG);
++	if (ret != NSS_TX_SUCCESS) {
++		nss_info_always("%px: prof: START failed (%d)\n", nss_ctx, ret);
++		nss_profile_dma_deregister_cb(nss_ctx, 0);
++		nss_profiler_notify_unregister(NSS_CORE_0);
++		return -EIO;
++	}
++
++	nss_prof_running = 1;
++	return 0;
++}
++
++/*
++ * nss_prof_stop()
++ */
++static void nss_prof_stop(struct nss_ctx_instance *nss_ctx)
++{
++	if (!nss_prof_running) {
++		return;
++	}
++
++	nss_prof_send(nss_ctx, NSS_PROFILER_STOP_MSG);
++	nss_profile_dma_deregister_cb(nss_ctx, 0);
++	nss_profiler_notify_unregister(NSS_CORE_0);
++	nss_prof_running = 0;
++	nss_info_always("%px: prof: stopped\n", nss_ctx);
++}
++
++/*
++ * nss_prof_handler()
++ *	dev.nss.general.prof - samples per second, 0 to stop.
++ */
++int nss_prof_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++{
++	struct nss_ctx_instance *nss_ctx = &nss_top_main.nss[NSS_CORE_0];
++	int ret;
++
++	ret = proc_dointvec(ctl, write, buffer, lenp, ppos);
++	if (ret || !write) {
++		return ret;
++	}
++
++	if (nss_cmd_buf.prof) {
++		if (nss_prof_running) {
++			nss_prof_stop(nss_ctx);
++		}
++		nss_prof_start(nss_ctx, nss_cmd_buf.prof);
++	} else {
++		nss_prof_stop(nss_ctx);
++	}
++
++	return ret;
++}
++
++/*
++ * nss_prof_dump_handler()
++ *	dev.nss.general.prof_dump - report the per-thread aggregate.
++ */
++int nss_prof_dump_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++{
++	unsigned long flags;
++	int ret, i;
++
++	ret = proc_dointvec(ctl, write, buffer, lenp, ppos);
++	if (ret || !write) {
++		return ret;
++	}
++
++	spin_lock_irqsave(&nss_prof_lock, flags);
++
++	nss_info_always("nss-prof: buffers %u sets %u dropped %u enabled 0x%04x swap %d\n",
++			nss_prof_buffers, nss_prof_sets, nss_prof_dropped,
++			nss_prof_enabled_mask, nss_prof_sswap);
++
++	{
++		struct nss_ctx_instance *nss_ctx = &nss_top_main.nss[NSS_CORE_0];
++		struct nss_profile_sdma_ctrl *ctrl = nss_prof_get_ctrl(nss_ctx);
++
++		if (ctrl) {
++			nss_info_always("nss-prof: ring rings=%d cur=%d pidx=%d,%d,%d cidx=%d,%d,%d\n",
++					ctrl->num_rings, ctrl->cur_ring,
++					ctrl->pidx[0], ctrl->pidx[1], ctrl->pidx[2],
++					ctrl->cidx[0], ctrl->cidx[1], ctrl->cidx[2]);
++			nss_info_always("nss-prof: producer intr=%u pkg=%u bufs=%u size=%u desc=0x%x disp=%px\n",
++					ctrl->producer[0].intr_num, ctrl->producer[0].pkg_id,
++					ctrl->producer[0].num_bufs, ctrl->producer[0].buf_size,
++					ctrl->producer[0].desc_ring,
++					ctrl->consumer[0].dispatch.fp);
++		}
++	}
++
++	for (i = 0; i < NSS_PROF_MAX_THREADS; i++) {
++		struct nss_prof_thread *th = &nss_prof_thr[i];
++
++		if (!th->seen) {
++			continue;
++		}
++
++		nss_info_always("nss-prof: thr%-2d n=%-6u pc=%08x moved=%-6u inst=%u..%u (+%u) ret=%08x %08x %08x %08x\n",
++				i, th->samples, th->pc_last, th->pc_changes,
++				th->inst_first, th->inst_last,
++				th->inst_last - th->inst_first,
++				th->parent[0], th->parent[1], th->parent[2], th->parent[3]);
++	}
++
++	if (nss_cmd_buf.prof_dump == 3) {
++		uint32_t n = nss_prof_trace_total < NSS_PROF_TRACE_ENTRIES ?
++				nss_prof_trace_total : NSS_PROF_TRACE_ENTRIES;
++		uint32_t start = nss_prof_trace_total < NSS_PROF_TRACE_ENTRIES ?
++				0 : nss_prof_trace_head;
++		uint32_t k;
++
++		nss_info_always("nss-prof: trace of the last %u non-idle samples (of %u recorded)\n",
++				n, nss_prof_trace_total);
++
++		for (k = 0; k < n; k++) {
++			struct nss_prof_trace_ent *e =
++				&nss_prof_trace[(start + k) % NSS_PROF_TRACE_ENTRIES];
++
++			nss_info_always("nss-prof: trace[%3u] thr%-2u pc=%08x ret=%08x %08x\n",
++					k, e->thread, e->pc, e->parent0, e->parent1);
++		}
++	}
++
++	if (nss_cmd_buf.prof_dump > 1 && nss_cmd_buf.prof_dump != 3) {
++		memset(nss_prof_thr, 0, sizeof(nss_prof_thr));
++		nss_prof_buffers = 0;
++		nss_prof_sets = 0;
++		nss_info_always("nss-prof: counters cleared\n");
++	}
++
++	spin_unlock_irqrestore(&nss_prof_lock, flags);
++	return ret;
++}
+--- a/nss_core.h
++++ b/nss_core.h
+@@ -777,6 +777,8 @@
+ 	int fwlog;		/* on-demand firmware log ring dump */
+ 	uint32_t memdump;	/* E103: offset (bytes, from load addr) to hexdump */
+ 	uint32_t memdump_len;	/* E103: how many bytes to dump (default 256) */
++	uint32_t prof;		/* E116: firmware profiler rate, 0 to stop */
++	uint32_t prof_dump;	/* E116: report per-thread samples; 2 also clears */
+ };
+ extern struct nss_cmd_buffer nss_cmd_buf;
+ 
+@@ -1040,6 +1042,8 @@
+ extern void nss_log_init(void);
+ extern bool nss_debug_log_buffer_alloc(uint8_t nss_id, uint32_t nentry);
+ extern int nss_logbuffer_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos);
++extern int nss_prof_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos);
++extern int nss_prof_dump_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos);
+ 
+ /*
+  * APIs to set jumbo_mru & paged_mode
+--- a/nss_init.c
++++ b/nss_init.c
+@@ -681,6 +681,20 @@
+ 		.proc_handler		= &proc_dointvec,
+ 	},
+ 	{
++		.procname               = "prof",
++		.data                   = &nss_cmd_buf.prof,
++		.maxlen                 = sizeof(uint32_t),
++		.mode                   = 0644,
++		.proc_handler		= &nss_prof_handler,
++	},
++	{
++		.procname               = "prof_dump",
++		.data                   = &nss_cmd_buf.prof_dump,
++		.maxlen                 = sizeof(uint32_t),
++		.mode                   = 0644,
++		.proc_handler		= &nss_prof_dump_handler,
++	},
++	{
+ 		.procname               = "logbuf",
+ 		.data                   = &nss_ctl_logbuf,
+ 		.maxlen                 = sizeof(int),
+--- a/Makefile
++++ b/Makefile
+@@ -571,7 +571,8 @@
+ ifeq ($(SoC),$(filter $(SoC),ipq50xx ipq50xx_64))
+ qca-nss-drv-objs += nss_data_plane/nss_data_plane.o \
+ 		    nss_hal/ipq50xx/nss_hal_pvt.o \
+-		    nss_data_plane/hal/nss_ipq50xx.o
++		    nss_data_plane/hal/nss_ipq50xx.o \
++		    nss_profiler.o
+ 
+ ifneq "$(NSS_DRV_IPSEC_ENABLE)" "n"
+ ccflags-y += -DNSS_DRV_IPSEC_ENABLE
