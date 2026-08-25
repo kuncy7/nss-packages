@@ -116,7 +116,8 @@ define KernelPackage/qca-nss-drv-bridge-mgr
   DEPENDS:=@(TARGET_qualcommax_ipq807x||TARGET_qualcommax_ipq60xx) \
 	   +kmod-qca-nss-drv \
 	   +@NSS_DRV_BRIDGE_ENABLE \
-	   +kmod-qca-ppe-nss
+	   +TARGET_qualcommax_ipq807x:kmod-qca-ppe-nss \
+	   +TARGET_qualcommax_ipq60xx:kmod-qca-ppe-nss
   FILES:=$(PKG_BUILD_DIR)/bridge/qca-nss-bridge-mgr.ko
 endef
 
@@ -124,6 +125,24 @@ define KernelPackage/qca-nss-drv-bridge-mgr/Description
 Offloads Linux-bridge L2 forwarding into the NSS firmware by binding the
 bridge's qca_ppe member ports to a firmware bridge interface. No AUTOLOAD:
 loaded at runtime after the NSS data plane is up (see nss-up).
+endef
+
+define KernelPackage/qca-nss-drv-vlan-mgr
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  TITLE:=NSS VLAN manager (802.1q offload interfaces)
+  DEPENDS:=@TARGET_qualcommax_ipq50xx \
+	   +kmod-qca-nss-drv \
+	   +@NSS_DRV_VLAN_ENABLE
+  FILES:=$(PKG_BUILD_DIR)/vlan/qca-nss-vlan.ko
+endef
+
+define KernelPackage/qca-nss-drv-vlan-mgr/Description
+Creates NSS VLAN interfaces (dynamic type 17) for 8021q netdevs over an
+NSS-known parent, so ECM can resolve VLAN hierarchies to the acceleration
+engine. ipq50xx only in this tree: on PPE SoCs the manager compiles
+against the fal/ssdk headers this stack does not carry. No AUTOLOAD.
 endef
 
 define KernelPackage/qca-nss-drv-netlink
@@ -198,6 +217,22 @@ EXTRA_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/include/qca-nss-drv
 
 # Build individual packages if selected
+define KernelPackage/qca-nss-drv-map-t
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  TITLE:=NSS connection manager for MAP-T
+  DEPENDS:=@(TARGET_qualcommax||TARGET_ipq806x) \
+	   +kmod-qca-nss-drv \
+	   +kmod-nat46
+  FILES:=$(PKG_BUILD_DIR)/map/map-t/qca-nss-map-t.ko
+  AUTOLOAD:=$(call AutoLoad,51,qca-nss-map-t)
+endef
+
+define KernelPackage/qca-nss-drv-map-t/description
+NSS connection manager for MAP-T - hardware offload of 464xlat/MAP-T.
+endef
+
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-qdisc),)
 NSS_CLIENTS_MAKE_OPTS+=qdisc=y
 # PPE shaper mode and NSS-bridge qdisc attach need qca-ssdk and
@@ -218,8 +253,17 @@ ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-vlan-mgr),)
 NSS_CLIENTS_MAKE_OPTS+=vlan-mgr=y
 endif
 
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-map-t),)
+NSS_CLIENTS_MAKE_OPTS+=map-t=y
+EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/nat46
+endif
+
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-bridge-mgr),)
 NSS_CLIENTS_MAKE_OPTS+=bridge-mgr=y
+endif
+
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-vlan-mgr),)
+NSS_CLIENTS_MAKE_OPTS+=vlan-mgr=y
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-netlink),)
@@ -262,7 +306,9 @@ $(eval $(call KernelPackage,qca-nss-drv-pppoe))
 $(eval $(call KernelPackage,qca-nss-drv-vlan-mgr))
 $(eval $(call KernelPackage,qca-nss-drv-qdisc))
 $(eval $(call KernelPackage,qca-nss-drv-igs))
+$(eval $(call KernelPackage,qca-nss-drv-map-t))
 $(eval $(call KernelPackage,qca-nss-drv-bridge-mgr))
+$(eval $(call KernelPackage,qca-nss-drv-vlan-mgr))
 $(eval $(call KernelPackage,qca-nss-drv-netlink))
 $(eval $(call KernelPackage,qca-nss-drv-mirror))
 $(eval $(call KernelPackage,qca-nss-drv-wifi-meshmgr))
