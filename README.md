@@ -16,6 +16,40 @@ branch `nss-edma-rework`. For what NSS offload is and how the pieces fit, see
 [NSS Offload Explained](https://github.com/JuliusBairaktaris/openwrt-nss-edma/wiki/NSS-Offload-Explained)
 in the wiki.
 
+## This branch: `ipq50xx-nss`
+
+The IPQ5018 flavour of the feed, companion to
+[kuncy7/openwrt-nss-edma](https://github.com/kuncy7/openwrt-nss-edma/tree/ipq50xx-nss)
+branch `ipq50xx-nss` (its `README.ipq50xx.md` has the build and runtime story).
+Based on `e621a63` of this feed - the revision the IPQ5018 plane was validated
+against - plus the twelve `qca-nss-drv` hardening commits from `edma-nss`
+(cherry-picked, authorship preserved) and five commits of its own:
+
+- **`nss-firmware`: the 12.2 line as a selectable version.**
+  `NSS_FIRMWARE_VERSION_12_2` installs `NSS.FW.12.2-156-MP.R` from the same
+  tarball. It is the newest firmware published for IPQ5018 and the only one
+  that works there: 12.5-210-MP ignores the H2N checksum-generation flags
+  (every TCP handshake leaves the wire corrupt) and does not answer VAP
+  allocation; 11.4-6 refuses VAP allocation.
+- **Build the stack on ipq50xx.** `qca-nss-drv` gets its `nss-dp` API from
+  `qca-dwmac-nss` on ipq50xx (from `qca-ppe-nss` on the PPE SoCs);
+  `qca-nss-clients`' bridge-mgr dependency on `qca-ppe-nss` becomes
+  per-target; the VLAN manager is packaged for ipq50xx only, because on the
+  PPE SoCs it compiles against ssdk headers this stack does not carry.
+- **`0120`, `0121`** - deassert all UBI0 reset lines on ipq50xx; make
+  `nss_vlan` refuse messages until its handler is registered.
+- **`0136`, `0137`** - park the core before copying the firmware over it (the
+  warm-reboot fix: the old firmware was still executing during the copy); map
+  the meminfo block table non-cacheable (`ioremap_wc`, found first by Adriel
+  Santos for the AX3000T port).
+- **Firmware inspection tooling** (`0122`, `0123`, `0129`, `0132`): coredump
+  and log-ring dumps on demand, a DDR hexdump, a thread sampler for the
+  firmware profiler. Inert unless used.
+
+Why not the newer `edma-nss` tip: `af423ae` packages a PPE-based VLAN manager
+(`qca_ppe_port_vlan_vsi_*`), symbols ipq50xx does not have. A rebase has to
+resolve that first.
+
 ## Provenance
 
 This feed is the **CodeLinaro QSDK `nss-host`** sources, packaged to build
