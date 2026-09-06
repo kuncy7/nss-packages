@@ -150,13 +150,13 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  	struct sk_buff *tail = *tail_ptr;
  
  	/*
-+	 * Same firmware-written pair as the paged sibling. Here the buffer is
-+	 * the alloc_skb(max_buf_size + NET_SKB_PAD) the host mapped in full,
-+	 * and without this the skb is shaped to claim memory past it - then
-+	 * handed to eth_type_trans() and forwarded.
++	 * Same firmware-written pair as the paged sibling. Bound them by the
++	 * skb's real capacity: the firmware sends control messages larger than
++	 * the data frame size it was given (wifili SOC statistics are 2092 B
++	 * against a max_buf_size of 1984), which a max_buf_size bound drops.
 +	 */
 +	if (unlikely((uint32_t)desc->payload_offs + desc->payload_len >
-+			nss_ctx->max_buf_size + NET_SKB_PAD)) {
++			skb_end_offset(nbuf))) {
 +		nss_warning("%px: bad linear descriptor: offs %u len %u", nss_ctx, desc->payload_offs, desc->payload_len);
 +		dma_unmap_single(nss_ctx->dev, desc->buffer, nss_ctx->max_buf_size + NET_SKB_PAD, DMA_FROM_DEVICE);
 +		NSS_PKT_STATS_DEC(&nss_ctx->nss_top->stats_drv[NSS_DRV_STATS_NSS_SKB_COUNT]);
