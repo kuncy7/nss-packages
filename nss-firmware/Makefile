@@ -41,7 +41,8 @@ endef
 define Package/nss-firmware
 $(call Package/nss-firmware-common,$(1))
 	DEPENDS+= +TARGET_qualcommax_ipq807x:nss-firmware-ipq807x \
-		  +TARGET_qualcommax_ipq60xx:nss-firmware-ipq60xx
+		  +TARGET_qualcommax_ipq60xx:nss-firmware-ipq60xx \
+		  +TARGET_qualcommax_ipq50xx:nss-firmware-ipq50xx
 endef
 
 define Package/nss-firmware-ipq807x
@@ -54,6 +55,13 @@ define Package/nss-firmware-ipq60xx
 $(call Package/nss-firmware-common,$(1))
 	IPQ_PLATFORM=IPQ6018
 	NSS_SOC:=CP
+endef
+
+define Package/nss-firmware-ipq50xx
+$(call Package/nss-firmware-common,$(1))
+	IPQ_PLATFORM=IPQ5018
+	CONFLICTS=nss-firmware-ipq807x nss-firmware-ipq60xx
+	NSS_SOC:=MP
 endef
 
 define Package/nss-firmware/config
@@ -136,10 +144,15 @@ define Package/nss-firmware-ipq60xx/install
 	$(call Package/nss-firmware-common/install,$(1))
 endef
 
+define Package/nss-firmware-ipq50xx/install
+	$(call Package/nss-firmware-common/install,$(1))
+endef
+
 define Package/nss-firmware/install
 	true
 endef
 
 $(eval $(call BuildPackage,nss-firmware-ipq807x))
 $(eval $(call BuildPackage,nss-firmware-ipq60xx))
+$(eval $(call BuildPackage,nss-firmware-ipq50xx))
 $(eval $(call BuildPackage,nss-firmware))
