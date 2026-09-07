@@ -1,0 +1,35 @@
+vlan-mgr: compile the qca-ppe half only on PPE SoCs
+
+0046 made NSS_VLAN_MGR_QCA_PPE unconditional, so the manager always
+calls qca_ppe_port_vlan_vsi_get/_refresh/_put. Those are exported by the
+qca_ppe driver, which is the PPE/EDMA data plane and exists on ipq807x
+and ipq60xx only. On ipq50xx - where the plane is dwmac plus the NSS
+firmware and there is no PPE at all - the module still builds but does
+not link:
+
+  ERROR: modpost: "qca_ppe_port_vlan_vsi_get" [vlan/qca-nss-vlan.ko] undefined!
+
+which takes qca-nss-clients, and with it the whole image, down. The VLAN
+manager itself is not optional here: the ipq50xx topology is a plain
+802.1Q trunk, and this is what turns eth0.1 and eth0.2 into firmware
+interfaces.
+
+The C side is already guarded on NSS_VLAN_MGR_QCA_PPE, so restoring the
+SoC condition around the define is enough - the same shape the vendor
+Makefile used for NSS_VLAN_MGR_PPE_SUPPORT before 0046. The package
+Makefile already passes SoC.
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+
+--- a/vlan/Makefile
++++ b/vlan/Makefile
+@@ -4,7 +4,9 @@ ccflags-y += -DNSS_CLIENT_BUILD_ID="$(BU
+ obj-m += qca-nss-vlan.o
+ qca-nss-vlan-objs := nss_vlan_mgr.o
+ 
++ifeq ($(SoC),$(filter $(SoC),ipq807x ipq807x_64 ipq60xx ipq60xx_64))
+ ccflags-y += -DNSS_VLAN_MGR_QCA_PPE
++endif
+ 
+ ccflags-y += -DNSS_VLAN_MGR_DEBUG_LEVEL=0
+ ccflags-y += -Wall -Werror

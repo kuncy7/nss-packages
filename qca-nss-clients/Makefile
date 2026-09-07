@@ -127,24 +127,6 @@ bridge's qca_ppe member ports to a firmware bridge interface. No AUTOLOAD:
 loaded at runtime after the NSS data plane is up (see nss-up).
 endef
 
-define KernelPackage/qca-nss-drv-vlan-mgr
-  SECTION:=kernel
-  CATEGORY:=Kernel modules
-  SUBMENU:=Network Devices
-  TITLE:=NSS VLAN manager (802.1q offload interfaces)
-  DEPENDS:=@TARGET_qualcommax_ipq50xx \
-	   +kmod-qca-nss-drv \
-	   +@NSS_DRV_VLAN_ENABLE
-  FILES:=$(PKG_BUILD_DIR)/vlan/qca-nss-vlan.ko
-endef
-
-define KernelPackage/qca-nss-drv-vlan-mgr/Description
-Creates NSS VLAN interfaces (dynamic type 17) for 8021q netdevs over an
-NSS-known parent, so ECM can resolve VLAN hierarchies to the acceleration
-engine. ipq50xx only in this tree: on PPE SoCs the manager compiles
-against the fal/ssdk headers this stack does not carry. No AUTOLOAD.
-endef
-
 define KernelPackage/qca-nss-drv-netlink
   SECTION:=kernel
   CATEGORY:=Kernel modules
@@ -247,10 +229,6 @@ endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-pppoe),)
 NSS_CLIENTS_MAKE_OPTS+=pppoe=y
-endif
-
-ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-vlan-mgr),)
-NSS_CLIENTS_MAKE_OPTS+=vlan-mgr=y
 endif
 
 ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-drv-map-t),)
