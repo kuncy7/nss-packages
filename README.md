@@ -1,5 +1,11 @@
 # NSS offload packages for the OpenWrt qualcommax EDMA stack
 
+> **This branch is an archive.** Work moved to
+> [`ipq50xx-rebase`](https://github.com/kuncy7/nss-packages/tree/ipq50xx-rebase)
+> on 2026-09-07, together with the tree
+> ([kuncy7/openwrt-nss-edma](https://github.com/kuncy7/openwrt-nss-edma/tree/ipq50xx-rebase),
+> same branch name). Nothing here gets fixed any more.
+
 An OpenWrt package feed that runs the **Qualcomm NSS offload stack** (the UBI32
 NSS cores in IPQ807x) **on top of OpenWrt main's upstream qualcommax ethernet
 drivers** — `qca_edma` / `qca_ppe`, from
