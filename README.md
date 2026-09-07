@@ -16,11 +16,14 @@ branch `nss-edma-rework`. For what NSS offload is and how the pieces fit, see
 [NSS Offload Explained](https://github.com/JuliusBairaktaris/openwrt-nss-edma/wiki/NSS-Offload-Explained)
 in the wiki.
 
-## This branch: `ipq50xx-nss`
+## This branch: `ipq50xx-rebase`
 
 The IPQ5018 flavour of the feed, companion to
-[kuncy7/openwrt-nss-edma](https://github.com/kuncy7/openwrt-nss-edma/tree/ipq50xx-nss)
-branch `ipq50xx-nss` (its `README.ipq50xx.md` has the build and runtime story).
+[kuncy7/openwrt-nss-edma](https://github.com/kuncy7/openwrt-nss-edma/tree/ipq50xx-rebase)
+branch `ipq50xx-rebase` (its `README.ipq50xx.md` has the build and runtime
+story). Use the matching branch in both repositories; the older
+`ipq50xx-nss` pair is an archive of the pre-rebase series and gets no
+further fixes.
 Based on `e621a63` of this feed - the revision the IPQ5018 plane was validated
 against - plus the twelve `qca-nss-drv` hardening commits from `edma-nss`
 (cherry-picked, authorship preserved) and five commits of its own:
