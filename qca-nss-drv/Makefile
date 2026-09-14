@@ -22,6 +22,7 @@ PKG_FLAGS:=nonshared
 
 PKG_CONFIG_DEPENDS:= \
 	CONFIG_NSS_FIRMWARE_VERSION_11_4 \
+	CONFIG_NSS_FIRMWARE_VERSION_12_2 \
 	CONFIG_NSS_FIRMWARE_VERSION_12_5 \
 	CONFIG_PACKAGE_kmod-gre \
 	CONFIG_PACKAGE_kmod-ipsec \
@@ -151,6 +152,12 @@ endif
 
 ifdef CONFIG_NSS_FIRMWARE_VERSION_11_4
   EXTRA_CFLAGS += -DNSS_FIRMWARE_VERSION_11_4
+endif
+
+# 12.2 lays the wifili peer stats out without four 12.5 fields (0144);
+# ath11k has to see the same define through the mac80211 package.
+ifdef CONFIG_NSS_FIRMWARE_VERSION_12_2
+  EXTRA_CFLAGS += -DNSS_FIRMWARE_VERSION_12_2
 endif
 
 DRV_MAKE_OPTS:=
