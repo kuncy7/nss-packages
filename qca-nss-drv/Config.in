@@ -5,6 +5,14 @@ comment "Build Options"
 
 choice
   prompt "Memory Profile"
+  # 256 MB boards. Anything but LOW hands the firmware an 8192-entry
+  # empty-buffer pool, and each entry is a kmalloc-4k object on 64-bit:
+  # 35 MB before a single packet, on a board with ~160 MB usable.
+  # Single-device builds only: the profile is shared by every board in a
+  # multi-device image, so such a build picks it by hand rather than
+  # losing connection-table size on its 512 MB members the moment a
+  # 256 MB board is ticked.
+  default NSS_MEM_PROFILE_LOW if TARGET_qualcommax_ipq50xx_DEVICE_tplink_ex511-v2
   default NSS_MEM_PROFILE_HIGH if TARGET_qualcommax_ipq807x
   default NSS_MEM_PROFILE_MEDIUM if (TARGET_qualcommax_ipq60xx || TARGET_qualcommax_ipq50xx)
   help
