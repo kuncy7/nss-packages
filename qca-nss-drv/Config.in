@@ -12,7 +12,7 @@ choice
   # multi-device image, so such a build picks it by hand rather than
   # losing connection-table size on its 512 MB members the moment a
   # 256 MB board is ticked.
-  default NSS_MEM_PROFILE_LOW if TARGET_qualcommax_ipq50xx_DEVICE_tplink_ex511-v2
+  default NSS_MEM_PROFILE_LOW if TARGET_qualcommax_ipq50xx_DEVICE_cudy_p5 || TARGET_qualcommax_ipq50xx_DEVICE_tplink_ex511-v2
   default NSS_MEM_PROFILE_HIGH if TARGET_qualcommax_ipq807x
   default NSS_MEM_PROFILE_MEDIUM if (TARGET_qualcommax_ipq60xx || TARGET_qualcommax_ipq50xx)
   help
