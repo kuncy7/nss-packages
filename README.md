@@ -45,6 +45,14 @@ against - plus the twelve `qca-nss-drv` hardening commits from `edma-nss`
   warm-reboot fix: the old firmware was still executing during the copy); map
   the meminfo block table non-cacheable (`ioremap_wc`, found first by Adriel
   Santos for the AX3000T port).
+- **ECM on tag_8021q DSA ports** (`qca-nss-ecm` `0046`, `0047`, `0048`): a
+  DSA user port whose switch talks 802.1Q to the CPU is a VLAN upper of its
+  conduit for ECM (`0046`); a port of a VLAN-aware bridge carries the flow's
+  VLAN, taken from ECM's bridge VLAN filter data, with the endpoint on the
+  conduit and the firmware VLAN interface from `qca-dsa-nss` (`0047`); a
+  routed flow gets each side's own bridge VLAN, so routing between two VLANs
+  of one bridge - the WAN on `br-lan.2`, a guest VLAN - is accelerated too
+  (`0048`).
 - **Firmware inspection tooling** (`0122`, `0123`, `0129`, `0132`): coredump
   and log-ring dumps on demand, a DDR hexdump, a thread sampler for the
   firmware profiler. Inert unless used.
