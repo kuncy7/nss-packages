@@ -10,10 +10,12 @@ include $(TOPDIR)/rules.mk
 # NSS qdisc modules while qca-nss-drv is not already loaded, because
 # modprobing them would boot the NSS firmware with no armed ports and
 # kill all wired RX. SQM's interface hotplug retries once the NSS data
-# plane is up.
+# plane is up. On the dsa topology (ipq50xx) the shaper sits on the
+# switch conduit in a lane of its own: WAN flows are steered into it by
+# the script's nftables marks, the other ports' traffic passes unshaped.
 PKG_NAME:=sqm-scripts-nss
 PKG_VERSION:=20260215
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 include $(INCLUDE_DIR)/package.mk
 

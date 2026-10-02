@@ -8,6 +8,16 @@
 # act_nssmirred redirect off that port. The shaper sits below the VLAN/PPPoE
 # encapsulation because the firmware refuses shaper nodes on the ppp netdev.
 #
+# On the dsa topology (ipq50xx: one GMAC behind a switch, tag_8021q) a port
+# such as `wan` is a firmware VLAN node the shaper never reaches - the
+# accelerated flows bypass it - and the only shaping point is the conduit
+# (eth0), which carries every switch port at once. There the same two trees
+# get a lane: an nssprio root whose first band is the shaped WAN tree and whose
+# second band passes everything else unshaped, and the flows that leave or
+# enter through the WAN port are steered into the first band by an nftables
+# `meta priority set 10:0` of our own (ECM copies it into the rule's qos_tag,
+# the IGS forward hook into the ingress one). See shaping_point.
+#
 # Three properties this file has to keep, each one learned the hard way:
 #
 #  * It is SOURCED by start-sqm and stop-sqm, so it defines functions and
@@ -333,6 +343,27 @@ tree_spec() {
 
 	sqm_debug "tree_spec: rate=${speed}kbps burst=${burst} mtu=${mtu} fastlane=${fast} leaf=[${opts}]"
 
+	if [ "$LANES" = 1 ]; then
+		# Conduit of a switch: the shaped tree is band 1 of a prio root,
+		# band 2 is the unshaped default for every other port's traffic.
+		# The default leaf goes in first: until some leaf below the root
+		# carries set_default the tree drops everything handed to it.
+		echo "qdisc nssprio 1: root bands 2 accel_mode 0"
+		echo "qdisc nsspfifo 20: 1:2 limit ${NSS_LIMIT_CAP} set_default accel_mode 0"
+		echo "qdisc nsstbl 3: 1:1 rate ${speed}kbit burst ${burst} mtu ${mtu} accel_mode 0"
+		leaf=3:
+		if [ "$fast" = 1 ]; then
+			leaf=2:2
+			echo "qdisc nssprio 2: 3: bands 2 accel_mode 0"
+		fi
+		# Flows marked 10:0 land here; the leaf keeps its flat-tree handle
+		# so the mark means the same thing on both topologies.
+		echo "qdisc nssfq_codel 10: ${leaf} ${opts} accel_mode 0"
+		[ "$fast" = 1 ] &&
+			echo "qdisc nsspfifo 100: 2:1 limit ${FASTLANE_LIMIT} accel_mode 0"
+		return 0
+	fi
+
 	echo "qdisc nsstbl 1: root rate ${speed}kbit burst ${burst} mtu ${mtu} accel_mode 0"
 	if [ "$fast" = 1 ]; then
 		leaf=2:2
@@ -388,6 +419,96 @@ ensure_tree() {
 	fi
 	SILENT=1 $TC qdisc del dev "$dev" root
 	return 1
+}
+
+
+# --- where the shaper sits ---------------------------------------------------
+
+# On the EDMA stack every port is its own NSS physical interface and the
+# shaper sits on $IFACE itself. A DSA user port has the conduit as its sysfs
+# lower link (and the conduit carries the dsa/tagging attribute): there the
+# shaper has to sit on that conduit, with lanes. A VLAN on the port is one
+# level further up, so walk the lowers down.
+shaping_point() {
+	local walk=$IFACE next d l
+
+	PHYS=$IFACE
+	LANES=0
+	while [ -n "$walk" ]; do
+		next=""
+		for d in $walk; do
+			for l in "/sys/class/net/${d}/lower_"*; do
+				[ -e "$l" ] || continue
+				l=${l##*/lower_}
+				if [ -e "/sys/class/net/${l}/dsa/tagging" ]; then
+					PHYS=$l
+					LANES=1
+					return 0
+				fi
+				next="$next $l"
+			done
+		done
+		walk=$next
+	done
+	return 0
+}
+
+# The netdevs a forwarded WAN packet actually enters or leaves through: the
+# port, the VLANs stacked on it (sysfs uppers, bridges excluded - a bridged
+# port is not a WAN) and the L3 devices netifd runs over any of them, which
+# for PPPoE is a ppp netdev with no sysfs link to the port at all.
+lane_devs() {
+	local devs=$IFACE walk=$IFACE next d u s phys l3
+
+	while [ -n "$walk" ]; do
+		next=""
+		for d in $walk; do
+			for u in "/sys/class/net/${d}/upper_"*; do
+				[ -e "$u" ] || continue
+				u=${u##*/upper_}
+				[ -e "/sys/class/net/${u}/bridge" ] && continue
+				case " $devs " in *" $u "*) continue ;; esac
+				devs="$devs $u"
+				next="$next $u"
+			done
+		done
+		walk=$next
+	done
+	for s in $(ubus list 'network.interface.*' 2>/dev/null | sed 's/^network\.interface\.//'); do
+		network_get_physdev phys "$s"
+		case " $devs " in *" $phys "*) ;; *) continue ;; esac
+		network_get_device l3 "$s"
+		[ -n "$l3" ] || continue
+		case " $devs " in *" $l3 "*) ;; *) devs="$devs $l3" ;; esac
+	done
+	echo "$devs"
+}
+
+LANE_TABLE=sqm_nss_lanes
+
+# One chain per shaped port, at mangle-1 so that a user's own
+# `meta priority set 100:0` in fw4's mangle_forward (fast lane) still wins.
+lanes_marks_ensure() {
+	local devs set d
+
+	devs=$(lane_devs)
+	set=""
+	for d in $devs; do set="${set:+$set, }\"$d\""; done
+
+	nft add table inet $LANE_TABLE 2>/dev/null
+	nft add chain inet $LANE_TABLE "$IFACE" \
+		"{ type filter hook forward priority mangle - 1; policy accept; }" 2>/dev/null
+	nft flush chain inet $LANE_TABLE "$IFACE" || return 1
+	nft add rule inet $LANE_TABLE "$IFACE" oifname "{ $set }" meta priority set 10:0 || return 1
+	nft add rule inet $LANE_TABLE "$IFACE" iifname "{ $set }" meta priority set 10:0 || return 1
+	sqm_log "lanes: WAN flows through { $set } steered into the shaped lane"
+}
+
+lanes_marks_drop() {
+	nft delete chain inet $LANE_TABLE "$IFACE" 2>/dev/null
+	# Drop the table once no chain is left; another shaped port may use it.
+	nft list table inet $LANE_TABLE 2>/dev/null | grep -q '^\s*chain ' ||
+		nft delete table inet $LANE_TABLE 2>/dev/null
 }
 
 
@@ -564,6 +685,14 @@ upload_igs_start() {
 
 	ports=$(sqm_opt igs_upload)
 
+	if [ "$LANES" = 1 ] && [ -n "$ports" ]; then
+		# The firmware refuses a redirect off a tag_8021q port (the port
+		# is a VLAN node, not a physical interface), and the conduit is
+		# already the WAN's own redirect source.
+		sqm_warn "upload_igs: per-port upload trees are not available on a switch conduit, ignoring igs_upload"
+		ports=""
+	fi
+
 	# The shaped interface already carries the ingress redirect built by
 	# ingress(), and a port has exactly one ingress qdisc to hang it on.
 	# Listing it here would have the two paths tear down and re-create each
@@ -664,7 +793,7 @@ egress() {
 
 	spec=$(tree_spec ${fast} ${UPLINK} "${ETARGET}" ${ELIMIT} ${mtu} \
 		"${EQDISC_OPTS}" "${EECN}" ${ESHAPER_BURST_DUR_US})
-	ensure_tree "$IFACE" "$spec" || return 1
+	ensure_tree "$PHYS" "$spec" || return 1
 
 	[ "$fast" = 1 ] &&
 		sqm_log "egress: fast lane active (mark: ip dscp set <class> meta priority set 100:0)"
@@ -683,8 +812,8 @@ ingress() {
 		sqm_error "ingress: ${DEV} could not be brought up"
 		return 1
 	}
-	ensure_redirect "$IFACE" "$DEV" || {
-		sqm_error "ingress: no redirect ${IFACE} -> ${DEV}, cannot shape ingress"
+	ensure_redirect "$PHYS" "$DEV" || {
+		sqm_error "ingress: no redirect ${PHYS} -> ${DEV}, cannot shape ingress"
 		return 1
 	}
 
@@ -692,7 +821,7 @@ ingress() {
 		"${IQDISC_OPTS}" "${IECN}" ${ISHAPER_BURST_DUR_US})
 	if ! ensure_tree "$DEV" "$spec"; then
 		# Never leave the port feeding a shaper that is not there.
-		drop_redirect "$IFACE"
+		drop_redirect "$PHYS"
 		return 1
 	fi
 
@@ -706,7 +835,8 @@ ingress() {
 sqm_prepare_script() {
 	local module
 
-	case "$(cat /sys/kernel/debug/qca-ppe-nss/fw_mask 2>/dev/null)" in
+	# qca-ppe-nss on the EDMA stack, qca-dwmac-nss on ipq50xx.
+	case "$(cat /sys/kernel/debug/qca-ppe-nss/fw_mask /sys/kernel/debug/qca-dwmac-nss/fw_mask 2>/dev/null)" in
 	""|0x0)
 		sqm_error "sqm_prepare_script: NSS data plane is not armed; refusing to load NSS qdisc modules"
 		return 1
@@ -743,8 +873,11 @@ sqm_start() {
 	fi
 
 	DEV=$(printf '%.15s' "ifb@${IFACE}")
+	shaping_point
+	[ "$LANES" = 1 ] && sqm_log "sqm_start: ${IFACE} is a switch port, shaping its flows in a lane on ${PHYS}"
 
-	ipt_log_restart
+	# Gone from current sqm-scripts; harmless when absent.
+	type ipt_log_restart >/dev/null 2>&1 && ipt_log_restart
 	# Neither of these two builds anything, but both still have to leave the
 	# wire empty, because start-sqm writes the state file only on success and
 	# run.sh's stop path is `[ -f state ] && stop-sqm`: a tree that outlives
@@ -755,7 +888,7 @@ sqm_start() {
 	check_addr && sqm_prepare_script || { sqm_stop; return 1; }
 
 	if [ "${UPLINK}" -eq 0 ]; then
-		SILENT=1 $TC qdisc del dev "$IFACE" root
+		SILENT=1 $TC qdisc del dev "$PHYS" root
 		upload_igs_stop
 		sqm_log "sqm_start: egress shaping disabled (UPLINK=0)"
 	else
@@ -779,7 +912,7 @@ sqm_start() {
 	# is removed a moment later - the one thing this file must not spend.
 	if [ "$rc" -eq 0 ]; then
 		if [ "${DOWNLINK}" -eq 0 ]; then
-			drop_redirect "$IFACE"
+			drop_redirect "$PHYS"
 			SILENT=1 $TC qdisc del dev "$DEV" root
 			sqm_log "sqm_start: ingress shaping disabled (DOWNLINK=0)"
 		else
@@ -790,6 +923,15 @@ sqm_start() {
 				rc=1
 			fi
 		fi
+	fi
+
+	# The lane marks come last: a mark with no tree behind it steers flows
+	# into a node that is not there, and the firmware drops those.
+	if [ "$rc" -eq 0 ] && [ "$LANES" = 1 ]; then
+		lanes_marks_ensure || {
+			sqm_error "sqm_start: could not install the lane marks for ${IFACE}"
+			rc=1
+		}
 	fi
 
 	if [ "$rc" -ne 0 ]; then
@@ -807,12 +949,16 @@ sqm_stop() {
 	[ -n "$IFACE" ] || return 1
 
 	DEV=$(printf '%.15s' "ifb@${IFACE}")
+	shaping_point
 	sqm_log "sqm_stop: tearing down SQM on ${IFACE} (${DEV})"
+
+	# Marks first: a flow steered into a node that is gone gets dropped.
+	[ "$LANES" = 1 ] && lanes_marks_drop
 
 	# The exact reverse of the build, and within each pair the redirect goes
 	# first: a port still feeding a shaper that is already gone is the one
 	# state that black-holes it.
-	drop_redirect "$IFACE"
+	drop_redirect "$PHYS"
 	if ifb_exists "$DEV"; then
 		SILENT=1 $TC qdisc del dev "$DEV" root
 		sqm_log "sqm_stop: removed $DEV qdisc (device kept for reuse)"
@@ -820,9 +966,9 @@ sqm_stop() {
 
 	upload_igs_stop
 
-	SILENT=1 $TC qdisc del dev "$IFACE" root
+	SILENT=1 $TC qdisc del dev "$PHYS" root
 
-	ipt_log_rewind
+	type ipt_log_rewind >/dev/null 2>&1 && ipt_log_rewind
 
 	sqm_debug "sqm_stop: keeping NSS modules loaded (safer for restart)"
 
