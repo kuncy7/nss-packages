@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=qca-nss-drv
-PKG_RELEASE:=18
+PKG_RELEASE:=19
 
 # Source: https://git.codelinaro.org/clo/qsdk/oss/lklm/nss-drv.git @ d7ef98b1d3d31346981d3a1abff5152a206374af
 # (tag NHSS.QSDK.14.0.r9-00025-O, the newest QSDK tag; pre-generated 'git archive' of the commit).
@@ -133,6 +133,14 @@ else ifeq ($(CONFIG_TARGET_SUBTARGET), "ipq60xx")
 else ifeq ($(CONFIG_TARGET_SUBTARGET), "ipq50xx")
   SOC="ipq50xx_64"
   subtarget:=$(CONFIG_TARGET_SUBTARGET)
+endif
+
+# The MP firmware refuses nssfq_codel ("zero flow queue size") unless the
+# host gives it a QoS memory pool at core init (0146); 1 MB carries two
+# full trees (shaper + IFB). The HK firmware does without. The
+# qos_mem_size module parameter still overrides this.
+ifeq ($(CONFIG_TARGET_SUBTARGET), "ipq50xx")
+  EXTRA_CFLAGS += -DNSS_QOS_MEM_SIZE_DEFAULT=1
 endif
 
 define Build/InstallDev
