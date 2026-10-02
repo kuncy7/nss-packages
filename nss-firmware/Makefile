@@ -84,8 +84,8 @@ define Package/nss-firmware/config
           bool "NSS Firmware 12.2 Release 156"
           help
                The newest firmware published for IPQ5018 (2025-05-01,
-               nine months after 12.5) and the only line that accepts
-               VAP allocation there. Use this one on ipq50xx.
+               nine months after 12.5) and the one the ipq50xx
+               measurements were taken on. 12.5 runs there as well.
 
     config NSS_FIRMWARE_VERSION_11_4
           bool "NSS Firmware 11.4.0.5 Release 6"
