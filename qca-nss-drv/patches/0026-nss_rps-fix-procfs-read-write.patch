@@ -32,9 +32,10 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
 +	size_t *lenp, struct nss_rps_pri_map_parse_data *out)
  {
 -	size_t cp_bytes = 0;
- 	char w_buf[5];
+-	char w_buf[5];
 -	loff_t w_offset = 0;
 -	char *str;
++	char w_buf[6];
  	unsigned int pri;
  	int core, res;
  
@@ -122,7 +123,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  	struct nss_ctx_instance *nss_ctx = &nss_top->nss[0];
 --- a/nss_ipv4.c
 +++ b/nss_ipv4.c
-@@ -599,7 +599,7 @@ void nss_ipv4_free_conn_tables(void)
+@@ -591,7 +591,7 @@ void nss_ipv4_free_conn_tables(void)
   * nss_ipv4_accel_mode_cfg_handler()
   *	Configure acceleration mode for IPv4
   */
@@ -131,7 +132,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  {
  	struct nss_top_instance *nss_top = &nss_top_main;
  	struct nss_ctx_instance *nss_ctx = &nss_top->nss[0];
-@@ -643,7 +643,7 @@ static int nss_ipv4_accel_mode_cfg_handl
+@@ -635,7 +635,7 @@ static int nss_ipv4_accel_mode_cfg_handl
   * nss_ipv4_dscp_map_cfg_handler()
   *	Sysctl handler for dscp/pri mappings.
   */
@@ -170,8 +171,9 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  {
  	int count;
 -	size_t cp_bytes = 0;
- 	char w_buf[7];
+-	char w_buf[7];
 -	loff_t w_offset = 0;
++	char w_buf[8];
  	char *str;
  	char *tokens[NSS_DSCP_MAP_PARAM_FIELD_COUNT];
  	unsigned int dscp, priority, action;

@@ -16,6 +16,11 @@ We finally drop the NSS_CORE_DMA_CACHE_MAINT jus in case someone wants
 to use it.
 
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+[Julius: map the meminfo table write-combined; the core reads it before
+ running firmware and nothing cleans the host's writes to it from the
+ CPU cache any more]
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
 ---
  nss_core.c                    | 136 +++++++++++++++++++++++++---------
  nss_core.h                    |  41 +++++-----
@@ -546,6 +551,15 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	NSS_CORE_DSB();
  
  	return true;
+@@ -752,7 +751,7 @@ bool nss_meminfo_init(struct nss_ctx_ins
+ 	}
+ 
+ 	map = &mem_ctx->meminfo_map;
+-	map->start = (uint32_t *)ioremap_cache(meminfo_start[1], NSS_MEMINFO_MAP_SIZE);
++	map->start = (uint32_t *)ioremap_wc(meminfo_start[1], NSS_MEMINFO_MAP_SIZE);
+ 	if (!map->start) {
+ 		nss_info_always("%px: failed to remap meminfo map\n", nss_ctx);
+ 		return false;
 --- a/nss_profiler.c
 +++ b/nss_profiler.c
 @@ -209,11 +209,12 @@ EXPORT_SYMBOL(nss_profile_dma_deregister
