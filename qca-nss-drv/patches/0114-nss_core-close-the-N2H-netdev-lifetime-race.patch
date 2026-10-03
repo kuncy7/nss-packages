@@ -71,7 +71,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
 
 --- a/nss_core.c
 +++ b/nss_core.c
-@@ -389,6 +389,18 @@ void nss_core_unregister_subsys_dp(struc
+@@ -402,6 +402,18 @@ void nss_core_unregister_subsys_dp(struc
  	reg->ndev = NULL;
  	reg->features = 0;
  	reg->type = 0;

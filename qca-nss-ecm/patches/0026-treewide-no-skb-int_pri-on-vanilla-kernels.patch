@@ -117,7 +117,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  
 --- a/frontends/cmn/ecm_ported_ipv4.c
 +++ b/frontends/cmn/ecm_ported_ipv4.c
-@@ -1038,33 +1038,16 @@ done:
+@@ -1039,33 +1039,16 @@ done:
  	if (ci->unidir_accel_en) {
  		if (sender == ECM_TRACKER_SENDER_TYPE_SRC) {
  			prevalent_pr.flow_qos_tag = skb->priority;
@@ -157,7 +157,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  	prevalent_pr.accel_mode = ECM_CLASSIFIER_ACCELERATION_MODE_ACCEL;
 --- a/frontends/cmn/ecm_ported_ipv6.c
 +++ b/frontends/cmn/ecm_ported_ipv6.c
-@@ -1063,33 +1063,16 @@ done:
+@@ -1064,33 +1064,16 @@ done:
  	if (ci->unidir_accel_en) {
  		if (sender == ECM_TRACKER_SENDER_TYPE_SRC) {
  			prevalent_pr.flow_qos_tag = skb->priority;
@@ -197,7 +197,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  	prevalent_pr.accel_mode = ECM_CLASSIFIER_ACCELERATION_MODE_ACCEL;
 --- a/frontends/ecm_front_end_common.c
 +++ b/frontends/ecm_front_end_common.c
-@@ -1168,7 +1168,7 @@ void ecm_front_end_tcp_set_dscp_ext(stru
+@@ -1179,7 +1179,7 @@ void ecm_front_end_tcp_set_dscp_ext(stru
  	if (dscpcte) {
  		if (sender == ECM_TRACKER_SENDER_TYPE_SRC) {
  			dscpcte->flow_priority = skb->priority;
@@ -206,7 +206,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  			dscpcte->flow_mark = skb->mark;
  			dscpcte->flow_dscp = iph->ds >> XT_DSCP_SHIFT;
  			dscpcte->flow_set_flags = NF_CT_DSCPREMARK_EXT_PRIO | NF_CT_DSCPREMARK_EXT_DSCP | NF_CT_DSCPREMARK_EXT_MARK;
-@@ -1176,7 +1176,7 @@ void ecm_front_end_tcp_set_dscp_ext(stru
+@@ -1187,7 +1187,7 @@ void ecm_front_end_tcp_set_dscp_ext(stru
  				    ct, sender, dscpcte->flow_priority, dscpcte->flow_int_pri, dscpcte->flow_dscp, dscpcte->flow_mark, dscpcte->flow_set_flags);
  		} else {
  			dscpcte->reply_priority =  skb->priority;
@@ -215,7 +215,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  			dscpcte->reply_mark =  skb->mark;
  			dscpcte->reply_dscp = iph->ds >> XT_DSCP_SHIFT;
  			dscpcte->return_set_flags = NF_CT_DSCPREMARK_EXT_PRIO | NF_CT_DSCPREMARK_EXT_DSCP | NF_CT_DSCPREMARK_EXT_MARK;
-@@ -2476,41 +2476,6 @@ uint8_t ecm_front_end_common_int_pri_get
+@@ -2496,41 +2496,6 @@ uint8_t ecm_front_end_common_int_pri_get
  #endif
  }
  
@@ -259,7 +259,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
   * ecm_front_end_fse_info_get()
 --- a/frontends/include/ecm_front_end_common.h
 +++ b/frontends/include/ecm_front_end_common.h
-@@ -528,8 +528,6 @@ bool ecm_front_end_check_tcp_denied_port
+@@ -531,8 +531,6 @@ bool ecm_front_end_check_tcp_denied_port
  bool ecm_front_end_common_intf_qdisc_check(int32_t interface_num, bool *is_ppeq);
  bool ecm_front_end_common_intf_ingress_qdisc_check(int32_t interface_num);
  uint8_t ecm_front_end_common_int_pri_get(int32_t egress_ifnum, uint32_t qos_tag, uint8_t default_int_pri);

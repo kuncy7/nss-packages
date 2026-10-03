@@ -32,7 +32,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  ccflags-y += -DNSS_DRV_EDMA_ENABLE
 --- a/nss_hal/nss_hal.c
 +++ b/nss_hal/nss_hal.c
-@@ -486,7 +486,9 @@ int nss_hal_probe(struct platform_device
+@@ -498,7 +498,9 @@ int nss_hal_probe(struct platform_device
  	if (npd->ppe_enabled == NSS_FEATURE_ENABLED) {
  		nss_top->ppe_handler_id = nss_dev->id;
  		nss_ppe_register_handler();
