@@ -15,7 +15,7 @@ include $(TOPDIR)/rules.mk
 # the script's nftables marks, the other ports' traffic passes unshaped.
 PKG_NAME:=sqm-scripts-nss
 PKG_VERSION:=20260215
-PKG_RELEASE:=6
+PKG_RELEASE:=7
 
 include $(INCLUDE_DIR)/package.mk
 

@@ -42,14 +42,19 @@
 . "${SQM_LIB_DIR}/defaults.sh"
 
 
-# Queue depth the auto-calculated packet limit aims at. The firmware buffers
-# roughly twice the configured limit, so 15 ms of wire time lands near 30 ms of
-# real queue.
-MAXQLIMIT_MS=15
+# Queue depth the auto-calculated packet limit aims at, in wire time. The limit
+# is one number for all the flows of an nssfq_codel together, and it has to hold
+# what the senders have in flight: rate x round-trip time. A limit below that
+# drops at the tail before CoDel ever acts. 15 ms, which this was, is fine on a
+# path of a few milliseconds and not on an ordinary internet path - measured at
+# 100 Mbit/s over a 30 ms path, 123 packets: 97 % of the drops were overlimit
+# drops and the rate fell short of the shaper's; with room for the flight none
+# were, and the latency of other flows under load did not move either way.
+MAXQLIMIT_MS=100
 
-# CoDel needs a handful of packets to measure at all; below this the limit,
-# not the AQM, would be doing the dropping.
-MINLIMIT=64
+# The floor for slow links, where 100 ms is only a few dozen packets. 200 is the
+# floor of the nss-zk.qos this script comes from.
+MINLIMIT=200
 
 # The firmware pbuf pool is shared with Wi-Fi and the N2H rings, so a queue
 # deeper than this starves them instead of the flow it is shaping.
