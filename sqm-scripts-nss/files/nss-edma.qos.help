@@ -11,6 +11,8 @@ to disable): firewall-mark a flow with `ip dscp set <class> meta priority set 10
 (nftables mangle forward chain, per direction) to bypass the default queue entirely.
 On a switch port (dsa topology, ipq50xx: `option interface 'wan'` with wan a DSA port) the trees
 sit on the conduit (eth0) as a lane: WAN flows are steered into it by an nftables chain of this
-script's own (`meta priority set 10:0`), every other port's traffic passes unshaped. igs_upload
+script's own (`meta priority set 10:0` out through the WAN, `11:0` in through it), every other
+port's traffic passes unshaped. The fast lane mark there is per direction too: `100:0` for packets
+going out through the WAN, `101:0` for packets coming in through it. igs_upload
 is not available there. The firmware counts the 4-byte switch tag, so rates run ~0.3 % low.
 Requires kmod-qca-nss-drv-qdisc + kmod-qca-nss-drv-igs and an armed NSS data plane.

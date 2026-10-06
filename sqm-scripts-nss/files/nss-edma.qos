@@ -14,9 +14,11 @@
 # (eth0), which carries every switch port at once. There the same two trees
 # get a lane: an nssprio root whose first band is the shaped WAN tree and whose
 # second band passes everything else unshaped, and the flows that leave or
-# enter through the WAN port are steered into the first band by an nftables
-# `meta priority set 10:0` of our own (ECM copies it into the rule's qos_tag,
-# the IGS forward hook into the ingress one). See shaping_point.
+# enter through the WAN port are steered into the first band by nftables marks
+# of our own, `meta priority set 10:0` on the way out and `11:0` on the way in
+# (ECM copies the mark into the rule's qos_tag, the IGS forward hook into the
+# ingress one). The two directions have classes of their own because the
+# conduit carries the LAN ports as well. See shaping_point and tree_spec.
 #
 # Three properties this file has to keep, each one learned the hard way:
 #
@@ -310,9 +312,20 @@ leaf_opts() {
 # verified afterwards is exactly what was asked for.
 #
 # tree_spec <fastlane 0|1> <speed kbps> <target> <limit> <mtu> <opts> <ecn> <burst us>
+# TREE_DIR=in in the caller's environment asks for the ingress tree.
+#
+# On a switch conduit the two directions must not share their class handles.
+# The conduit carries every port, so a download packet for a wired LAN client
+# leaves through the very device the upload tree sits on, and an upload packet
+# from one enters through the device the ingress redirect is on. A mark that
+# meant "shaped" in both trees put the first into the upload shaper and the
+# second into the download one. The egress tree keeps 10: (fast lane 100:),
+# the ingress tree gets 11: (101:), and each direction is marked with its own.
 tree_spec() {
 	local fast=$1 speed=$2 target=$3 limit=$4 mtu=$5 opts=$6 ecn=$7 burst_us=$8
-	local burst leaf=1: tgt
+	local burst leaf=1: tgt shaped=10: fastq=100:
+
+	[ "$LANES" = 1 ] && [ "$TREE_DIR" = in ] && { shaped=11:; fastq=101:; }
 
 	if [ -n "$ecn" ] && [ "$(get_ecn "$ecn")" = "ecn" ]; then
 		sqm_log "tree_spec: NSS firmware does not implement CoDel ECN marking; ignoring ECN setting"
@@ -356,11 +369,11 @@ tree_spec() {
 			leaf=2:2
 			echo "qdisc nssprio 2: 3: bands 2 accel_mode 0"
 		fi
-		# Flows marked 10:0 land here; the leaf keeps its flat-tree handle
-		# so the mark means the same thing on both topologies.
-		echo "qdisc nssfq_codel 10: ${leaf} ${opts} accel_mode 0"
+		# Flows marked ${shaped}0 land here; the egress leaf keeps its
+		# flat-tree handle so that mark means the same on both topologies.
+		echo "qdisc nssfq_codel ${shaped} ${leaf} ${opts} accel_mode 0"
 		[ "$fast" = 1 ] &&
-			echo "qdisc nsspfifo 100: 2:1 limit ${FASTLANE_LIMIT} accel_mode 0"
+			echo "qdisc nsspfifo ${fastq} 2:1 limit ${FASTLANE_LIMIT} accel_mode 0"
 		return 0
 	fi
 
@@ -499,9 +512,12 @@ lanes_marks_ensure() {
 	nft add chain inet $LANE_TABLE "$IFACE" \
 		"{ type filter hook forward priority mangle - 1; policy accept; }" 2>/dev/null
 	nft flush chain inet $LANE_TABLE "$IFACE" || return 1
+	# One mark per direction, see tree_spec: 10:0 is a class of the egress
+	# tree only, 11:0 of the ingress tree only, and in the other tree each
+	# falls through to the unshaped default band.
 	nft add rule inet $LANE_TABLE "$IFACE" oifname "{ $set }" meta priority set 10:0 || return 1
-	nft add rule inet $LANE_TABLE "$IFACE" iifname "{ $set }" meta priority set 10:0 || return 1
-	sqm_log "lanes: WAN flows through { $set } steered into the shaped lane"
+	nft add rule inet $LANE_TABLE "$IFACE" iifname "{ $set }" meta priority set 11:0 || return 1
+	sqm_log "lanes: WAN flows through { $set } steered into the shaped lanes (out 10:0, in 11:0)"
 }
 
 lanes_marks_drop() {
@@ -817,7 +833,7 @@ ingress() {
 		return 1
 	}
 
-	spec=$(tree_spec ${fast} ${DOWNLINK} "${ITARGET}" ${ILIMIT} ${mtu} \
+	spec=$(TREE_DIR=in; tree_spec ${fast} ${DOWNLINK} "${ITARGET}" ${ILIMIT} ${mtu} \
 		"${IQDISC_OPTS}" "${IECN}" ${ISHAPER_BURST_DUR_US})
 	if ! ensure_tree "$DEV" "$spec"; then
 		# Never leave the port feeding a shaper that is not there.
@@ -825,7 +841,13 @@ ingress() {
 		return 1
 	fi
 
-	[ "$fast" = 1 ] && sqm_log "ingress: fast lane active"
+	if [ "$fast" = 1 ]; then
+		if [ "$LANES" = 1 ]; then
+			sqm_log "ingress: fast lane active (mark for packets coming in through the WAN: meta priority set 101:0)"
+		else
+			sqm_log "ingress: fast lane active"
+		fi
+	fi
 	return 0
 }
 
