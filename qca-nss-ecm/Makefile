@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=qca-nss-ecm
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 # Source: https://git.codelinaro.org/clo/qsdk/oss/lklm/qca-nss-ecm.git @ 7894b769eeb64f1c44fde547a107a8b866997590
 # (head of win.nss.1.0.r39, which carries every change of NHSS.QSDK.14.0.r9-00040-O;
