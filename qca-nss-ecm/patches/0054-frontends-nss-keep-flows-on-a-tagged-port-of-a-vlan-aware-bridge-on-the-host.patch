@@ -5,7 +5,7 @@ Subject: [PATCH] frontends/nss: keep flows on a tagged port of a VLAN-aware
 The rule the NSS frontends build gets a VLAN tag for a side only from a
 VLAN device in that side's interface hierarchy: br-lan.10 over the bridge
 (0038 then asks the bridge port whether the tag is on the wire), or a
-tag_8021q DSA port of a VLAN-aware bridge, which 0051 resolves from the
+tag_8021q DSA port of a VLAN-aware bridge, which 0052 resolves from the
 connection's bridge VLAN filter data. An ordinary port of a VLAN-aware
 bridge with no VLAN device above it had neither. That is every bridged
 flow through an ethernet port that is not a switch port, and every routed

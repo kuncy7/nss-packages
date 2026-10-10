@@ -1,12 +1,12 @@
 frontends/nss: accelerate the tag_8021q ports of a VLAN-aware bridge
 
 A tag_8021q DSA port of a VLAN-unaware bridge is, on the wire, a VLAN upper
-of its conduit with the bridge's tag_8021q VID, and 0046 makes it that in
+of its conduit with the bridge's tag_8021q VID, and 0051 makes it that in
 the interface hierarchy: a VLAN iface above the conduit's ethernet leaf, so
 the rule ends on the conduit and carries the VID. A port of a VLAN-aware
 bridge is not that: its frames cross the conduit with the bridge's own VIDs
 (the CPU port is a tagged member of every bridge VLAN), and the port
-carries as many of them as it is a member of. Until now 0046 still gave it
+carries as many of them as it is a member of. Until now 0051 still gave it
 the tag_8021q bridge VID: the rule was written with a VID the flow never
 uses, the firmware matched almost nothing, the flow ran on the host at
 62-83 % softirq with 90-210 Mbit/s and retransmissions (measured on an

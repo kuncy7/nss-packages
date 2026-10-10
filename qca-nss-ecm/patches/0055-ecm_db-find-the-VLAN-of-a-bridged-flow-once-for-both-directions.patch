@@ -32,11 +32,11 @@ which the other host is known too, the source's first, then the
 destination's. If neither gives a VLAN the lookups run as before. The
 walks still check each port's membership of the VLAN they are given.
 
-Routed flows are not touched; each of their sides has its own VLAN (0052).
+Routed flows are not touched; each of their sides has its own VLAN (0053).
 
 This needs the previous patch. With the VLAN now agreed for every bridged
 flow, an ordinary port that carries it tagged would always get a rule
-without the tag; 0053 is what refuses that rule.
+without the tag; 0054 is what refuses that rule.
 
 Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
 diff -urN a/ecm_db/ecm_db_connection.c b/ecm_db/ecm_db_connection.c
