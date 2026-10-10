@@ -45,7 +45,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  
 --- a/ecm_interface.c
 +++ b/ecm_interface.c
-@@ -5588,7 +5588,7 @@ int32_t ecm_interface_multicast_heirarch
+@@ -5559,7 +5559,7 @@ int32_t ecm_interface_multicast_heirarch
  			return 0;
  		}
  

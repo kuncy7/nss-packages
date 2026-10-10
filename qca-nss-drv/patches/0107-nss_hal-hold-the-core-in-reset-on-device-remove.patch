@@ -96,7 +96,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  	.debug_enable = __nss_hal_debug_enable,
 --- a/nss_hal/nss_hal.c
 +++ b/nss_hal/nss_hal.c
-@@ -840,6 +840,43 @@ int nss_hal_remove(struct platform_devic
+@@ -828,6 +828,43 @@ int nss_hal_remove(struct platform_devic
  	int i;
  
  	/*
