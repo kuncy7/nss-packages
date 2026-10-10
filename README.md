@@ -1,256 +1,128 @@
-# NSS offload packages for the OpenWrt qualcommax EDMA stack
+# NSS packages for OpenWrt qualcommax
 
-An OpenWrt package feed that runs the **Qualcomm NSS offload stack** (the UBI32
-NSS cores in IPQ807x) **on top of OpenWrt main's upstream qualcommax ethernet
-drivers** — `qca_edma` / `qca_ppe`, merged into OpenWrt main from
-[openwrt/openwrt#22381](https://github.com/openwrt/openwrt/pull/22381) — instead
-of the classic vendor pairing of `qca-nss-dp` + `qca-ssdk`.
+An OpenWrt package feed for Qualcomm NSS offload on IPQ807x and IPQ60xx.
+It runs the NSS cores on top of OpenWrt's upstream `qca_edma` and `qca_ppe`
+ethernet drivers instead of `qca-nss-dp` and `qca-ssdk`. IPQ60xx support is
+new and lightly tested.
 
-Developed and validated on a **Xiaomi AX3600** (IPQ8071A, 512 MB) running PPPoE
-at 300 Mbit/s, with ECM NAT/PPPoE acceleration and NSS SQM shaping.
-
-The companion OpenWrt tree — kernel patches, the `kmod-qca-ppe-nss` glue module,
-device-tree changes — is at
+The OpenWrt tree that uses this feed is
 [openwrt-nss-edma](https://github.com/JuliusBairaktaris/openwrt-nss-edma),
-branch `nss-edma-rework`. For what NSS offload is and how the pieces fit, see
-[NSS Offload Explained](https://github.com/JuliusBairaktaris/openwrt-nss-edma/wiki/NSS-Offload-Explained)
-in the wiki.
+branches `nss-edma-rework` (Linux 6.18) and `nss-edma-7.3` (6.18 and the
+7.3 testing kernel). They carry the kernel patches and the
+`kmod-qca-ppe-nss` module that connects `qca-nss-drv` to `qca_edma`. The
+packages build for Linux 6.18 and 7.3 only.
+Prebuilt images for IPQ807x and IPQ60xx boards are on the
+[Qualcommax_NSS_Builder releases](https://github.com/JuliusBairaktaris/Qualcommax_NSS_Builder/releases)
+page.
 
 ## This branch: `ipq50xx-rebase`
 
-The IPQ5018 flavour of the feed, companion to
-[kuncy7/openwrt-nss-edma](https://github.com/kuncy7/openwrt-nss-edma/tree/ipq50xx-rebase)
-branch `ipq50xx-rebase` (its `README.ipq50xx.md` has the build and runtime
-story). Use the matching branch in both repositories; the older
-`ipq50xx-nss` pair is an archive of the pre-rebase series and gets no
-further fixes.
-Based on `e621a63` of this feed - the revision the IPQ5018 plane was validated
-against - plus the twelve `qca-nss-drv` hardening commits from `edma-nss`
-(cherry-picked, authorship preserved) and five commits of its own:
+The IPQ5018 flavour of the feed, companion to the `c3po-tag-8021q` branch of
+[kuncy7/openwrt-nss-edma](https://github.com/kuncy7/openwrt-nss-edma), whose
+`README.ipq50xx.md` has the build and runtime story. It is Julius
+Bairaktaris's `edma-nss` (last synced on 10 October 2026) with the IPQ5018
+work on top. His patches are kept as he has them; what differs:
 
 - **`nss-firmware`: the 12.2 line as a selectable version.**
   `NSS_FIRMWARE_VERSION_12_2` installs `NSS.FW.12.2-156-MP.R` from the same
-  tarball. It is the newest firmware published for IPQ5018 and the only one
-  that works there: 12.5-210-MP ignores the H2N checksum-generation flags
-  (every TCP handshake leaves the wire corrupt) and does not answer VAP
-  allocation; 11.4-6 refuses VAP allocation.
-- **Build the stack on ipq50xx.** `qca-nss-drv` gets its `nss-dp` API from
-  `qca-dwmac-nss` on ipq50xx (from `qca-ppe-nss` on the PPE SoCs);
-  `qca-nss-clients`' bridge-mgr dependency on `qca-ppe-nss` becomes
-  per-target; the VLAN manager is packaged for ipq50xx only, because on the
-  PPE SoCs it compiles against ssdk headers this stack does not carry.
-- **`0120`, `0121`** - deassert all UBI0 reset lines on ipq50xx; make
-  `nss_vlan` refuse messages until its handler is registered.
-- **`0136`, `0137`** - park the core before copying the firmware over it (the
-  warm-reboot fix: the old firmware was still executing during the copy); map
-  the meminfo block table non-cacheable (`ioremap_wc`, found first by Adriel
-  Santos for the AX3000T port).
-- **ECM on tag_8021q DSA ports** (`qca-nss-ecm` `0046`, `0047`, `0048`): a
-  DSA user port whose switch talks 802.1Q to the CPU is a VLAN upper of its
-  conduit for ECM (`0046`); a port of a VLAN-aware bridge carries the flow's
-  VLAN, taken from ECM's bridge VLAN filter data, with the endpoint on the
-  conduit and the firmware VLAN interface from `qca-dsa-nss` (`0047`); a
-  routed flow gets each side's own bridge VLAN, so routing between two VLANs
-  of one bridge - the WAN on `br-lan.2`, a guest VLAN - is accelerated too
-  (`0048`).
-- **Firmware inspection tooling** (`0122`, `0123`, `0129`, `0132`): coredump
-  and log-ring dumps on demand, a DDR hexdump, a thread sampler for the
-  firmware profiler. Inert unless used.
+  tarball - the line the IPQ5018 plane is validated on.
+- **The stack builds on ipq50xx.** `qca-nss-drv` gets its `nss-dp` API from
+  `qca-dwmac-nss` there (from `qca-ppe-nss` on the PPE SoCs); the bridge
+  manager stays a PPE package; the VLAN manager compiles its PPE half only
+  on the PPE SoCs (`qca-nss-clients` `0054`). The 256 MB boards default to
+  the LOW memory profile.
+- **`qca-nss-drv`**: `0120` (deassert all UBI0 reset lines), `0121`
+  (`nss_vlan` refuses messages until its handler is registered), `0136`
+  (park the core before copying the firmware over it - the warm-reboot
+  fix), `0138` (core clock first, enabled before its rate is set), `0141`
+  (idle samples in the CPU utilisation average), `0144` (the wifili peer
+  statistics layout of the 12.2 firmware), `0146` (the build picks the
+  default QoS memory pool size), `0122`/`0123` (coredump and firmware log
+  ring on demand; inert unless used). His `0111` carries one change: the
+  N2H descriptor is bounded by the skb's real capacity, because the 12.2
+  firmware sends wifili statistics larger than `max_buf_size`.
+- **`qca-nss-ecm` on tag_8021q DSA ports**: a DSA user port whose switch
+  talks 802.1Q to the CPU is a VLAN upper of its conduit (`0051`); a port of
+  a VLAN-aware bridge carries the flow's VLAN, with the endpoint on the
+  conduit and the firmware VLAN interface from `qca-dsa-nss` (`0052`); a
+  routed flow gets each side's own bridge VLAN (`0053`); a tagged port that
+  is not a DSA port stays on the host and the VLAN of a bridged flow is
+  found once for both directions (`0054`, `0055`); a bridged flow to one of
+  the box's own addresses stays on the host and rules check their source
+  interface by default on ipq50xx (`0056`, `0057`) - the two things a guest
+  network behind an access point needs. His `0048` (ports behind a qca-8021q
+  switch) is not carried: `0051` and `0052` cover it and more.
+- **Multicast through ECM is built off on ipq50xx** until it is measured
+  with the DSA port nodes.
+- **`sqm-scripts-nss`**: on a switch conduit only the WAN flows are shaped,
+  each direction in its own class.
 
-Why not the newer `edma-nss` tip: `af423ae` packages a PPE-based VLAN manager
-(`qca_ppe_port_vlan_vsi_*`), symbols ipq50xx does not have. A rebase has to
-resolve that first.
+## Packages
 
-## Provenance
+| Package | Source | Version |
+|---|---|---|
+| `qca-nss-drv` | [lklm/nss-drv](https://git.codelinaro.org/clo/qsdk/oss/lklm/nss-drv) | `win.nss.1.0.r39`, `705629d` |
+| `qca-nss-ecm` | [lklm/qca-nss-ecm](https://git.codelinaro.org/clo/qsdk/oss/lklm/qca-nss-ecm) | `win.nss.1.0.r39`, `7894b76` |
+| `qca-nss-clients` | [lklm/nss-clients](https://git.codelinaro.org/clo/qsdk/oss/lklm/nss-clients) | `NHSS.QSDK.12.5.5`, `51be82d` |
+| `nss-userspace-oss` | [nss-userspace](https://git.codelinaro.org/clo/qsdk/oss/nss-userspace) | `win.nss.1.0.r39`, `dc142b3` |
+| `nss-firmware` | [qosmio/qca-sdk-nss-fw](https://github.com/qosmio/qca-sdk-nss-fw) | 12.5 release 210, or 11.4.0.5 release 6 |
+| `sqm-scripts-nss` | local | `nss-edma.qos` queue setup for SQM |
 
-This feed is the **CodeLinaro QSDK `nss-host`** sources, packaged to build
-standalone against OpenWrt main. The driver stack (`qca-nss-drv`, `qca-mcs`,
-`qca-nss-ecm`) tracks the tip of the **`NHSS.QSDK.14.0.r9`** release — the line
-Qualcomm actively develops and tests as one set, and the newest that still
-carries IPQ807x support. `qca-nss-drv` and `qca-mcs` are unchanged across r8→r9
-(the tag heads are the same commit); only `qca-nss-ecm` advanced.
+`qca-nss-clients` has no 14.0 branch. Only the modules this stack uses are
+built: PPPoE, VLAN and bridge managers, the NSS qdisc, ingress shaping
+(IGS), netlink, mirror and the Wi-Fi mesh manager. `nss-userspace-oss`
+builds `libnl-nss` and `nssinfo`.
 
-The packaging conversion (pinned upstream sources instead of QSDK's
-`local-development.mk`), the 5.15 → 6.12 kernel-compatibility patch queues, and
-the firmware tarballs come from
-[qosmio/nss-packages](https://github.com/qosmio/nss-packages); the 6.18
-kernel bump and the EDMA-data-plane adaptation are this tree's.
+The default firmware is 12.5-210. Select `NSS_FIRMWARE_VERSION_11_4` for
+802.11s mesh offload; newer firmware does not support mesh interfaces.
 
-### Firmware: why a 14.0 host stack runs 12.5 firmware
+The OpenWrt packaging comes from
+[qosmio/nss-packages](https://github.com/qosmio/nss-packages).
 
-The firmware is **`NSS.FW.12.5-210-HK.R`** — the newest NSS firmware Qualcomm has
-ever published for IPQ807x (Hawkeye). The official
-[quic/qca-sdk-nss-fw](https://github.com/quic/qca-sdk-nss-fw) stops at SPF 12.0,
-qosmio's fork carries it through 12.5, and **QSDK 14.0 dropped the Hawkeye
-firmware package entirely** (NSS firmware moved to IPQ95xx). A `12.5-245-HK`
-build is referenced by QSDK 13.0 but has never been published, so `12.5-210-HK`
-is the firmware ceiling for this SoC.
+## Runtime behaviour
 
-The package also offers **`NSS_FIRMWARE_VERSION_11_4`** (`NSS.HK.11.4.0.5-6-R`,
-from the same tarball): the last firmware line with 802.11s mesh support, and
-the required selection for the ath11k NSS mesh offload. Newer firmware rejects
-mesh interfaces at the firmware level. On 11.4 the shaper statistics wire
-format differs; the NSS qdisc module selects it at build time, and SQM
-runs unchanged with the same `nss-edma.qos` script.
-
-The `14.0.r9` drivers and the `12.5-210` firmware share the same wire ABI — the
-same combination the community NSS builds run — and the pairing is verified at
-runtime, not assumed. `qca-nss-clients` has no `14.0` line and stays at the tip
-of its last release, `NHSS.QSDK.12.5.5`.
-
-## Packages and source pins
-
-| Package | Source | Pin | Notes |
-|---|---|---|---|
-| `qca-nss-drv` | [lklm/nss-drv](https://git.codelinaro.org/clo/qsdk/oss/lklm/nss-drv) | `d7ef98b1d3d3` | Tip of `NHSS.QSDK.14.0.r9` (same commit as r8). `exports/` ABI to the EDMA glue is stable; proven against firmware 12.5-210. |
-| `qca-mcs` | [lklm/qca-mcs](https://git.codelinaro.org/clo/qsdk/oss/lklm/qca-mcs) | `063a4679ed22` | Tip of `NHSS.QSDK.14.0.r9` (same commit as r8). IGMP/MLD snooping for multicast offload. |
-| `qca-nss-ecm` | [lklm/qca-nss-ecm](https://git.codelinaro.org/clo/qsdk/oss/lklm/qca-nss-ecm) | `e978478f5dba` | Tip of `NHSS.QSDK.14.0.r9`. NSS front-end; SFE/PPE/SDX front-ends compiled out. |
-| `qca-nss-clients` | [lklm/nss-clients](https://git.codelinaro.org/clo/qsdk/oss/lklm/nss-clients) | `51be82d` | Tip of `NHSS.QSDK.12.5.5` — the newest clients commit on any maintained branch; no 14.0 line exists. |
-| `nss-firmware` | [qosmio/qca-sdk-nss-fw](https://github.com/qosmio/qca-sdk-nss-fw) | 12.5 Release 210 | `NSS.FW.12.5-210-HK.R`; the firmware the driver source pins against. |
-| `sqm-scripts-nss` | local `files/` | — | NSS shaper integration; ships one queue-setup script, `nss-edma.qos`. |
-
-`qca-nss-clients` is trimmed to the seven KernelPackages this stack uses — the
-NSS qdisc, the ingress-shaping action, the PPPoE connection manager, the bridge
-manager (`kmod-qca-nss-drv-bridge-mgr`, wired LAN-bridge offload), the netlink
-and mirror modules (`kmod-qca-nss-drv-netlink` / `-mirror` — the `nssinfo`
-stats/control interface and port mirroring), and the Wi-Fi mesh manager
-(`kmod-qca-nss-drv-wifi-meshmgr`, for the 802.11s mesh offload on the 11.4
-firmware). The other managers, their compatibility patches and init scripts are
-not carried.
-
-On top of the upstream sources sit a small number of commits that trim the tree
-to the packages this stack uses, convert each to build standalone on OpenWrt
-main, carry the 5.15 → 6.18 kernel/toolchain compatibility patch queues, and
-adapt the stack to the EDMA data plane (below).
-
-## How the EDMA data-plane integration works
-
-The classic NSS stack replaces the ethernet driver: `qca-nss-dp` registers the
-GMAC netdevs and hands the data plane to the NSS cores, with `qca-ssdk`
-programming the switch. This tree keeps OpenWrt main's upstream `qca_edma`
-ethernet driver and DSA switch driver, and inserts a small glue module
-(`kmod-qca-ppe-nss`, in the companion OpenWrt tree) that:
-
-- exports the six `nss_dp_*` symbols `qca-nss-drv` consumes
-  (`nss_data_plane/nss_data_plane.c` is the driver's entire nss-dp surface);
-- overrides the data plane per physical port: TX is redirected from `qca_edma`'s
-  xmit into the NSS conduit; RX arrives via `nss_dp_receive` callbacks from the
-  firmware;
-- replays the port bring-up the firmware expects (vsi_assign → MAC → MTU → open
-  → link state) and re-asserts the PPE VSI flood masks the firmware clears.
-
-Consequences, all verified on hardware:
-
-- **The IPQ807x EDMA block is shared between the host and the NSS firmware.**
-  Once the firmware boots it remaps PPE queue-to-ring delivery (QID2RID) so that
-  *all* wired RX lands on firmware-owned rings. There is **no mixed mode**: with
-  the firmware up, every physical port must be attached to the NSS data plane or
-  it loses RX.
-- **Nothing autoloads.** Loading `qca-nss-drv` boots the firmware; doing that
-  before the glue is armed kills all wired RX until reboot. Bring-up is an
-  explicit runtime sequence (load glue → arm `fw_mask` → load `qca-nss-drv` →
-  attach ports → optionally ECM, PPPoE manager, SQM). The init scripts start
-  nothing at boot, and the ECM and SQM scripts refuse to load their modules
-  unless `qca_nss_drv` is already up.
-- `qca-nss-drv` is built without PPE virtual-port support (`nss_ppe_vp.c` is the
-  only ssdk consumer in the driver; ECM does not use ppe_vp).
-- The NSS qdisc is built without PPE shaper and NSS-bridge support; the firmware
-  accel mode (`accel_mode 0`) that SQM uses is unaffected.
-- Bonding/LAG is compiled out (its kernel hooks come from QSDK kernel patches
-  this tree does not carry).
+No module loads at boot. NSS offload is enabled at runtime, and the ECM and
+SQM scripts refuse to start until the NSS data plane is up. On IPQ807x, once
+the NSS firmware runs it receives all wired traffic, so every physical port
+is attached to the NSS data plane.
 
 ## Building
 
-In `feeds.conf`:
+Add the feed to `feeds.conf`:
 
 ```
-src-link nss /path/to/this/repo
+src-git nss https://github.com/JuliusBairaktaris/nss-packages.git;edma-nss
 ```
 
-Minimum config for the validated AX3600 setup:
+A typical selection:
 
 ```
 CONFIG_PACKAGE_kmod-qca-nss-drv=y
 CONFIG_PACKAGE_kmod-qca-nss-ecm=y
-CONFIG_PACKAGE_kmod-qca-nss-drv-pppoe=y     # PPPoE offload
-CONFIG_PACKAGE_kmod-qca-nss-drv-qdisc=y     # NSS qdiscs for SQM
+CONFIG_PACKAGE_kmod-qca-nss-drv-pppoe=y
+CONFIG_PACKAGE_kmod-qca-nss-drv-qdisc=y
 CONFIG_PACKAGE_kmod-qca-nss-drv-igs=y
 CONFIG_PACKAGE_sqm-scripts-nss=y
 CONFIG_NSS_FIRMWARE_VERSION_12_5=y
-CONFIG_NSS_MEM_PROFILE_MEDIUM=y             # 512 MB boards (AX3600)
+CONFIG_NSS_MEM_PROFILE_MEDIUM=y
 ```
 
-`nss-firmware` is pulled in automatically by `kmod-qca-nss-drv` on qualcommax.
-**Match the memory profile to the board's RAM** — the Config.in default for
-ipq807x is the 1 GB profile, which is wrong for 512 MB devices like the AX3600.
-
-The NSS feature switches (`CONFIG_NSS_DRV_*`) follow the packages you select
-(e.g. the PPPoE manager forces `NSS_DRV_PPPOE_ENABLE`); IPv4 is always on, IPv6
-follows global IPv6 support.
-
-## Known issues
-
-Open defects in the NSS stack this feed builds, found during IPQ807x bring-up.
-
-### Firmware coredump panic on re-arm
-
-Re-arming the firmware after a driver reload can panic with `NSS FW coredump:
-bringing system down`. Consequence: a lightweight firmware reload cannot be used
-to reset the offload plane in place — only a full reboot does.
-
-Why it is still open: the firmware's own trap fingerprint is the evidence that
-would answer it, and both routes to it are currently closed. Forcing a coredump
-through `/proc/sys/dev/nss/general/coredump` needs `nss_ctl_debug != 0`, but the
-`debug` node is compiled out — drv's `Makefile` sets `-DNSS_FW_DBG_SUPPORT=1`
-only for kernel 3.4. Reaching the real repro means unloading the driver, and
-`rmmod ath11k` while NSS wifili is registered hangs the SoC before the re-arm
-step, leaving nothing in pstore (a hang collected by the watchdog writes no
-record, unlike a panic). The next attempt should load ath11k with
-`nss_offload=0` so there is no wifili registration to tear down, isolating the
-re-arm from that separate hazard.
-
-### Out-of-memory on a carrier-down with a high-rate accelerated flow
-
-If a LAN port goes carrier-down while a near-line-rate accelerated flow is
-egressing it, the flow decelerates to the host slow path and the Linux bridge
-floods the packets as unknown-unicast faster than the remaining ports drain
-them, exhausting memory and rebooting the router. Distinct from the silent
-egress-wedge — this one crashes/reboots.
-
-Two earlier readings of this were wrong and are worth stating so nobody chases
-them. The FDB entry is not aged out: `br_port_carrier_check()` ->
-`br_stp_disable_port()` -> `br_fdb_delete_by_port()` flushes that port's entries
-immediately, so the destination is unknown from the first frame. And "drop for a
-down bridge port" is already what Linux does — `should_deliver()` requires
-`BR_STATE_FORWARDING`, so nothing is queued for the down port at all. ECM does
-tear the flow down (`NETDEV_CHANGE` with `!netif_carrier_ok()` calls
-`ecm_interface_dev_defunct_connections()`), so this is not a race with ECM
-catching up: the deceleration is what starts the host path, and the far end keeps
-sending at line rate into a destination that no longer exists. The flood is a
-steady state, not a burst.
-
-What the next reproduction has to capture, before anything is written: whether
-the growth is a qdisc backlog (`tc -s qdisc`, and whether it reproduces with SQM
-off) or unaccounted skb allocation (`skbuff_head_cache` /
-`skbuff_small_head_cache` in `/proc/slabinfo`). Those point at different code and
-only one of them is ours.
+Set the memory profile to the board's RAM: `HIGH` for 1 GB, `MEDIUM` for
+512 MB, `LOW` for 256 MB. The default is `HIGH` on ipq807x and `MEDIUM` on
+ipq60xx.
 
 ## Acknowledgements
 
-- [qosmio/nss-packages](https://github.com/qosmio/nss-packages) and the
-  community NSS builds lineage — the OpenWrt packaging conversion, the 5.15 →
-  6.12 kernel-compatibility patch queues, and the firmware tarballs. This tree
-  would not exist without that work.
-- Ansuel's [openwrt/openwrt#22381](https://github.com/openwrt/openwrt/pull/22381)
-  — the EDMA driver rework this stack runs on.
+- [qosmio/nss-packages](https://github.com/qosmio/nss-packages) for the
+  packaging, the kernel compatibility patches and the firmware tarballs.
+- [Christian Marangi (Ansuel)](https://github.com/Ansuel) for the upstream
+  EDMA and PPE drivers.
+- [Robert Marko (robimarko)](https://github.com/robimarko) for maintaining the
+  OpenWrt qualcommax target.
 
-## Support the project
+## Support
 
-This is an unpaid, single-maintainer effort. If this work is useful to you,
-consider chipping in — it goes toward IPQ807x development and hardware to start
-looking into **IPQ50xx** and **IPQ60xx** next.
-
-- **[GitHub Sponsors](https://github.com/sponsors/JuliusBairaktaris)** — zero-fee, GitHub-native
-- **[PayPal](https://paypal.me/JuliusBairaktaris)** — one-off donations
-
-Thank you!
+This is a single-maintainer project. Donations go toward development and
+test hardware:
+[GitHub Sponsors](https://github.com/sponsors/JuliusBairaktaris) or
+[PayPal](https://paypal.me/JuliusBairaktaris).
