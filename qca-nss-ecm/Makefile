@@ -108,11 +108,15 @@ ECM_MAKE_OPTS+=ECM_CLASSIFIER_DSCP_IGS=y
 endif
 
 # Multicast needs the ipmr/ip6mr MFC offload hooks and reads the
-# bridge MDB directly.
+# bridge MDB directly. Not on ipq50xx yet: the multicast frontend has
+# not been measured with the qca-dwmac-nss glue and the VLAN nodes of
+# the DSA ports, so those boards keep multicast on the host until it is.
+ifeq ($(CONFIG_TARGET_qualcommax_ipq50xx),)
 ifneq ($(CONFIG_KERNEL_IP_MROUTE),)
 ifeq ($(CONFIG_IPV6),$(CONFIG_KERNEL_IPV6_MROUTE))
 ECM_MAKE_OPTS+=ECM_MULTICAST_ENABLE=y \
 			   ECM_MCAST_LINUX_SNOOPER_SUPPORT=y
+endif
 endif
 endif
 
