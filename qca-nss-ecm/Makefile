@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=qca-nss-ecm
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 # Source: https://git.codelinaro.org/clo/qsdk/oss/lklm/qca-nss-ecm.git @ 7894b769eeb64f1c44fde547a107a8b866997590
 # (head of win.nss.1.0.r39, which carries every change of NHSS.QSDK.14.0.r9-00040-O;
@@ -31,7 +31,8 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_kmod-nat46 \
 	CONFIG_PACKAGE_kmod-pppoe \
 	CONFIG_PACKAGE_kmod-qca-nss-drv \
-	CONFIG_PACKAGE_kmod-qca-nss-drv-igs
+	CONFIG_PACKAGE_kmod-qca-nss-drv-igs \
+	CONFIG_TARGET_qualcommax_ipq50xx
 
 include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/package.mk
@@ -172,6 +173,16 @@ ECM_MAKE_OPTS+=ECM_INTERFACE_BOND_ENABLE=n
 
 ifneq ($(CONFIG_NSS_FIRMWARE_VERSION_11_4),)
 EXTRA_CFLAGS+=-DNSS_FIRMWARE_VERSION_11_4
+endif
+
+# The firmware finds a connection by its 5-tuple alone, so a flow that crosses
+# the box twice (a guest behind an access point reaching a LAN device behind the
+# same access point, through the router on the shared uplink) is forwarded the
+# wrong way on its second leg unless the rule checks where the packet came in.
+# On by default where that was measured (IPQ5018, firmware 12.2);
+# net.ecm.src_interface_check=0 turns it off.
+ifneq ($(CONFIG_TARGET_qualcommax_ipq50xx),)
+EXTRA_CFLAGS+=-DECM_INTERFACE_SRC_CHECK_DEFAULT=1
 endif
 
 define Build/InstallDev
