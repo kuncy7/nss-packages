@@ -126,7 +126,7 @@ Used to diagnose the wifili start wedging the phys_if node on IPQ5018.
 + * is the only way to read what it logged before it stopped: the ring lives
 + * in host memory, so walking it needs nothing from the firmware.
 + */
-+static int nss_fwlog_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_fwlog_handler(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 +{
 +	struct nss_ctx_instance *nss_ctx = &nss_top_main.nss[NSS_CORE_0];
 +	int ret;
