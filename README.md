@@ -1,29 +1,52 @@
-# NSS packages for OpenWrt qualcommax
+# NSS packages for OpenWrt on IPQ50xx (IPQ5018)
 
-An OpenWrt package feed for Qualcomm NSS offload on IPQ807x and IPQ60xx.
-It runs the NSS cores on top of OpenWrt's upstream `qca_edma` and `qca_ppe`
-ethernet drivers instead of `qca-nss-dp` and `qca-ssdk`. IPQ60xx support is
-new and lightly tested.
+An OpenWrt package feed for Qualcomm NSS offload on IPQ5018: the NSS driver,
+ECM, the NSS clients and qdiscs, the firmware and the SQM scripts. It is the
+companion of the `c3po-tag-8021q` branch of
+[kuncy7/openwrt-nss-edma](https://github.com/kuncy7/openwrt-nss-edma), which
+runs the NSS core on top of OpenWrt's upstream `stmmac` ethernet driver
+instead of `qca-nss-dp` and `qca-ssdk`. The build and runtime story is in
+that tree's `README.ipq50xx.md`, and prebuilt images are on its
+[Releases page](https://github.com/kuncy7/openwrt-nss-edma/releases).
 
-The OpenWrt tree that uses this feed is
-[openwrt-nss-edma](https://github.com/JuliusBairaktaris/openwrt-nss-edma),
-branches `nss-edma-rework` (Linux 6.18) and `nss-edma-7.3` (6.18 and the
-7.3 testing kernel). They carry the kernel patches and the
-`kmod-qca-ppe-nss` module that connects `qca-nss-drv` to `qca_edma`. The
-packages build for Linux 6.18 and 7.3 only.
-Prebuilt images for IPQ807x and IPQ60xx boards are on the
-[Qualcommax_NSS_Builder releases](https://github.com/JuliusBairaktaris/Qualcommax_NSS_Builder/releases)
-page.
+The working branch is **`ipq50xx-rebase`**. The repository's default branch,
+`edma-nss`, is an old copy of the feed this one was forked from and is not
+what the tree builds.
 
-## This branch: `ipq50xx-rebase`
+## Where this feed comes from
 
-The IPQ5018 flavour of the feed, companion to the `c3po-tag-8021q` branch of
-[kuncy7/openwrt-nss-edma](https://github.com/kuncy7/openwrt-nss-edma), whose
-`README.ipq50xx.md` has the build and runtime story. It is Julius
-Bairaktaris's `edma-nss` (last synced on 10 October 2026) with the IPQ5018
-work on top. His patches are kept as he has them; what differs:
+It is a fork of Julius Bairaktaris's `nss-packages`, branch `edma-nss`: the
+vendor NSS stack on the upstream `qca_edma` and `qca_ppe` drivers of IPQ807x
+and IPQ60xx. In October 2026 that project became
+[PPE-NSS](https://github.com/JuliusBairaktaris/openwrt-ppe-nss), which has
+no vendor stack and needs no feed, and `edma-nss` is archived. IPQ5018 has
+no PPE, so this branch stays on the vendor stack and carries the feed by
+itself from here on. Its base is `edma-nss` at the `vendor-nss-archive` tag
+(10 October 2026).
 
-- **`nss-firmware`: the 12.2 line as a selectable version.**
+The IPQ807x and IPQ60xx parts are still in the feed as they were, but
+nothing here builds or tests them. For those SoCs use
+[openwrt-ppe-nss](https://github.com/JuliusBairaktaris/openwrt-ppe-nss).
+
+| Branch | What |
+|---|---|
+| `ipq50xx-rebase` | The working branch. Pull requests go here. |
+| `ipq50xx-nss` | Archive of the series before the rebase. |
+| `julius-archive/vendor-nss-archive` | The base of `ipq50xx-rebase`: `edma-nss` at its `vendor-nss-archive` tag. |
+| `julius-archive/edma-nss` | The final state of `edma-nss`. |
+| `julius-archive/edma-nss-7.3-feed-20261011` | The feed for the 7.3 testing kernel. |
+
+The source archives of `qca-nss-drv`, `qca-nss-ecm`, `qca-nss-clients` and
+`nss-userspace-oss` are downloaded from the
+[`nss-source-tarballs` release](https://github.com/kuncy7/nss-packages/releases/tag/nss-source-tarballs)
+of this repository. It is a byte-for-byte copy of the release of the same
+name in the original feed.
+
+## What this branch has on top
+
+Julius's patches are kept as he has them. What differs:
+
+- **`nss-firmware`: the 12.2 line, and the default on ipq50xx.**
   `NSS_FIRMWARE_VERSION_12_2` installs `NSS.FW.12.2-156-MP.R` from the same
   tarball - the line the IPQ5018 plane is validated on.
 - **The stack builds on ipq50xx.** `qca-nss-drv` gets its `nss-dp` API from
@@ -65,7 +88,7 @@ work on top. His patches are kept as he has them; what differs:
 | `qca-nss-ecm` | [lklm/qca-nss-ecm](https://git.codelinaro.org/clo/qsdk/oss/lklm/qca-nss-ecm) | `win.nss.1.0.r39`, `7894b76` |
 | `qca-nss-clients` | [lklm/nss-clients](https://git.codelinaro.org/clo/qsdk/oss/lklm/nss-clients) | `NHSS.QSDK.12.5.5`, `51be82d` |
 | `nss-userspace-oss` | [nss-userspace](https://git.codelinaro.org/clo/qsdk/oss/nss-userspace) | `win.nss.1.0.r39`, `dc142b3` |
-| `nss-firmware` | [qosmio/qca-sdk-nss-fw](https://github.com/qosmio/qca-sdk-nss-fw) | 12.5 release 210, or 11.4.0.5 release 6 |
+| `nss-firmware` | [qosmio/qca-sdk-nss-fw](https://github.com/qosmio/qca-sdk-nss-fw) | 12.2 release 156 (IPQ5018), 12.5 release 210, or 11.4.0.5 release 6 |
 | `sqm-scripts-nss` | local | `nss-edma.qos` queue setup for SQM |
 
 `qca-nss-clients` has no 14.0 branch. Only the modules this stack uses are
@@ -73,8 +96,10 @@ built: PPPoE, VLAN and bridge managers, the NSS qdisc, ingress shaping
 (IGS), netlink, mirror and the Wi-Fi mesh manager. `nss-userspace-oss`
 builds `libnl-nss` and `nssinfo`.
 
-The default firmware is 12.5-210. Select `NSS_FIRMWARE_VERSION_11_4` for
-802.11s mesh offload; newer firmware does not support mesh interfaces.
+On ipq50xx the default is 12.2-156, the line the released images are built
+with and the only one the IPQ5018 plane is validated on. 12.5-210 can be
+selected there (`NSS_FIRMWARE_VERSION_12_5`); it is the default on the
+other targets.
 
 The OpenWrt packaging comes from
 [qosmio/nss-packages](https://github.com/qosmio/nss-packages).
@@ -82,47 +107,30 @@ The OpenWrt packaging comes from
 ## Runtime behaviour
 
 No module loads at boot. NSS offload is enabled at runtime, and the ECM and
-SQM scripts refuse to start until the NSS data plane is up. On IPQ807x, once
-the NSS firmware runs it receives all wired traffic, so every physical port
-is attached to the NSS data plane.
+SQM scripts refuse to start until the NSS data plane is up. How the plane
+comes up on IPQ5018 is described in the tree's `README.ipq50xx.md`.
 
 ## Building
 
-Add the feed to `feeds.conf`:
+The tree's `feeds.conf.default` already names the feed. In a `feeds.conf`
+of your own it is:
 
 ```
-src-git nss https://github.com/JuliusBairaktaris/nss-packages.git;edma-nss
+src-git nss https://github.com/kuncy7/nss-packages.git;ipq50xx-rebase
 ```
 
-A typical selection:
-
-```
-CONFIG_PACKAGE_kmod-qca-nss-drv=y
-CONFIG_PACKAGE_kmod-qca-nss-ecm=y
-CONFIG_PACKAGE_kmod-qca-nss-drv-pppoe=y
-CONFIG_PACKAGE_kmod-qca-nss-drv-qdisc=y
-CONFIG_PACKAGE_kmod-qca-nss-drv-igs=y
-CONFIG_PACKAGE_sqm-scripts-nss=y
-CONFIG_NSS_FIRMWARE_VERSION_12_5=y
-CONFIG_NSS_MEM_PROFILE_MEDIUM=y
-```
-
-Set the memory profile to the board's RAM: `HIGH` for 1 GB, `MEDIUM` for
-512 MB, `LOW` for 256 MB. The default is `HIGH` on ipq807x and `MEDIUM` on
-ipq60xx.
+Select `nss-tools-dwmac` in the tree's menuconfig, as `<*>`. It pulls in
+every kernel module the IPQ5018 plane needs.
 
 ## Acknowledgements
 
+- [Julius Bairaktaris](https://github.com/JuliusBairaktaris) for the feed
+  this is forked from. His work can be supported through
+  [GitHub Sponsors](https://github.com/sponsors/JuliusBairaktaris) or
+  [PayPal](https://paypal.me/JuliusBairaktaris).
 - [qosmio/nss-packages](https://github.com/qosmio/nss-packages) for the
   packaging, the kernel compatibility patches and the firmware tarballs.
 - [Christian Marangi (Ansuel)](https://github.com/Ansuel) for the upstream
   EDMA and PPE drivers.
 - [Robert Marko (robimarko)](https://github.com/robimarko) for maintaining the
   OpenWrt qualcommax target.
-
-## Support
-
-This is a single-maintainer project. Donations go toward development and
-test hardware:
-[GitHub Sponsors](https://github.com/sponsors/JuliusBairaktaris) or
-[PayPal](https://paypal.me/JuliusBairaktaris).
