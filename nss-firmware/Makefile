@@ -71,6 +71,7 @@ define Package/nss-firmware/config
 
   choice
     prompt "Version"
+    default NSS_FIRMWARE_VERSION_12_2 if TARGET_qualcommax_ipq50xx
     default NSS_FIRMWARE_VERSION_12_5
 
     config NSS_FIRMWARE_VERSION_12_5
