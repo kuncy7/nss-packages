@@ -13,7 +13,7 @@ PKG_SOURCE_VERSION:=705629dab29e45e1fbfe57c4fcba73f3d58dee24
 QSDK_VERSION:=14.0
 PKG_VERSION:=$(QSDK_VERSION).$(subst -,.,$(PKG_SOURCE_DATE))~$(PKG_SOURCE_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(subst ~,.,$(PKG_VERSION)).tar.zst
-PKG_SOURCE_URL:=https://github.com/JuliusBairaktaris/nss-packages/releases/download/nss-source-tarballs
+PKG_SOURCE_URL:=https://github.com/kuncy7/nss-packages/releases/download/nss-source-tarballs
 PKG_HASH:=da91403856431c46c197d2c1137bd6b55ba8a39b39ada2435893b24d4a601c67
 
 PKG_BUILD_PARALLEL:=1
