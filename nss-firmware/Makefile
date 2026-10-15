@@ -78,23 +78,25 @@ define Package/nss-firmware/config
           bool "NSS Firmware 12.5 Release 210"
           help
                The firmware line the qca-nss-drv source in this tree
-               is pinned against. Does NOT work with NSS MESH
-               (802.11s).
+               is pinned against. On IPQ5018 it runs the ath11k NSS
+               mesh offload (802.11s) as well as 12.2.
 
     config NSS_FIRMWARE_VERSION_12_2
           bool "NSS Firmware 12.2 Release 156"
           help
                The newest firmware published for IPQ5018 (2025-05-01,
-               nine months after 12.5) and the one the ipq50xx
-               measurements were taken on. 12.5 runs there as well.
+               nine months after 12.5) and the one most ipq50xx
+               measurements were taken on. 12.5 runs there as well;
+               build for the version you run (the Wi-Fi peer
+               statistics differ between the two).
 
     config NSS_FIRMWARE_VERSION_11_4
           bool "NSS Firmware 11.4.0.5 Release 6"
           help
-               The last firmware line with 802.11s mesh support:
-               required for (and selected by) the ath11k NSS mesh
-               offload. Every firmware newer than 11.4 rejects mesh
-               interface allocation.
+               The firmware the ath11k NSS mesh offload needs on
+               ipq807x/ipq60xx, where newer firmware rejects mesh
+               interface allocation. On IPQ5018, 12.2 and 12.5 run
+               the mesh offload.
   endchoice
   endmenu
 endef
