@@ -471,6 +471,29 @@ shaping_point() {
 	return 0
 }
 
+# Download shaping is not available on ipq50xx when PPPoE runs straight on a
+# port that is an NSS interface of its own (a WAN on the second GMAC, no VLAN
+# and no switch in between). The redirect works and the IFB tree shapes, but
+# what the IFB hands back is refused by the firmware's PPPoE base node
+# (`short_packet_length` in stats/pppoe for every packet), so the whole download
+# goes to the host - and its ACKs, travelling through the accelerated rule,
+# make the firmware flush that rule over and over. Redirecting from the PPPoE
+# session instead is not an option either: the session node does not answer
+# the IGS attach (the tc filter times out). Measured on a Xiaomi AX6000.
+# On a switch conduit the IFB hands back to the VLAN node first and the same
+# PPPoE session is fine; a VLAN on the GMAC (wan.35) has not been tried, so it
+# is left alone.
+pppoe_on_bare_port() {
+	local s dev
+	[ -e /sys/kernel/debug/qca-dwmac-nss/fw_mask ] || return 1
+	[ "$LANES" = 0 ] || return 1
+	for s in $(uci -q show network | sed -n "s/^network\.\([^.]*\)\.proto='pppoe'$/\1/p"); do
+		dev=$(uci -q get "network.${s}.device") || dev=$(uci -q get "network.${s}.ifname")
+		[ "$dev" = "$IFACE" ] && return 0
+	done
+	return 1
+}
+
 # The netdevs a forwarded WAN packet actually enters or leaves through: the
 # port, the VLANs stacked on it (sysfs uppers, bridges excluded - a bridged
 # port is not a WAN) and the L3 devices netifd runs over any of them, which
@@ -942,6 +965,12 @@ sqm_start() {
 			drop_redirect "$PHYS"
 			SILENT=1 $TC qdisc del dev "$DEV" root
 			sqm_log "sqm_start: ingress shaping disabled (DOWNLINK=0)"
+		elif pppoe_on_bare_port; then
+			# Not a failure of the start: the upload tree above stands and
+			# keeps its state file, only the download is left unshaped.
+			drop_redirect "$PHYS"
+			SILENT=1 $TC qdisc del dev "$DEV" root
+			sqm_error "sqm_start: download shaping is not available on ${IFACE}: PPPoE runs directly on this port, and the NSS firmware sends a shaped download to the host instead of accelerating it. Upload shaping is active; set download to 0, and shape wired downloads with a queue on the LAN conduit (README.ipq50xx.md, SQM)"
 		else
 			CUR_DIRECTION="ingress"
 			if ingress; then

@@ -15,4 +15,7 @@ script's own (`meta priority set 10:0` out through the WAN, `11:0` in through it
 port's traffic passes unshaped. The fast lane mark there is per direction too: `100:0` for packets
 going out through the WAN, `101:0` for packets coming in through it. igs_upload
 is not available there. The firmware counts the 4-byte switch tag, so rates run ~0.3 % low.
+On ipq50xx with PPPoE directly on a WAN that is its own GMAC (no switch, no VLAN) only the upload is shaped:
+the firmware sends a shaped download to the host there. Shape wired downloads with a second queue on
+the LAN conduit (`option interface 'eth0'`, upload = the download cap, download 0).
 Requires kmod-qca-nss-drv-qdisc + kmod-qca-nss-drv-igs and an armed NSS data plane.
