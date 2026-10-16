@@ -46,9 +46,10 @@ name in the original feed.
 
 Julius's patches are kept as he has them. What differs:
 
-- **`nss-firmware`: the 12.2 line, and the default on ipq50xx.**
+- **`nss-firmware`: the 12.2 line as well.**
   `NSS_FIRMWARE_VERSION_12_2` installs `NSS.FW.12.2-156-MP.R` from the same
-  tarball - the line the IPQ5018 plane is validated on.
+  tarball - the newest firmware published for IPQ5018 and the one most
+  ipq50xx measurements were taken on.
 - **The stack builds on ipq50xx.** `qca-nss-drv` gets its `nss-dp` API from
   `qca-dwmac-nss` there (from `qca-ppe-nss` on the PPE SoCs); the bridge
   manager stays a PPE package; the VLAN manager compiles its PPE half only
@@ -96,10 +97,10 @@ built: PPPoE, VLAN and bridge managers, the NSS qdisc, ingress shaping
 (IGS), netlink, mirror and the Wi-Fi mesh manager. `nss-userspace-oss`
 builds `libnl-nss` and `nssinfo`.
 
-On ipq50xx the default is 12.2-156, the line the released images are built
-with and the only one the IPQ5018 plane is validated on. 12.5-210 can be
-selected there (`NSS_FIRMWARE_VERSION_12_5`); it is the default on the
-other targets.
+The default is 12.5-210 on every target, ipq50xx included: the ipq50xx
+release images carry it since 2026-10-15, and on IPQ5018 it carries the same
+traffic as 12.2. 12.2-156 stays selectable (`NSS_FIRMWARE_VERSION_12_2`).
+A `.config` that already names a version keeps it.
 
 The OpenWrt packaging comes from
 [qosmio/nss-packages](https://github.com/qosmio/nss-packages).

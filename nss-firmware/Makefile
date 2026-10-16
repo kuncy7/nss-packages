@@ -71,15 +71,15 @@ define Package/nss-firmware/config
 
   choice
     prompt "Version"
-    default NSS_FIRMWARE_VERSION_12_2 if TARGET_qualcommax_ipq50xx
     default NSS_FIRMWARE_VERSION_12_5
 
     config NSS_FIRMWARE_VERSION_12_5
           bool "NSS Firmware 12.5 Release 210"
           help
                The firmware line the qca-nss-drv source in this tree
-               is pinned against. On IPQ5018 it runs the ath11k NSS
-               mesh offload (802.11s) as well as 12.2.
+               is pinned against, and the one the ipq50xx release
+               images carry. On IPQ5018 it runs the ath11k NSS mesh
+               offload (802.11s) as well as 12.2.
 
     config NSS_FIRMWARE_VERSION_12_2
           bool "NSS Firmware 12.2 Release 156"
