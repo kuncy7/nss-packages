@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=qca-nss-drv
-PKG_RELEASE:=19
+PKG_RELEASE:=20
 
 # Source: https://git.codelinaro.org/clo/qsdk/oss/lklm/nss-drv.git @ 705629dab29e45e1fbfe57c4fcba73f3d58dee24
 # (head of win.nss.1.0.r39, three commits past NHSS.QSDK.14.0.r9-00040-O;
