@@ -86,12 +86,11 @@ define KernelPackage/qca-nss-drv
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  # The nss-dp API shim is SoC-specific: ipq807x/ipq60xx get it from
-  # qca-ppe-nss (built on the PPE/EDMA stack), ipq50xx from qca-dwmac-nss
-  # (built on dwmac-ipq5018), which has neither.
-  DEPENDS:=@(TARGET_ipq806x||TARGET_qualcommax) \
-  				 +TARGET_qualcommax_ipq807x:kmod-qca-ppe-nss \
-  				 +TARGET_qualcommax_ipq60xx:kmod-qca-ppe-nss \
+  # The nss-dp API shim is SoC-specific: ipq50xx gets it from
+  # qca-dwmac-nss (built on dwmac-ipq5018). ipq807x and ipq60xx got it
+  # from qca-ppe-nss on the old qca_edma, which the tree no longer
+  # carries since main moved qca_edma to the in-band QCA tag.
+  DEPENDS:=@(TARGET_ipq806x||TARGET_qualcommax_ipq50xx) \
   				 +TARGET_qualcommax_ipq50xx:kmod-qca-dwmac-nss \
   				 +TARGET_qualcommax:nss-firmware
   TITLE:=Kernel driver for NSS (core driver)
