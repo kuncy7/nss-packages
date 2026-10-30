@@ -1,0 +1,100 @@
+From: Adriel Santos <adriel@adriel.eu>
+Subject: [PATCH] frontends/cmn: give both QoS tags of a ported connection a
+ value
+
+ecm_ported_ipv{4,6}_process() collects the classifiers' verdict in a
+struct ecm_classifier_process_response on the stack. Since cc610c8 ("Add
+per-direction acceleration and classification support for UDP flows") a
+uni-direction connection, which every UDP connection is by default
+(unidir_accel_en=1), sets only the sending direction's QoS tag. Since
+6c84102 ("Allocate memory dynamically for PPE FE update rule message")
+the struct is no longer zeroed. The flow tag is written to skb->priority
+for a packet of either direction, so a reply packet gets uninitialised
+stack as its priority whenever no classifier supplies a QoS tag: the DSCP
+classifier is off, or leaves the connection (no conntrack, no DSCPREMARK
+extension, a failed or denied offload).
+
+On the host Wi-Fi path that priority becomes the frame's TID: ath11k
+takes skb->priority & 0xf with TID override, and mac80211's 802.3 path
+does not re-classify the frame. A routed UDP download into a Wi-Fi client
+then asserts the WLAN firmware (ar_wal_tx_send.c:22193, WLAN_TX_DE).
+Measured on a Xiaomi AX3000T v2 (IPQ5018 + QCN6122) in host Wi-Fi mode,
+with an nft counter after ECM's hook: 369 packets of a UDP download left
+with a priority set, 349 of them above 7, and the 5 GHz firmware
+asserted. With unidir_accel_en=0, 240009 packets left with none set and
+nothing asserted.
+
+Give both tags the packet's own priority again, as before cc610c8. A
+connection accelerated in both directions is unchanged. A packet of a
+uni-direction connection keeps its own priority, so the write back to
+skb->priority does nothing to it. Restoring the zero initialiser instead
+would set the priority of every uni-direction reply packet to 0, dropping
+the one ip_forward() derives from its TOS.
+
+Signed-off-by: Adriel Santos <adriel@adriel.eu>
+Assisted-by: Claude:claude-opus-5-5
+---
+--- a/frontends/cmn/ecm_ported_ipv4.c
++++ b/frontends/cmn/ecm_ported_ipv4.c
+@@ -1033,22 +1033,14 @@ done:
+ 	prevalent_pr.drop = false;
+ 
+ 	/*
+-	 * In case of uni-direction acceleration, assign priority per direction
++	 * Give both tags this packet's priority, for a uni-direction connection
++	 * too: the flow tag is written to skb->priority below for a packet of
++	 * either direction. A classifier that sets a QoS tag overrides both.
+ 	 */
+-	if (ci->unidir_accel_en) {
+-		if (sender == ECM_TRACKER_SENDER_TYPE_SRC) {
+-			prevalent_pr.flow_qos_tag = skb->priority;
+-			prevalent_pr.flow_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+-		} else {
+-			prevalent_pr.return_qos_tag = skb->priority;
+-			prevalent_pr.return_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+-		}
+-	} else {
+-		prevalent_pr.flow_qos_tag = skb->priority;
+-		prevalent_pr.return_qos_tag = skb->priority;
+-		prevalent_pr.flow_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+-		prevalent_pr.return_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+-	}
++	prevalent_pr.flow_qos_tag = skb->priority;
++	prevalent_pr.return_qos_tag = skb->priority;
++	prevalent_pr.flow_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
++	prevalent_pr.return_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+ 
+ 	prevalent_pr.accel_mode = ECM_CLASSIFIER_ACCELERATION_MODE_ACCEL;
+ 	prevalent_pr.timer_group = ci_orig_timer_group = ecm_db_connection_timer_group_get(ci);
+--- a/frontends/cmn/ecm_ported_ipv6.c
++++ b/frontends/cmn/ecm_ported_ipv6.c
+@@ -1060,22 +1060,14 @@ done:
+ 	prevalent_pr.drop = false;
+ 
+ 	/*
+-	 * In case of uni-direction acceleration, assign priority per direction.
++	 * Give both tags this packet's priority, for a uni-direction connection
++	 * too: the flow tag is written to skb->priority below for a packet of
++	 * either direction. A classifier that sets a QoS tag overrides both.
+ 	 */
+-	if (ci->unidir_accel_en) {
+-		if (sender == ECM_TRACKER_SENDER_TYPE_SRC) {
+-			prevalent_pr.flow_qos_tag = skb->priority;
+-			prevalent_pr.flow_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+-		} else {
+-			prevalent_pr.return_qos_tag = skb->priority;
+-			prevalent_pr.return_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+-		}
+-	} else {
+-		prevalent_pr.flow_qos_tag = skb->priority;
+-		prevalent_pr.return_qos_tag = skb->priority;
+-		prevalent_pr.flow_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+-		prevalent_pr.return_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+-	}
++	prevalent_pr.flow_qos_tag = skb->priority;
++	prevalent_pr.return_qos_tag = skb->priority;
++	prevalent_pr.flow_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
++	prevalent_pr.return_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+ 
+ 	prevalent_pr.accel_mode = ECM_CLASSIFIER_ACCELERATION_MODE_ACCEL;
+ 	prevalent_pr.timer_group = ci_orig_timer_group = ecm_db_connection_timer_group_get(ci);
