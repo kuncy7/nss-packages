@@ -1,0 +1,53 @@
+From: Vadim Deiss <letechnarb@gmail.com>
+Subject: [PATCH] nss_core: reset truesize when reusing a tx skb as a receive buffer
+
+nss_skb_reuse() clears the sk_buff up to tail. truesize lies past tail,
+so a reused buffer keeps the truesize of its previous life.
+
+Since 238e03d04662 ("net: fix memory leak in skb_segment_list for GRO
+packets", CVE-2026-22979, in 6.18), skb_segment_list() no longer
+subtracts the segments' truesize from the head: a fraglist GRO head
+keeps the truesize of all its segments. When such a head is sent through
+NSS with reuse and comes back as a receive buffer, the inflated value is
+carried over, and the next fraglist GRO merge adds to it again. The value
+grows over reuse cycles; tens of MB were observed on received linear
+skbs whose fresh truesize is 4352.
+
+At 2^31:
+- a UDP socket on 6.18 dies for good: on an empty queue
+  __udp_enqueue_schedule_skb() accepts the skb and adds truesize to
+  udp_prod_queue->rmem_alloc, but udp_skb_truesize() masks bit 31
+  (UDP_SKB_IS_STATELESS), so the drain subtracts 2^31 less and
+  rmem_alloc stays at 0x80000000;
+- IPv4 reassembly stops for good: ip_frag_queue() adds the unsigned
+  truesize to fqdir->mem, inet_frag_reasm_finish() subtracts an int sum,
+  leaving FRAG memory at 2^32 (kuncy7/openwrt-nss-edma#54).
+
+Reset truesize to what a fresh buffer of that size gets, as
+napi_reuse_skb() does since e33d0ba8047b ("net-gro: reset skb->truesize
+in napi_reuse_skb()").
+
+Link: https://github.com/kuncy7/openwrt-nss-edma/issues/54
+Signed-off-by: Vadim Deiss <letechnarb@gmail.com>
+---
+diff --git a/nss_core.c b/nss_core.c
+index f01f14c..616fc14 100644
+--- a/nss_core.c
++++ b/nss_core.c
+@@ -2894,6 +2894,16 @@ void nss_skb_reuse(struct sk_buff *nbuf)
+ 	skb_reset_tail_pointer(nbuf);
+ 
+ 	nbuf->head_frag = head_frag;
++
++	/*
++	 * truesize lies past tail, so the memset above keeps the value from
++	 * the skb's previous life. The stack may have grown it (a fraglist
++	 * GRO head keeps the truesize of all its segments after
++	 * skb_segment_list()), and it would then accumulate over reuse cycles.
++	 * Reset it to what a fresh buffer of this size gets, as
++	 * napi_reuse_skb() does.
++	 */
++	nbuf->truesize = SKB_TRUESIZE(skb_end_offset(nbuf));
+ }
+ #endif
+ 
