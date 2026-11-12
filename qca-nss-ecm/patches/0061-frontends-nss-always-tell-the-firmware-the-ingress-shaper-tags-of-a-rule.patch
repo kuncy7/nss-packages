@@ -1,0 +1,102 @@
+From: Stanislaw Pal <kuncy7@gmail.com>
+Subject: [PATCH] frontends/nss: always tell the firmware the ingress shaper
+ tags of a rule
+
+With an ingress shaper on the conduit (sqm-scripts-nss, nss-edma.qos:
+act_nssmirred from the conduit to an ifb), every frame the switch hands to
+the SoC passes the ifb's nssprio, and the rule of its flow says which band
+it takes. ECM fills in the ingress tags of a rule only when a classifier
+supplied them, and that is the DSCP classifier, from the conntrack entry.
+A bridged flow has no such entry: its rule goes to the firmware without
+NSS_IPV{4,6}_RULE_CREATE_IGS_VALID, and the firmware then shapes some of
+those flows as WAN downloads.
+
+Seen on a GL-B3000 (firmware 12.5) with a 150 Mbit/s ingress limit on wan:
+iperf3 UDP at 500 Mbit/s from a host on lan1 to a 802.11s mesh peer on
+5 GHz, both in br-lan, 16 source ports. Without this change 8 to 11 of the
+16 arrive at 141 Mbit/s, with the drops counted by the WAN nsstbl on the
+ifb; which ports changes after the rules are flushed. With it, 48 of 48
+runs in three series arrive at 386 to 464 Mbit/s with no drop in the WAN
+nsstbl, and a download from the WAN still goes through that nsstbl.
+
+Send the tags with every unicast rule: the classifier's, or 0 when there
+are none. Multicast rules are left as they are.
+
+Link: https://github.com/kuncy7/openwrt-nss-edma/issues/69
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+---
+--- a/frontends/nss/ecm_nss_ported_ipv4.c
++++ b/frontends/nss/ecm_nss_ported_ipv4.c
+@@ -1243,6 +1243,15 @@ static void ecm_nss_ported_ipv4_connecti
+ 		nircm->igs_rule.igs_flow_qos_tag = (uint16_t)pr->igs_flow_qos_tag;
+ 		nircm->igs_rule.igs_return_qos_tag = (uint16_t)pr->igs_return_qos_tag;
+ 		nircm->valid_flags |= NSS_IPV4_RULE_CREATE_IGS_VALID;
++	} else {
++		/*
++		 * No classifier gave ingress tags, as for a bridged flow, which
++		 * the DSCP classifier never sees. Say so: a rule that leaves the
++		 * tags out can be shaped as if it had some.
++		 */
++		nircm->igs_rule.igs_flow_qos_tag = 0;
++		nircm->igs_rule.igs_return_qos_tag = 0;
++		nircm->valid_flags |= NSS_IPV4_RULE_CREATE_IGS_VALID;
+ 	}
+ #endif
+ 	/*
+
+--- a/frontends/nss/ecm_nss_non_ported_ipv4.c
++++ b/frontends/nss/ecm_nss_non_ported_ipv4.c
+@@ -554,6 +554,15 @@ static void ecm_nss_non_ported_ipv4_conn
+ 		nircm->igs_rule.igs_flow_qos_tag = (uint16_t)pr->igs_flow_qos_tag;
+ 		nircm->igs_rule.igs_return_qos_tag = (uint16_t)pr->igs_return_qos_tag;
+ 		nircm->valid_flags |= NSS_IPV4_RULE_CREATE_IGS_VALID;
++	} else {
++		/*
++		 * No classifier gave ingress tags, as for a bridged flow, which
++		 * the DSCP classifier never sees. Say so: a rule that leaves the
++		 * tags out can be shaped as if it had some.
++		 */
++		nircm->igs_rule.igs_flow_qos_tag = 0;
++		nircm->igs_rule.igs_return_qos_tag = 0;
++		nircm->valid_flags |= NSS_IPV4_RULE_CREATE_IGS_VALID;
+ 	}
+ #endif
+ 
+
+--- a/frontends/nss/ecm_nss_ported_ipv6.c
++++ b/frontends/nss/ecm_nss_ported_ipv6.c
+@@ -1219,6 +1219,15 @@ static void ecm_nss_ported_ipv6_connecti
+ 		nircm->igs_rule.igs_flow_qos_tag = (uint16_t)pr->igs_flow_qos_tag;
+ 		nircm->igs_rule.igs_return_qos_tag = (uint16_t)pr->igs_return_qos_tag;
+ 		nircm->valid_flags |= NSS_IPV6_RULE_CREATE_IGS_VALID;
++	} else {
++		/*
++		 * No classifier gave ingress tags, as for a bridged flow, which
++		 * the DSCP classifier never sees. Say so: a rule that leaves the
++		 * tags out can be shaped as if it had some.
++		 */
++		nircm->igs_rule.igs_flow_qos_tag = 0;
++		nircm->igs_rule.igs_return_qos_tag = 0;
++		nircm->valid_flags |= NSS_IPV6_RULE_CREATE_IGS_VALID;
+ 	}
+ #endif
+ 	/*
+
+--- a/frontends/nss/ecm_nss_non_ported_ipv6.c
++++ b/frontends/nss/ecm_nss_non_ported_ipv6.c
+@@ -470,6 +470,15 @@ static void ecm_nss_non_ported_ipv6_conn
+ 		nircm->igs_rule.igs_flow_qos_tag = (uint16_t)pr->igs_flow_qos_tag;
+ 		nircm->igs_rule.igs_return_qos_tag = (uint16_t)pr->igs_return_qos_tag;
+ 		nircm->valid_flags |= NSS_IPV6_RULE_CREATE_IGS_VALID;
++	} else {
++		/*
++		 * No classifier gave ingress tags, as for a bridged flow, which
++		 * the DSCP classifier never sees. Say so: a rule that leaves the
++		 * tags out can be shaped as if it had some.
++		 */
++		nircm->igs_rule.igs_flow_qos_tag = 0;
++		nircm->igs_rule.igs_return_qos_tag = 0;
++		nircm->valid_flags |= NSS_IPV6_RULE_CREATE_IGS_VALID;
+ 	}
+ #endif
+ 
