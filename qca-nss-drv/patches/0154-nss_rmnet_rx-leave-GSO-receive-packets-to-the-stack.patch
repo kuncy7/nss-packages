@@ -1,0 +1,39 @@
+From: Georg Seema <georgseema@gmail.com>
+Subject: [PATCH] nss: rmnet: leave GSO receive packets to the network stack
+
+The raw-IP receive handler can receive GRO aggregates from kernel rmnet.
+Linearizing these buffers and redirecting them to the NSS receive node
+is not equivalent to segmenting them into the original packets. On an
+RM551 using mhi_net and rmnet, IPv6 QUIC traffic reaches the client as
+fragmented UDP datagrams with multiples of the original payload length.
+Disabling GRO on the rmnet interface restores video playback.
+
+Pass GSO buffers to the network stack before modifying them. Linux
+retains the segmentation metadata and performs segmentation for the
+selected egress device. Ordinary receive packets still use NSS. Keep
+GRO enabled and avoid relying on firmware receive-side segmentation
+support inferred from the generic transmit segmentation flag.
+
+Signed-off-by: Georg Seema <georgseema@gmail.com>
+---
+ nss_rmnet_rx.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/nss_rmnet_rx.c b/nss_rmnet_rx.c
+--- a/nss_rmnet_rx.c
++++ b/nss_rmnet_rx.c
+@@ -944,6 +944,14 @@ static rx_handler_result_t nss_rmnet_rx_bind_handler(struct sk_buff **pskb)
+ 	struct ethhdr *eth;
+ 	__be16 proto, orig_proto;
+ 
++	/*
++	 * GRO aggregates require segmentation, not IP fragmentation. Leave
++	 * them intact for the stack: this receive node must not consume GSO
++	 * packets as ordinary frames, even after skb_linearize().
++	 */
++	if (skb_is_gso(skb))
++		return RX_HANDLER_PASS;
++
+ 	if (__this_cpu_read(nss_rmnet_rx_reinject)) {
+ 		return RX_HANDLER_PASS;
+ 	}
