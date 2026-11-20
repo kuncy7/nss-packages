@@ -1,0 +1,133 @@
+From: Stanislaw Pal <kuncy7@gmail.com>
+Subject: [PATCH] nss_hal: pick the firmware file with a module parameter
+
+The driver asks for qca-nss<core>.bin, a name that exists only as a link
+the firmware hotplug script makes on the first boot. An image that
+carries two firmware lines (12.5 and 12.2 on IPQ5018) could only choose
+between them by rewriting that link in the overlay.
+
+Add a "firmware" parameter: when set to a line, such as 12.2, the driver
+loads qca-nss<core>-retail-12.2.bin; empty keeps the old name. It is
+read when a core is booted, so a boot script can write it to
+/sys/module/qca_nss_drv/parameters/firmware after the module is loaded
+and before the first port is armed.
+
+Report the line of the image that was loaded, taken from the version
+string inside it and not from the file name, in the log and in the
+read-only "firmware_line" parameter (major * 100 + minor: 1205, 1202),
+and export it as nss_hal_fw_line for the code that has to follow the
+layout differences between the lines.
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+---
+--- a/nss_hal/include/nss_hal.h
++++ b/nss_hal/include/nss_hal.h
+@@ -124,6 +124,12 @@ int nss_hal_probe(struct platform_device
+ int nss_hal_remove(struct platform_device *nss_dev);
+ 
+ /*
++ * Line of the firmware image loaded last, major * 100 + minor (1205 for
++ * 12.5), 0 before the first load.
++ */
++extern unsigned int nss_hal_fw_line;
++
++/*
+  * nss_hal_firmware_load()
+  */
+ int nss_hal_firmware_load(struct nss_ctx_instance *nss_ctx, struct platform_device *nss_dev, struct nss_platform_data *npd);
+--- a/nss_hal/nss_hal.c
++++ b/nss_hal/nss_hal.c
+@@ -46,29 +46,87 @@
+ #define NSS_AP0_IMAGE "qca-nss0.bin"
+ #define NSS_AP1_IMAGE "qca-nss1.bin"
+ 
++/*
++ * Which firmware line to boot. Empty keeps the name the driver always asked
++ * for (qca-nss<core>.bin); "12.2" asks for qca-nss<core>-retail-12.2.bin, so
++ * an image can carry more than one line and the choice needs no link in the
++ * file system. Read when a core is booted, not when the module loads.
++ */
++static char nss_fw_name[16];
++module_param_string(firmware, nss_fw_name, sizeof(nss_fw_name), 0644);
++MODULE_PARM_DESC(firmware, "load qca-nss<core>-retail-<firmware>.bin instead of qca-nss<core>.bin");
++
++/*
++ * The line the loaded image belongs to, as major * 100 + minor (1205, 1202,
++ * 1104), 0 until a core has been loaded. Taken from the version string the
++ * image carries - "NSS.FW.12.5-210-MP.R", "NSS.MP.11.4.0.5-6-R" - not from
++ * the file name, so a file named for one line but holding another is still
++ * reported as what it is.
++ */
++unsigned int nss_hal_fw_line;
++EXPORT_SYMBOL(nss_hal_fw_line);
++module_param_named(firmware_line, nss_hal_fw_line, uint, 0444);
++MODULE_PARM_DESC(firmware_line, "line of the loaded firmware, major * 100 + minor");
++
++static void nss_hal_firmware_line(struct nss_ctx_instance *nss_ctx, const struct firmware *nss_fw, const char *name)
++{
++	static const char tag[] = "Version: NSS.";
++	const char *v = strnstr((const char *)nss_fw->data, tag, nss_fw->size);
++	const char *end = (const char *)nss_fw->data + nss_fw->size;
++	unsigned int major, minor;
++	char ver[40];
++	size_t n;
++
++	if (!v) {
++		nss_info_always("%px: %s carries no version string\n", nss_ctx, name);
++		return;
++	}
++
++	v += sizeof(tag) - 1 - 4;	/* keep "NSS." */
++	n = min_t(size_t, end - v, sizeof(ver) - 1);
++	memcpy(ver, v, n);
++	ver[n] = 0;
++	ver[strcspn(ver, " \t\r\n")] = 0;
++
++	/*
++	 * "NSS.FW.12.5-210-MP.R" and "NSS.MP.11.4.0.5-6-R": the line follows
++	 * the second dot either way.
++	 */
++	v = strchr(ver + 4, '.');
++	if (v && sscanf(v + 1, "%u.%u", &major, &minor) == 2)
++		nss_hal_fw_line = major * 100 + minor;
++
++	nss_info_always("%px: firmware %s (%s, line %u)\n", nss_ctx, ver, name, nss_hal_fw_line);
++}
++
+ int nss_hal_firmware_load(struct nss_ctx_instance *nss_ctx, struct platform_device *nss_dev, struct nss_platform_data *npd)
+ {
+ 	const struct firmware *nss_fw;
+ 	void __iomem *load_mem;
++	char name[48];
+ 	int rc;
+ 
+-	if (nss_ctx->id == 0) {
+-		rc = firmware_request_nowarn(&nss_fw, NSS_AP0_IMAGE, &(nss_dev->dev));
+-	} else if (nss_ctx->id == 1) {
+-		rc = firmware_request_nowarn(&nss_fw, NSS_AP1_IMAGE, &(nss_dev->dev));
+-	} else {
++	if (nss_ctx->id > 1) {
+ 		nss_warning("%px: Invalid nss dev: %d\n", nss_ctx, nss_ctx->id);
+ 		return -EINVAL;
+ 	}
+ 
++	if (nss_fw_name[0])
++		snprintf(name, sizeof(name), "qca-nss%u-retail-%s.bin", nss_ctx->id, strim(nss_fw_name));
++	else
++		strscpy(name, nss_ctx->id ? NSS_AP1_IMAGE : NSS_AP0_IMAGE, sizeof(name));
++
++	rc = firmware_request_nowarn(&nss_fw, name, &(nss_dev->dev));
++
+ 	/*
+ 	 *  Check if the file read is successful
+ 	 */
+ 	if (rc) {
+-		nss_info_always("%px: request_firmware failed with err code: %d", nss_ctx, rc);
++		nss_info_always("%px: request_firmware of %s failed with err code: %d", nss_ctx, name, rc);
+ 		return rc;
+ 	}
+ 
++	nss_hal_firmware_line(nss_ctx, nss_fw, name);
+ 
+ 	load_mem = nss_ioremap(npd->load_addr, nss_fw->size);
+ 	if (!load_mem) {
