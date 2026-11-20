@@ -16,8 +16,10 @@ choice
   default NSS_MEM_PROFILE_HIGH if TARGET_qualcommax_ipq807x
   default NSS_MEM_PROFILE_MEDIUM if (TARGET_qualcommax_ipq60xx || TARGET_qualcommax_ipq50xx)
   help
-  	This option allows you to select the memory profile.
-  	It should correspond to the total RAM of your board.
+  	The memory profile the driver uses on a board with 384 MB of RAM
+  	or more. Below that it takes the low profile by itself, and the
+  	mem_profile module parameter (nss.general.mem_profile in uci)
+  	overrides both.
 
   config NSS_MEM_PROFILE_HIGH
   	bool "Use 1G memory profile"

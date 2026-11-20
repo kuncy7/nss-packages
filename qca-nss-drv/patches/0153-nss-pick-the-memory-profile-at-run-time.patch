@@ -1,0 +1,343 @@
+From: Stanislaw Pal <kuncy7@gmail.com>
+Subject: [PATCH] nss: pick the memory profile at run time
+
+The memory profile - the number of connections, their ceiling and, on the
+low profile, the empty buffer pool and the number of cores on IPQ807x -
+was a build-time choice (NSS_MEM_PROFILE_LOW / _MEDIUM from the package's
+Kconfig, else high), one value for every board in an image. An image
+built medium hands the firmware of a 256 MB board an 8192-entry empty
+buffer pool, 35 MB of kmalloc-4k before the first packet.
+
+The build now only names the default. The driver picks the profile when
+it loads and again right before it boots a core: the new mem_profile
+parameter if set (1 high, 2 medium, 3 low; 0, the default, lets the
+driver choose), low when the kernel manages less than 384 MB, the
+build's profile otherwise. A board with 384 MB or more therefore keeps
+what its image did until now, and a low build stays low everywhere.
+max_ipv4_conn and max_ipv6_conn default to 0, which means the profile's
+number; a value given when the module is loaded still wins. One line in
+the log says what was chosen:
+
+  nss_driver: memory profile medium (the build's default, 413 MB): 2048 connections per IP family, 4096 in all
+
+The parameter is writable so that a boot script can set it between
+loading the module and arming the first port, like "firmware".
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+---
+--- a/nss_core.c
++++ b/nss_core.c
+@@ -64,13 +64,13 @@ static atomic_t max_reuse = ATOMIC_INIT(
+ 
+ #endif /* NSS_SKB_REUSE_SUPPORT */
+ 
+-static int max_ipv4_conn = NSS_DEFAULT_NUM_CONN;
++static int max_ipv4_conn;
+ module_param(max_ipv4_conn, int, S_IRUGO);
+-MODULE_PARM_DESC(max_ipv4_conn, "Max number of IPv4 connections");
++MODULE_PARM_DESC(max_ipv4_conn, "Max number of IPv4 connections (0: the memory profile's default)");
+ 
+-static int max_ipv6_conn = NSS_DEFAULT_NUM_CONN;
++static int max_ipv6_conn;
+ module_param(max_ipv6_conn, int, S_IRUGO);
+-MODULE_PARM_DESC(max_ipv6_conn, "Max number of IPv6 connections");
++MODULE_PARM_DESC(max_ipv6_conn, "Max number of IPv6 connections (0: the memory profile's default)");
+ 
+ bool pn_mq_en = false;
+ module_param(pn_mq_en, bool, S_IRUGO);
+@@ -1874,26 +1874,26 @@ static void nss_core_init_nss(struct nss
+ 		 * connections supported by the accelerator.
+ 		 */
+ #ifdef NSS_DRV_IPV4_ENABLE
+-		nss_ipv4_conn_cfg = max_ipv4_conn;
+-		nss_ipv4_update_conn_count(max_ipv4_conn);
++		nss_ipv4_conn_cfg = max_ipv4_conn ? max_ipv4_conn : nss_mem_profile_default_num_conn();
++		nss_ipv4_update_conn_count(nss_ipv4_conn_cfg);
+ #endif
+ 
+ #ifdef NSS_DRV_IPV6_ENABLE
+-		nss_ipv6_conn_cfg = max_ipv6_conn;
+-		nss_ipv6_update_conn_count(max_ipv6_conn);
++		nss_ipv6_conn_cfg = max_ipv6_conn ? max_ipv6_conn : nss_mem_profile_default_num_conn();
++		nss_ipv6_update_conn_count(nss_ipv6_conn_cfg);
+ #endif
+ 
+-#ifdef NSS_MEM_PROFILE_LOW
+-		/*
+-		 * For low memory profiles, restrict the number of empty buffer pool
+-		 * size to NSS_LOW_MEM_EMPTY_POOL_BUF_SZ. Overwrite the default number
+-		 * of empty buffer pool size configured during NSS initialization.
+-		 */
+-		ret = nss_n2h_cfg_empty_pool_size(nss_ctx, NSS_LOW_MEM_EMPTY_POOL_BUF_SZ);
+-		if (ret != NSS_TX_SUCCESS) {
+-			nss_warning("%px: Failed to update empty buffer pool config\n", nss_ctx);
++		if (nss_mem_profile == NSS_MEM_PROFILE_ID_LOW) {
++			/*
++			 * For low memory profiles, restrict the number of empty buffer pool
++			 * size to NSS_LOW_MEM_EMPTY_POOL_BUF_SZ. Overwrite the default number
++			 * of empty buffer pool size configured during NSS initialization.
++			 */
++			ret = nss_n2h_cfg_empty_pool_size(nss_ctx, NSS_LOW_MEM_EMPTY_POOL_BUF_SZ);
++			if (ret != NSS_TX_SUCCESS) {
++				nss_warning("%px: Failed to update empty buffer pool config\n", nss_ctx);
++			}
+ 		}
+-#endif
+ 
+ #ifdef NSS_DRV_SHAPER_ENABLE
+ 		ret = nss_n2h_cfg_qos_mem_size(nss_ctx, qos_mem_size);
+--- a/nss_hal/nss_hal.c
++++ b/nss_hal/nss_hal.c
+@@ -128,6 +128,13 @@ int nss_hal_firmware_load(struct nss_ctx
+ 
+ 	nss_hal_firmware_line(nss_ctx, nss_fw, name);
+ 
++	/*
++	 * The memory profile is read from here on (connection counts, empty
++	 * buffer pool), so take the mem_profile parameter as it is now.
++	 */
++	if (nss_ctx->id == 0)
++		nss_mem_profile_select(true);
++
+ 	load_mem = nss_ioremap(npd->load_addr, nss_fw->size);
+ 	if (!load_mem) {
+ 		nss_info_always("%px: ioremap_nocache failed: %x", nss_ctx, npd->load_addr);
+--- a/nss_hlos_if.h
++++ b/nss_hlos_if.h
+@@ -28,24 +28,44 @@
+ #define NSS_CONN_CFG_TIMEOUT			6000		/* 6 sec timeout for connection cfg message */
+ 
+ /*
+- * The following definitions sets the maximum number of connections
+- * based on the type of memory profile that the system is operating with
++ * The memory profile sets the number of connections and, on the low one, the
++ * size of the empty buffer pool. It used to be fixed at build time
++ * (NSS_MEM_PROFILE_LOW / NSS_MEM_PROFILE_MEDIUM, else high). The build now
++ * only names the default; the driver picks the profile in
++ * nss_mem_profile_select() (nss_init.c): the mem_profile module parameter if
++ * set, low on a board with less than 384 MB of RAM, the build's default
++ * otherwise. The two helpers read the chosen row.
+  */
++enum nss_mem_profile {
++	NSS_MEM_PROFILE_ID_HIGH,
++	NSS_MEM_PROFILE_ID_MEDIUM,
++	NSS_MEM_PROFILE_ID_LOW,
++};
++
+ #if defined (NSS_MEM_PROFILE_LOW)
+-#define NSS_DEFAULT_NUM_CONN			512		/* Default number of connections for IPv4 and IPv6 each, for low memory profile */
+-#if defined (NSS_DRV_IPV6_ENABLE)
+-#define NSS_MAX_TOTAL_NUM_CONN_IPV4_IPV6	1024		/* MAX Connection shared between IPv4 and IPv6 for low memory profile */
++#define NSS_MEM_PROFILE_ID_BUILD		NSS_MEM_PROFILE_ID_LOW
++#elif defined (NSS_MEM_PROFILE_MEDIUM)
++#define NSS_MEM_PROFILE_ID_BUILD		NSS_MEM_PROFILE_ID_MEDIUM
+ #else
+-#define NSS_MAX_TOTAL_NUM_CONN_IPV4_IPV6	512		/* MAX Connection for IPv4 for low memory profile */
++#define NSS_MEM_PROFILE_ID_BUILD		NSS_MEM_PROFILE_ID_HIGH
+ #endif
+-#define NSS_LOW_MEM_EMPTY_POOL_BUF_SZ		4096		/* Default empty buffer pool size for low profile */
+-#elif defined (NSS_MEM_PROFILE_MEDIUM)
+-#define NSS_DEFAULT_NUM_CONN			2048		/* Default number of connections for IPv4 and IPv6 each, for medium memory profile */
+-#define NSS_MAX_TOTAL_NUM_CONN_IPV4_IPV6	4096		/* MAX Connection shared between IPv4 and IPv6 for medium memory profile */
++
++#define NSS_HIGH_MEM_DEFAULT_NUM_CONN		4096		/* Default number of connections for each IPv4 and IPv6 */
++#define NSS_HIGH_MEM_MAX_TOTAL_NUM_CONN		8192		/* MAX Connection shared between IPv4 and IPv6 */
++#define NSS_MEDIUM_MEM_DEFAULT_NUM_CONN		2048		/* Default number of connections for IPv4 and IPv6 each, for medium memory profile */
++#define NSS_MEDIUM_MEM_MAX_TOTAL_NUM_CONN	4096		/* MAX Connection shared between IPv4 and IPv6 for medium memory profile */
++#define NSS_LOW_MEM_DEFAULT_NUM_CONN		512		/* Default number of connections for IPv4 and IPv6 each, for low memory profile */
++#if defined (NSS_DRV_IPV6_ENABLE)
++#define NSS_LOW_MEM_MAX_TOTAL_NUM_CONN		1024		/* MAX Connection shared between IPv4 and IPv6 for low memory profile */
+ #else
+-#define NSS_DEFAULT_NUM_CONN			4096		/* Default number of connections for each IPv4 and IPv6 */
+-#define NSS_MAX_TOTAL_NUM_CONN_IPV4_IPV6	8192		/* MAX Connection shared between IPv4 and IPv6 */
++#define NSS_LOW_MEM_MAX_TOTAL_NUM_CONN		512		/* MAX Connection for IPv4 for low memory profile */
+ #endif
++#define NSS_LOW_MEM_EMPTY_POOL_BUF_SZ		4096		/* Default empty buffer pool size for low profile */
++
++extern enum nss_mem_profile nss_mem_profile;
++void nss_mem_profile_select(bool log);
++int nss_mem_profile_default_num_conn(void);
++int nss_mem_profile_max_total_num_conn(void);
+ 
+ #if defined(NSS_SKB_FIXED_SIZE_2K) && !defined(__LP64__)
+ #define NSS_EMPTY_BUFFER_SIZE			1792		/* Default buffer size for reduced memory profiles. */
+--- a/nss_init.c
++++ b/nss_init.c
+@@ -37,6 +37,8 @@
+ #include <nss_dp_api_if.h>
+ 
+ #include <linux/module.h>
++#include <linux/mm.h>
++#include <linux/sizes.h>
+ #include <linux/platform_device.h>
+ #include <linux/proc_fs.h>
+ #include <linux/device.h>
+@@ -66,6 +68,85 @@ int nss_skip_nw_process = 0x0;
+ module_param(nss_skip_nw_process, int, S_IRUGO);
+ 
+ /*
++ * The memory profile (nss_hlos_if.h).
++ */
++enum nss_mem_profile nss_mem_profile = NSS_MEM_PROFILE_ID_BUILD;
++
++static int nss_mem_profile_param;
++module_param_named(mem_profile, nss_mem_profile_param, int, 0644);
++MODULE_PARM_DESC(mem_profile, "memory profile: 0 chosen by the driver (default), 1 high, 2 medium, 3 low");
++
++/*
++ * nss_mem_profile_default_num_conn()
++ *	The default number of connections per IP family on the chosen profile.
++ */
++int nss_mem_profile_default_num_conn(void)
++{
++	switch (nss_mem_profile) {
++	case NSS_MEM_PROFILE_ID_LOW:
++		return NSS_LOW_MEM_DEFAULT_NUM_CONN;
++	case NSS_MEM_PROFILE_ID_MEDIUM:
++		return NSS_MEDIUM_MEM_DEFAULT_NUM_CONN;
++	default:
++		return NSS_HIGH_MEM_DEFAULT_NUM_CONN;
++	}
++}
++
++/*
++ * nss_mem_profile_max_total_num_conn()
++ *	The most connections IPv4 and IPv6 may have together on the chosen profile.
++ */
++int nss_mem_profile_max_total_num_conn(void)
++{
++	switch (nss_mem_profile) {
++	case NSS_MEM_PROFILE_ID_LOW:
++		return NSS_LOW_MEM_MAX_TOTAL_NUM_CONN;
++	case NSS_MEM_PROFILE_ID_MEDIUM:
++		return NSS_MEDIUM_MEM_MAX_TOTAL_NUM_CONN;
++	default:
++		return NSS_HIGH_MEM_MAX_TOTAL_NUM_CONN;
++	}
++}
++
++/*
++ * nss_mem_profile_select()
++ *	Pick the memory profile: the mem_profile parameter if it names one, low
++ *	when the kernel manages less than 384 MB (what MemTotal shows: a 256 MB
++ *	board has about 200 MB, a 512 MB board about 420 MB), else the profile
++ *	the build names. Called when the module loads and again before a core
++ *	is booted, so the parameter can be written in between; nothing reads
++ *	the profile before a core is up, except the number of cores on IPQ807x.
++ */
++void nss_mem_profile_select(bool log)
++{
++	static const char * const names[] = { "high", "medium", "low" };
++	const char *how = "the build's default";
++	struct sysinfo si;
++	u64 total;
++
++	si_meminfo(&si);
++	total = (u64)si.totalram * si.mem_unit;
++	nss_mem_profile = NSS_MEM_PROFILE_ID_BUILD;
++	if (total < SZ_256M + SZ_128M && nss_mem_profile != NSS_MEM_PROFILE_ID_LOW) {
++		nss_mem_profile = NSS_MEM_PROFILE_ID_LOW;
++		how = "from the RAM size";
++	}
++
++	if (nss_mem_profile_param >= 1 && nss_mem_profile_param <= 3) {
++		nss_mem_profile = nss_mem_profile_param - 1;
++		how = "mem_profile parameter";
++	} else if (nss_mem_profile_param && log) {
++		nss_info_always("mem_profile %d is not a profile, choosing one\n",
++				nss_mem_profile_param);
++	}
++
++	if (log)
++		nss_info_always("memory profile %s (%s, %llu MB): %d connections per IP family, %d in all\n",
++				names[nss_mem_profile], how, (unsigned long long)(total >> 20),
++				nss_mem_profile_default_num_conn(), nss_mem_profile_max_total_num_conn());
++}
++
++/*
+  * PM client handle
+  */
+ 
+@@ -586,6 +667,8 @@ static int __init nss_init(void)
+ 
+ 	struct device_node *cmn = NULL;
+ 
++	nss_mem_profile_select(false);
++
+ #if defined(NSS_DRV_POINT_OFFLOAD)
+ 	pof = of_find_node_by_name(NULL, "reg-update");
+ 	if ((!pof) || (!of_property_read_bool(pof, "ubi_core_enable"))) {
+@@ -624,11 +707,10 @@ nss_info("Init NSS driver");
+ #ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
+ 		nss_top_main.data_plane_ops = &nss_data_plane_ops;
+ #endif
+-#if defined(NSS_MEM_PROFILE_LOW)
+-		nss_top_main.num_nss = 1;
+-#else
+-		nss_top_main.num_nss = 2;
+-#endif
++		/*
++		 * The low memory profile runs a single core.
++		 */
++		nss_top_main.num_nss = nss_mem_profile == NSS_MEM_PROFILE_ID_LOW ? 1 : 2;
+ 	}
+ #endif
+ #if defined(NSS_HAL_IPQ60XX_SUPPORT)
+--- a/nss_ipv4.c
++++ b/nss_ipv4.c
+@@ -38,7 +38,7 @@ struct nss_ipv4_conn_table_info {
+ 	unsigned long cme_mem;		/* Start address for connection match entry table */
+ } nss_ipv4_ct_info;
+ 
+-int nss_ipv4_conn_cfg = NSS_DEFAULT_NUM_CONN;
++int nss_ipv4_conn_cfg = NSS_MEDIUM_MEM_DEFAULT_NUM_CONN;	/* until a core boots */
+ int nss_ipv4_accel_mode_cfg __read_mostly = 1;
+ 
+ static struct nss_dscp_map_entry mapping[NSS_DSCP_MAP_ARRAY_SIZE];
+@@ -562,7 +562,7 @@ int nss_ipv4_update_conn_count(int ipv4_
+ 	sum_of_conn = nss_ipv4_get_total_conn_count(ipv4_num_conn);
+ 
+ 	if ((ipv4_num_conn & NSS_NUM_CONN_QUANTA_MASK) ||
+-		(sum_of_conn > NSS_MAX_TOTAL_NUM_CONN_IPV4_IPV6) ||
++		(sum_of_conn > nss_mem_profile_max_total_num_conn()) ||
+ 		(ipv4_num_conn < NSS_MIN_NUM_CONN)) {
+ 		nss_warning("%px: input supported connections (%d) does not adhere\
+ 				specifications\n1) not multiple of 1024,\n2) is less than \
+@@ -570,7 +570,7 @@ int nss_ipv4_update_conn_count(int ipv4_
+ 				nss_ctx,
+ 				ipv4_num_conn,
+ 				NSS_MIN_NUM_CONN,
+-				NSS_MAX_TOTAL_NUM_CONN_IPV4_IPV6);
++				nss_mem_profile_max_total_num_conn());
+ 		return -EINVAL;
+ 	}
+ 
+--- a/nss_ipv6.c
++++ b/nss_ipv6.c
+@@ -47,7 +47,7 @@ struct nss_ipv6_conn_table_info {
+ 	unsigned long cme_mem;		/* Start address for connection match entry table */
+ } nss_ipv6_ct_info;
+ 
+-int nss_ipv6_conn_cfg = NSS_DEFAULT_NUM_CONN;
++int nss_ipv6_conn_cfg = NSS_MEDIUM_MEM_DEFAULT_NUM_CONN;	/* until a core boots */
+ int nss_ipv6_accel_mode_cfg __read_mostly = 1;
+ 
+ static struct nss_dscp_map_entry mapping[NSS_DSCP_MAP_ARRAY_SIZE];
+@@ -567,7 +567,7 @@ int nss_ipv6_update_conn_count(int ipv6_
+ 	 */
+ 	sum_of_conn = nss_ipv4_conn_cfg + ipv6_num_conn;
+ 	if ((ipv6_num_conn & NSS_NUM_CONN_QUANTA_MASK) ||
+-		(sum_of_conn > NSS_MAX_TOTAL_NUM_CONN_IPV4_IPV6) ||
++		(sum_of_conn > nss_mem_profile_max_total_num_conn()) ||
+ 		(ipv6_num_conn < NSS_MIN_NUM_CONN)) {
+ 		nss_warning("%px: input supported connections (%d) does not adhere\
+ 				specifications\n1) not power of 2,\n2) is less than \
+@@ -575,7 +575,7 @@ int nss_ipv6_update_conn_count(int ipv6_
+ 				nss_ctx,
+ 				ipv6_num_conn,
+ 				NSS_MIN_NUM_CONN,
+-				NSS_MAX_TOTAL_NUM_CONN_IPV4_IPV6);
++				nss_mem_profile_max_total_num_conn());
+ 		return -EINVAL;
+ 	}
+ 
