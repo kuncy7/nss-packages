@@ -1,0 +1,126 @@
+From: Stanislaw Pal <kuncy7@gmail.com>
+Subject: [PATCH] nss_wifili: read the peer stats in the layout of the running firmware
+
+The 12.2 firmware writes 196-byte nss_wifili_peer_ctrl_stats entries: its
+rx control block has no ucast_rcv_cnt/ucast_rcv_bytes and its retry block
+has no tx_mpdu_retry_count/tx_mpdu_total_retry_count (checked against
+NHSS.QSDK.12.2.r10 and 12.2.5; measured on a GL-B3000: cm.len 200 with
+one peer). The 12.5 firmware writes all of them, 212 bytes. A host that
+walks the array with the wrong step reads entry 0 correctly and every
+later one 16*i bytes off, ath11k logs "unable to find peer" and the
+station statistics of the Wi-Fi offload stay at 0.
+
+The layout used to be a build-time choice (NSS_FIRMWARE_VERSION_12_2).
+The driver now knows which line it loaded (nss_hal_fw_line), so keep the
+12.5 structures in the header and add two helpers for the users of the
+message: nss_wifili_peer_ctrl_stats_len(), the size of an entry as the
+running firmware writes it, and nss_wifili_peer_ctrl_stats_get(), which
+copies entry i into the header's layout and leaves the fields a 12.2
+firmware does not report at 0.
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+---
+--- a/exports/nss_wifili_if.h
++++ b/exports/nss_wifili_if.h
+@@ -1543,6 +1543,41 @@ struct nss_wifili_peer_stats {
+ };
+ 
+ /**
++ * nss_wifili_peer_ctrl_stats_len
++ *	Size of one wpcs[] entry as the running firmware writes it.
++ *
++ * The structures above are the layout of the 12.5 firmware. The 12.2
++ * firmware has no ucast_rcv_cnt/ucast_rcv_bytes in the Rx block and no
++ * tx_mpdu_retry_count/tx_mpdu_total_retry_count in the retry block, so
++ * its entries are 16 bytes shorter and wpcs[i] is not where entry i is.
++ * Walk the array with nss_wifili_peer_ctrl_stats_get() instead.
++ *
++ * @return
++ * Size of an entry in bytes.
++ */
++extern uint32_t nss_wifili_peer_ctrl_stats_len(void);
++
++/**
++ * nss_wifili_peer_ctrl_stats_get
++ *	Copy entry i of a peer statistics message into the layout above.
++ *
++ * Fields the running firmware does not report are set to 0.
++ *
++ * @datatypes
++ * nss_wifili_peer_stats \n
++ * nss_wifili_peer_ctrl_stats
++ *
++ * @param[in]  stats  Peer statistics as received from the firmware.
++ * @param[in]  i      Index of the entry, below stats->npeers.
++ * @param[out] out    The entry.
++ *
++ * @return
++ * None.
++ */
++extern void nss_wifili_peer_ctrl_stats_get(const struct nss_wifili_peer_stats *stats, uint32_t i,
++					   struct nss_wifili_peer_ctrl_stats *out);
++
++/**
+  * nss_wifili_peer_stats_msg
+  *	Wifili peer statistics message.
+  */
+--- a/nss_wifili.c
++++ b/nss_wifili.c
+@@ -275,6 +275,57 @@ nss_tx_status_t nss_wifili_tx_msg_sync(s
+ EXPORT_SYMBOL(nss_wifili_tx_msg_sync);
+ 
+ /*
++ * The 12.2 firmware (line 1202, checked against NHSS.QSDK.12.2.r10 and
++ * 12.2.5: 196-byte entries, cm.len 200 with one peer) leaves four fields of
++ * the 12.5 peer statistics out; the line comes from the image that was
++ * loaded, see nss_hal_firmware_load().
++ */
++#ifndef NSS_FIRMWARE_VERSION_11_4
++#define NSS_WIFILI_PEER_STATS_RX_LEN_12_2 offsetof(struct nss_wifili_peer_ctrl_stats, rx.ucast_rcv_cnt)
++#define NSS_WIFILI_PEER_STATS_RETRY_LEN_12_2 offsetof(struct nss_wifili_retry_ctrl_stats, tx_mpdu_retry_count)
++
++static inline bool nss_wifili_peer_stats_12_2(void)
++{
++	return nss_hal_fw_line == 1202;
++}
++#endif
++
++/*
++ * nss_wifili_peer_ctrl_stats_len()
++ *	Size of one peer statistics entry as the running firmware writes it.
++ */
++uint32_t nss_wifili_peer_ctrl_stats_len(void)
++{
++#ifndef NSS_FIRMWARE_VERSION_11_4
++	if (nss_wifili_peer_stats_12_2())
++		return NSS_WIFILI_PEER_STATS_RX_LEN_12_2 + NSS_WIFILI_PEER_STATS_RETRY_LEN_12_2;
++#endif
++	return sizeof(struct nss_wifili_peer_ctrl_stats);
++}
++EXPORT_SYMBOL(nss_wifili_peer_ctrl_stats_len);
++
++/*
++ * nss_wifili_peer_ctrl_stats_get()
++ *	Entry i of a peer statistics message, in the layout of the header.
++ */
++void nss_wifili_peer_ctrl_stats_get(const struct nss_wifili_peer_stats *stats, uint32_t i,
++				    struct nss_wifili_peer_ctrl_stats *out)
++{
++	const uint8_t *raw = (const uint8_t *)stats->wpcs + i * nss_wifili_peer_ctrl_stats_len();
++
++#ifndef NSS_FIRMWARE_VERSION_11_4
++	if (nss_wifili_peer_stats_12_2()) {
++		memset(out, 0, sizeof(*out));
++		memcpy(out, raw, NSS_WIFILI_PEER_STATS_RX_LEN_12_2);
++		memcpy(&out->retry, raw + NSS_WIFILI_PEER_STATS_RX_LEN_12_2, NSS_WIFILI_PEER_STATS_RETRY_LEN_12_2);
++		return;
++	}
++#endif
++	memcpy(out, raw, sizeof(*out));
++}
++EXPORT_SYMBOL(nss_wifili_peer_ctrl_stats_get);
++
++/*
+  * nss_wifili_get_context()
+  */
+ struct nss_ctx_instance *nss_wifili_get_context(void)
